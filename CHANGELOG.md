@@ -20,8 +20,13 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   behaviour as in 0.2.0.
 - `src/los_bootstrap/fetch.py` — stdlib-only downloader (`urllib.request`
   + `json`, no new dependencies). Supports `fdroid://` scheme for
-  F-Droid API resolution and plain HTTPS for direct downloads. Raises
+  F-Droid API resolution, `github://owner/repo` scheme for GitHub
+  release assets, and plain HTTPS for direct downloads. Raises
   `FetchError` on HTTP or network failures.
+- `max-tools` profile: added ReVanced Manager (`github://ReVanced/revanced-manager`,
+  auto-downloaded from latest GitHub release) and a YouTube APK sideload
+  entry with instructions for manual staging (version must match
+  ReVanced patch requirements; no auto-download for proprietary APKs).
 
 ### Changed
 - `CLAUDE.md` "No hidden network" rule relaxed: downloads from URLs

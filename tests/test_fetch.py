@@ -71,3 +71,37 @@ def test_download_apk_fdroid_missing_version_code(tmp_path):
     with patch("urllib.request.urlopen", return_value=_make_resp(api_body)):
         with pytest.raises(FetchError, match="suggestedVersionCode"):
             download_apk("fdroid://com.example.app", tmp_path)
+
+
+def test_download_apk_github_scheme(tmp_path):
+    release_data = {
+        "assets": [
+            {"name": "revanced-manager-v2.5.0.apk", "browser_download_url": "https://github.com/releases/revanced-manager-v2.5.0.apk"},
+            {"name": "checksums.txt", "browser_download_url": "https://github.com/releases/checksums.txt"},
+        ]
+    }
+    apk_content = b"fake revanced apk"
+    responses = [
+        _make_resp(json.dumps(release_data).encode()),
+        _make_resp(apk_content),
+    ]
+    with patch("urllib.request.urlopen", side_effect=responses):
+        result = download_apk("github://ReVanced/revanced-manager", tmp_path)
+    assert result.name == "revanced-manager-v2.5.0.apk"
+    assert result.read_bytes() == apk_content
+
+
+def test_download_apk_github_no_apk_asset(tmp_path):
+    release_data = {"assets": [{"name": "checksums.txt", "browser_download_url": "https://example.com/checksums.txt"}]}
+    with patch("urllib.request.urlopen", return_value=_make_resp(json.dumps(release_data).encode())):
+        with pytest.raises(FetchError, match="no .apk asset"):
+            download_apk("github://SomeOrg/some-repo", tmp_path)
+
+
+def test_download_apk_github_api_error(tmp_path):
+    with patch(
+        "urllib.request.urlopen",
+        side_effect=urllib.error.HTTPError("url", 404, "Not Found", {}, None),
+    ):
+        with pytest.raises(FetchError, match="GitHub API returned 404"):
+            download_apk("github://SomeOrg/some-repo", tmp_path)
