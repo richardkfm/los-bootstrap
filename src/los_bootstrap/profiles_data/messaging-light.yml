@@ -1,0 +1,29 @@
+name: messaging-light
+description: |
+  A messaging-focused bootstrap on top of `minimal`. Queues Signal,
+  Element, and Telegram (X) for install via F-Droid / Aurora. No
+  Google services required. No settings changes beyond what
+  `minimal` already does — apply that one first if you want DNS too.
+
+apps:
+  - id: org.fdroid.fdroid
+    source: sideload
+    apk: F-Droid.apk
+    url: https://f-droid.org/F-Droid.apk
+    note: F-Droid client (sideload).
+
+  - id: org.thoughtcrime.securesms
+    source: aurora
+    note: >
+      Signal. Distributed via Play Store; Aurora Store can fetch it
+      anonymously. Tradeoff: Signal pushes via FCM by default. With
+      no GMS you fall back to Signal's WebSocket polling — battery
+      cost is real but bounded.
+
+  - id: im.vector.app
+    source: fdroid
+    note: Element (Matrix client). Works fine without GMS.
+
+  - id: org.thunderdog.challegram
+    source: fdroid
+    note: Telegram X. Works fine without GMS.

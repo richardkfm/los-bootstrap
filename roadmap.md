@@ -37,7 +37,7 @@ how to add a feature, where to put it, and how to bump the version.
 
 ---
 
-## Phase 1 — Audit MVP (current)
+## Phase 1 — Audit MVP
 
 **Goal:** read-only inspection of a connected device. The tool must be
 useful as an auditor on day one even if no other phase ships.
@@ -71,7 +71,7 @@ Version `0.1.0` tagged on first publish.
 
 ---
 
-## Phase 2 — Bootstrap profiles
+## Phase 2 — Bootstrap profiles (current)
 
 **Goal:** turn YAML profiles into actionable, reviewable bootstrap plans
 the user can opt into.

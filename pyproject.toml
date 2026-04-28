@@ -47,7 +47,7 @@ Issues = "https://example.invalid/los-bootstrap/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"los_bootstrap" = ["py.typed"]
+"los_bootstrap" = ["py.typed", "profiles_data/*.yml"]
 
 [tool.setuptools.dynamic]
 version = { attr = "los_bootstrap.__version__" }

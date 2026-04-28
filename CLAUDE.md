@@ -12,20 +12,28 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 
 It does **not** flash ROMs. It assumes the ROM is already installed.
 
-## Current scope (Phase 1, version 0.1.x)
+## Current scope (Phase 2, version 0.2.x)
 
-Read-only audit MVP:
+Audit MVP plus reviewable bootstrap profiles:
 
-- Detect connected devices over ADB
-- Read ROM/build info via `getprop`
-- Run a privacy/degoogle audit (GMS, GSF, common Google packages, ADB
-  network state, lockscreen presence, etc.)
-- Render a human-readable text report (and `--json`)
-- Surface non-binding bootstrap recommendations
-- Parse YAML profiles from `profiles/` (do not apply them yet)
+- Phase 1 (still in place):
+  - Detect connected devices over ADB
+  - Read ROM/build info via `getprop`
+  - Run a privacy/degoogle audit (GMS, GSF, common Google packages,
+    ADB-over-network, Private DNS, lockscreen presence)
+  - Render a human-readable text report (and `--json`)
+  - Surface non-binding bootstrap recommendations
+- Phase 2 (current):
+  - Profile schema with apps (source: `fdroid` / `aurora` / `sideload`)
+    and settings (`namespace`, `key`, `value`, `note`)
+  - `los-bootstrap plan --profile <name>` — dry-run a profile
+  - `los-bootstrap apply --profile <name> --confirm` — execute the
+    plan via `adb install` and `adb shell settings put`
+  - Bundled starter profiles: `minimal`, `privacy-default`,
+    `messaging-light`, shipped as package data
 - Scaffold `location/` and `camera/` packages — placeholder only
 
-If a change does not fit Phase 1, it goes in the roadmap, not the code.
+If a change does not fit Phase 2, it goes in the roadmap, not the code.
 
 ## Non-goals
 
@@ -51,11 +59,15 @@ src/los_bootstrap/
         models.py          # AuditFinding, Severity, AuditReport
     report.py              # render AuditReport as text or JSON
     bootstrap.py           # recommendations derived from findings
-    profiles.py            # YAML profile loader (parse-only for now)
+    profiles.py            # YAML profile loader + lookup
+    plan.py                # build a reviewable Plan from a Profile
+    apply.py               # execute a Plan via adb (mutating; --confirm)
+    profiles_data/         # bundled starter profiles (package data)
+        minimal.yml
+        privacy-default.yml
+        messaging-light.yml
     location/              # SCAFFOLD — Phase 4
     camera/                # SCAFFOLD — Phase 5
-profiles/
-    privacy-default.yml    # example, parsed but not applied
 tests/
     test_audit.py          # pytest, mocks adb
 ```
@@ -68,9 +80,13 @@ Design rules:
 - **Pluggable device logic.** Device-specific quirks belong in YAML
   profiles, not in `if codename == "..."` branches.
 - **Modes are separate concepts:**
-  - *audit mode* — read-only, the only mode in Phase 1
-  - *bootstrap mode* — propose/apply profile actions (Phase 2+)
+  - *audit mode* — read-only (Phase 1)
+  - *bootstrap mode* — propose/apply profile actions (Phase 2, current)
   - *hardening mode* — opinionated lockdown with explicit tradeoffs (P3+)
+- **Mutation is gated.** The applier is the only place that calls
+  mutating ADB methods (`install_apk`, `setting_put`), and only after
+  the user passes `--confirm`. `plan` is read-only; so is everything
+  in `audit/`.
 - **Root is opt-in.** Anything requiring root sits behind an explicit
   `--root` flag and lives in a clearly named module.
 - **No hidden network.** If a feature ever needs the network, it must be

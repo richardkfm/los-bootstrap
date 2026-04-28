@@ -1,11 +1,14 @@
 """Thin, testable wrapper around the `adb` binary.
 
 All ADB IO funnels through `Adb`. Tests inject a fake `runner` so no real
-`adb` is required. Phase 1 is read-only; nothing here mutates device state.
+`adb` is required. Read-only methods are always available. Mutating
+methods (`install_apk`, `setting_put`) are used by the Phase 2 applier
+and only ever run after the user passes `--confirm`.
 """
 
 from __future__ import annotations
 
+import shlex
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -94,6 +97,35 @@ class Adb:
             if line.strip() == f"package:{package}":
                 return True
         return False
+
+    def setting_get(self, namespace: str, key: str) -> str:
+        """Return the current value of `settings get <namespace> <key>`.
+
+        The `settings` CLI prints `null` when a key is unset; we
+        normalize that to an empty string for easier comparison.
+        """
+        out = self.shell(f"settings get {namespace} {key}").strip()
+        return "" if out == "null" else out
+
+    def install_apk(self, apk_path: str, replace: bool = True) -> str:
+        """Install an APK from a local path. Mutating; applier-only."""
+        args = ["install"]
+        if replace:
+            args.append("-r")
+        args.append(apk_path)
+        result = self.raw(*args)
+        if result.returncode != 0:
+            raise AdbCommandError(
+                f"adb install {apk_path} failed: "
+                f"{(result.stderr or result.stdout).strip()}"
+            )
+        return result.stdout
+
+    def setting_put(self, namespace: str, key: str, value: str) -> None:
+        """Run `settings put <namespace> <key> <value>`. Mutating."""
+        self.shell(
+            f"settings put {namespace} {key} {shlex.quote(value)}"
+        )
 
 
 def parse_devices(stdout: str) -> list[AdbDevice]:
