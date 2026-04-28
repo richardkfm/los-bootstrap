@@ -30,7 +30,7 @@ Audit MVP plus reviewable bootstrap profiles:
   - `los-bootstrap apply --profile <name> --confirm` — execute the
     plan via `adb install` and `adb shell settings put`
   - Bundled starter profiles: `minimal`, `privacy-default`,
-    `messaging-light`, shipped as package data
+    `messaging-light`, `max-tools`, shipped as package data
 - Scaffold `location/` and `camera/` packages — placeholder only
 
 If a change does not fit Phase 2, it goes in the roadmap, not the code.
@@ -66,6 +66,7 @@ src/los_bootstrap/
         minimal.yml
         privacy-default.yml
         messaging-light.yml
+        max-tools.yml
     location/              # SCAFFOLD — Phase 4
     camera/                # SCAFFOLD — Phase 5
 tests/

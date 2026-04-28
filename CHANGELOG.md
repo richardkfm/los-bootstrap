@@ -24,7 +24,10 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   the literal `adb` invocations without running them.
 - `los-bootstrap profiles list`: list bundled profiles.
 - Bundled profiles: `minimal`, `privacy-default` (refresh),
-  `messaging-light`. They ship inside the package as
+  `messaging-light`, and `max-tools` (broad coverage of everyday tools
+  without GMS — store, browser, maps, messaging, contacts/calendar,
+  mail, media, productivity, password manager + 2FA, RSS/podcasts).
+  They ship inside the package as
   `los_bootstrap/profiles_data/*.yml`.
 - New audit check `dns.private`: flags whether Private DNS is off,
   opportunistic, or hostname-pinned. Closes the loop so applying
