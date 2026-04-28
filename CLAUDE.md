@@ -12,7 +12,7 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 
 It does **not** flash ROMs. It assumes the ROM is already installed.
 
-## Current scope (Phase 2, version 0.2.x)
+## Current scope (Phase 2, version 0.3.x)
 
 Audit MVP plus reviewable bootstrap profiles:
 
@@ -90,8 +90,10 @@ Design rules:
   in `audit/`.
 - **Root is opt-in.** Anything requiring root sits behind an explicit
   `--root` flag and lives in a clearly named module.
-- **No hidden network.** If a feature ever needs the network, it must be
-  off by default and documented.
+- **Downloads from declared profile URLs are on by default** and documented.
+  `source: fdroid` entries are resolved via the F-Droid API; `source: sideload`
+  entries with a `url:` field are fetched directly. Use `--no-fetch` to opt out.
+  Any other network access must be off by default and documented.
 
 ## Coding workflow
 

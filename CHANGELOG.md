@@ -6,6 +6,35 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-28
+
+### Added
+- Automatic APK downloads, on by default. `source: fdroid` entries are
+  resolved via the F-Droid API (`suggestedVersionCode`) and downloaded
+  directly from `f-droid.org/repo/`. `source: sideload` entries with a
+  `url:` field are downloaded from that URL when the APK is not already
+  present in `--apk-dir`. Downloads are cached: re-running `apply` with
+  the same `--apk-dir` skips the network call.
+- `--no-fetch` flag on both `plan` and `apply` to opt out of automatic
+  downloads; sideload and F-Droid entries revert to manual/missing-APK
+  behaviour as in 0.2.0.
+- `src/los_bootstrap/fetch.py` — stdlib-only downloader (`urllib.request`
+  + `json`, no new dependencies). Supports `fdroid://` scheme for
+  F-Droid API resolution, `github://owner/repo` scheme for GitHub
+  release assets, and plain HTTPS for direct downloads. Raises
+  `FetchError` on HTTP or network failures.
+- `max-tools` profile: added ReVanced Manager (`github://ReVanced/revanced-manager`,
+  auto-downloaded from latest GitHub release) and a YouTube APK sideload
+  entry with instructions for manual staging (version must match
+  ReVanced patch requirements; no auto-download for proprietary APKs).
+
+### Changed
+- `CLAUDE.md` "No hidden network" rule relaxed: downloads from URLs
+  declared in the active profile are on by default and documented;
+  any other network access remains off by default.
+- `los-bootstrap apply` now accepts `--apk-dir` as a download cache
+  directory in addition to a staging directory.
+
 ## [0.2.0] - 2026-04-28
 
 ### Added

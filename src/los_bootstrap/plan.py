@@ -37,6 +37,9 @@ class PlanStep:
     skipped_reason: Optional[str] = None
     # Filled when kind == INSTALL_APK and we cannot find the staged APK.
     missing_apk_path: Optional[str] = None
+    # Filled when the APK will be fetched at apply time.
+    # "fdroid://<package>" → resolved via F-Droid API; plain HTTPS → direct download.
+    download_url: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -70,7 +73,7 @@ def _resolve_apk(app: AppEntry, apk_dir: Optional[Path]) -> tuple[Optional[Path]
     return candidate, None
 
 
-def _plan_app(adb: Adb, app: AppEntry, apk_dir: Optional[Path]) -> PlanStep:
+def _plan_app(adb: Adb, app: AppEntry, apk_dir: Optional[Path], fetch: bool) -> PlanStep:
     if adb.package_installed(app.id):
         return PlanStep(
             kind=StepKind.SKIP,
@@ -82,8 +85,14 @@ def _plan_app(adb: Adb, app: AppEntry, apk_dir: Optional[Path]) -> PlanStep:
     if app.source == "sideload":
         path, err = _resolve_apk(app, apk_dir)
         if path is None:
-            # Still surfaced as an INSTALL_APK step so `plan` lists it,
-            # but we cannot execute it without the APK.
+            if fetch and app.url:
+                return PlanStep(
+                    kind=StepKind.INSTALL_APK,
+                    summary=f"download + install {app.id}",
+                    target=app.id,
+                    rationale=app.note,
+                    download_url=app.url,
+                )
             return PlanStep(
                 kind=StepKind.INSTALL_APK,
                 summary=f"sideload {app.id}",
@@ -99,13 +108,27 @@ def _plan_app(adb: Adb, app: AppEntry, apk_dir: Optional[Path]) -> PlanStep:
             rationale=app.note,
             command=f"adb install -r {path}",
         )
-    # F-Droid / Aurora: we surface as manual; the applier prints them.
-    pretty_source = {"fdroid": "F-Droid", "aurora": "Aurora Store"}[app.source]
+    if app.source == "fdroid":
+        if fetch:
+            return PlanStep(
+                kind=StepKind.INSTALL_APK,
+                summary=f"download + install {app.id} from F-Droid",
+                target=app.id,
+                rationale=app.note or "F-Droid keeps this app updated.",
+                download_url=f"fdroid://{app.id}",
+            )
+        return PlanStep(
+            kind=StepKind.MANUAL_INSTALL,
+            summary=f"install {app.id} via F-Droid",
+            target=app.id,
+            rationale=app.note or "F-Droid keeps this app updated.",
+        )
+    # Aurora Store: always manual — cannot download Play Store apps automatically.
     return PlanStep(
         kind=StepKind.MANUAL_INSTALL,
-        summary=f"install {app.id} via {pretty_source}",
+        summary=f"install {app.id} via Aurora Store",
         target=app.id,
-        rationale=app.note or f"{pretty_source} keeps {app.id} updated for you.",
+        rationale=app.note or "Aurora Store keeps this app updated.",
     )
 
 
@@ -139,10 +162,11 @@ def build_plan(
     adb: Adb,
     profile: Profile,
     apk_dir: Optional[Path] = None,
+    fetch: bool = True,
 ) -> Plan:
     steps: list[PlanStep] = []
     for app in profile.apps:
-        steps.append(_plan_app(adb, app, apk_dir))
+        steps.append(_plan_app(adb, app, apk_dir, fetch))
     for setting in profile.settings:
         steps.append(_plan_setting(adb, setting))
     return Plan(
@@ -167,15 +191,23 @@ def render_plan(plan: Plan) -> str:
     lines.append("Steps")
     lines.append("-----")
     for i, step in enumerate(plan.steps, 1):
-        glyph = {
-            StepKind.INSTALL_APK: "+",
-            StepKind.MANUAL_INSTALL: "?",
-            StepKind.SET_SETTING: "~",
-            StepKind.SKIP: "=",
-        }[step.kind]
+        if step.download_url:
+            glyph = "↓"  # ↓
+        else:
+            glyph = {
+                StepKind.INSTALL_APK: "+",
+                StepKind.MANUAL_INSTALL: "?",
+                StepKind.SET_SETTING: "~",
+                StepKind.SKIP: "=",
+            }[step.kind]
         lines.append(f"  {i:2d} [{glyph}] {step.kind.value:14s} {step.summary}")
         if step.rationale:
             lines.append(f"        why    : {step.rationale}")
+        if step.download_url:
+            if step.download_url.startswith("fdroid://"):
+                lines.append(f"        from   : F-Droid repo ({step.download_url[9:]})")
+            else:
+                lines.append(f"        from   : {step.download_url}")
         if step.command:
             lines.append(f"        run    : {step.command}")
         if step.missing_apk_path:
