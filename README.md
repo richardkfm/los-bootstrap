@@ -13,8 +13,9 @@ A CLI-first post-install assistant for **LineageOS** and other
 AOSP-derived, degoogled Android ROMs. It does not flash ROMs. It helps
 with everything that comes *after* you flash.
 
-> **Status:** Phase 1 — Audit MVP. Read-only. No device state is changed.
-> See [`roadmap.md`](./roadmap.md) for what comes next.
+> **Status:** Phase 2 — Bootstrap profiles. Read-only by default; the
+> `apply` command only runs mutating `adb` invocations with explicit
+> `--confirm`. See [`roadmap.md`](./roadmap.md) for what comes next.
 
 ## Why
 
@@ -51,6 +52,10 @@ los-bootstrap audit              # privacy/degoogle audit
 los-bootstrap report             # full report (info + audit)
 los-bootstrap report --json      # machine-readable
 los-bootstrap recommend          # non-binding bootstrap suggestions
+
+los-bootstrap profiles list                       # list bundled profiles
+los-bootstrap plan    --profile privacy-default   # dry-run a profile
+los-bootstrap apply   --profile privacy-default --confirm
 ```
 
 If you have more than one device connected, pass `--serial <id>`.
@@ -65,16 +70,43 @@ If you have more than one device connected, pass `--serial <id>`.
   - Google Services Framework (`com.google.android.gsf`) presence
   - Common Google client packages (Maps, Play Store, GBoard, etc.)
   - ADB-over-network (`service.adb.tcp.port`) state
+  - Private DNS (DoT) configuration
   - Screen lock configuration
 - Renders findings as a human-readable report (or JSON).
 - Suggests bootstrap actions — without applying them.
+- Builds and applies **profiles**: a YAML-described list of apps to
+  install (via `adb install` for sideloaded APKs, or queued for
+  F-Droid / Aurora) and `settings put` toggles. Bundled profiles:
+  `minimal`, `privacy-default`, `messaging-light`.
+
+### Applying a profile
+
+```bash
+# 1. (one-time) stage any sideload APKs the profile references
+mkdir -p ~/los-bootstrap-apks
+curl -L -o ~/los-bootstrap-apks/F-Droid.apk https://f-droid.org/F-Droid.apk
+# verify the signature before continuing.
+
+# 2. dry-run: see exactly what would change
+los-bootstrap plan --profile privacy-default --apk-dir ~/los-bootstrap-apks
+
+# 3. apply
+los-bootstrap apply --profile privacy-default --apk-dir ~/los-bootstrap-apks --confirm
+```
+
+`apply` will sideload any `source: sideload` apps it has APKs for, push
+each setting via `adb shell settings put`, and print the remaining
+F-Droid / Aurora apps as manual follow-ups (the tool never reaches out
+to a store on your behalf).
 
 ## What it does NOT do (yet)
 
-- It does not install or remove anything.
+- It does not flash anything.
 - It does not configure microG, UnifiedNlp, or location backends.
 - It does not fetch or apply GCam ports / LMC XML configs.
 - It does not require or offer root.
+- It does not download APKs for you. Sideloaded APKs must already be
+  on disk and verified before `apply` runs.
 
 These are tracked in [`roadmap.md`](./roadmap.md).
 

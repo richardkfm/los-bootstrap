@@ -7,20 +7,33 @@ Phase 1 commands:
     report     info + audit, text or --json
     recommend  print non-binding bootstrap recommendations
     version    print version
+
+Phase 2 commands:
+    profiles   list bundled profiles
+    plan       dry-run a profile against the connected device
+    apply      execute a profile (requires --confirm)
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Optional, Sequence
 
 from . import __version__
 from .adb import Adb, AdbCommandError, AdbNotFoundError, AdbDevice
+from .apply import apply_plan
 from .audit import run_audit
 from .bootstrap import recommendations
 from .device import collect as collect_device
 from .logo import banner
+from .plan import build_plan, render_plan
+from .profiles import (
+    ProfileError,
+    find_profile,
+    list_bundled_profiles,
+)
 from .report import render_json, render_text
 
 
@@ -56,6 +69,46 @@ def _build_parser() -> argparse.ArgumentParser:
     p_report.add_argument("--json", action="store_true", help="Emit JSON.")
 
     sub.add_parser("recommend", help="Print non-binding bootstrap recommendations.")
+
+    p_profiles = sub.add_parser("profiles", help="Manage bootstrap profiles.")
+    p_profiles_sub = p_profiles.add_subparsers(dest="profiles_command", required=True)
+    p_profiles_sub.add_parser("list", help="List bundled profiles.")
+
+    p_plan = sub.add_parser("plan", help="Dry-run a profile against the device.")
+    p_plan.add_argument("--profile", required=True, help="Profile name or path.")
+    p_plan.add_argument(
+        "--profile-dir",
+        action="append",
+        default=[],
+        help="Extra directory to search for profiles (repeatable).",
+    )
+    p_plan.add_argument(
+        "--apk-dir",
+        help="Directory containing APKs referenced by sideload steps.",
+    )
+
+    p_apply = sub.add_parser("apply", help="Execute a profile against the device.")
+    p_apply.add_argument("--profile", required=True, help="Profile name or path.")
+    p_apply.add_argument(
+        "--profile-dir",
+        action="append",
+        default=[],
+        help="Extra directory to search for profiles (repeatable).",
+    )
+    p_apply.add_argument(
+        "--apk-dir",
+        help="Directory containing APKs referenced by sideload steps.",
+    )
+    p_apply.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Required to actually run mutating commands.",
+    )
+    p_apply.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print each command without running it.",
+    )
 
     return parser
 
@@ -139,6 +192,53 @@ def cmd_recommend(serial: Optional[str]) -> int:
     return 0
 
 
+def cmd_profiles_list() -> int:
+    profiles = list_bundled_profiles()
+    if not profiles:
+        print("(no bundled profiles)")
+        return 0
+    print("Bundled profiles")
+    print("----------------")
+    for p in profiles:
+        first_line = p.description.splitlines()[0] if p.description else ""
+        print(f"  {p.name:20s} {first_line}")
+    return 0
+
+
+def cmd_plan(args: argparse.Namespace) -> int:
+    profile = find_profile(
+        args.profile,
+        extra_dirs=[Path(d) for d in args.profile_dir or []],
+    )
+    adb = _resolve_target(args.serial)
+    apk_dir = Path(args.apk_dir) if args.apk_dir else None
+    plan = build_plan(adb, profile, apk_dir=apk_dir)
+    print(render_plan(plan), end="")
+    return 0
+
+
+def cmd_apply(args: argparse.Namespace) -> int:
+    profile = find_profile(
+        args.profile,
+        extra_dirs=[Path(d) for d in args.profile_dir or []],
+    )
+    adb = _resolve_target(args.serial)
+    apk_dir = Path(args.apk_dir) if args.apk_dir else None
+    plan = build_plan(adb, profile, apk_dir=apk_dir)
+
+    if not args.confirm and not args.dry_run:
+        sys.stderr.write(render_plan(plan))
+        sys.stderr.write(
+            "\nrefusing to apply without --confirm. "
+            "Re-run with `apply --profile ... --confirm` to execute, "
+            "or add --dry-run to preview.\n"
+        )
+        return 2
+
+    result = apply_plan(adb, plan, dry_run=args.dry_run)
+    return 1 if result.had_errors() else 0
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -157,6 +257,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return cmd_report(args.serial, args.json)
         if args.command == "recommend":
             return cmd_recommend(args.serial)
+        if args.command == "profiles":
+            if args.profiles_command == "list":
+                return cmd_profiles_list()
+        if args.command == "plan":
+            return cmd_plan(args)
+        if args.command == "apply":
+            return cmd_apply(args)
     except AdbNotFoundError as exc:
         sys.stderr.write(f"error: {exc}\n")
         sys.stderr.write("Install Android platform-tools so `adb` is on PATH.\n")
@@ -164,6 +271,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except AdbCommandError as exc:
         sys.stderr.write(f"error: {exc}\n")
         return 1
+    except ProfileError as exc:
+        sys.stderr.write(f"profile error: {exc}\n")
+        return 2
 
     parser.error(f"unknown command: {args.command}")
     return 2  # unreachable; keeps mypy/type-checkers happy

@@ -1,0 +1,28 @@
+name: minimal
+description: |
+  The smallest sensible bootstrap. Gets F-Droid on the device and
+  enables encrypted DNS so first-boot lookups stop leaking. Touches
+  no opinionated app choices.
+
+apps:
+  - id: org.fdroid.fdroid
+    source: sideload
+    apk: F-Droid.apk
+    url: https://f-droid.org/F-Droid.apk
+    note: >
+      F-Droid client. It is not on F-Droid itself, so the APK must
+      be sideloaded once. Verify the signature before staging it.
+
+settings:
+  - namespace: global
+    key: private_dns_mode
+    value: hostname
+    note: >
+      Force DNS-over-TLS for all queries. Tradeoff: a captive portal
+      that hijacks DNS will fail until you switch back to "off".
+  - namespace: global
+    key: private_dns_specifier
+    value: dns.quad9.net
+    note: >
+      Quad9 default. Replace with your provider of choice (NextDNS,
+      Cloudflare, your own DoT server). No endorsement implied.

@@ -1,0 +1,57 @@
+name: privacy-default
+description: |
+  Sensible defaults for a freshly installed degoogled LineageOS device.
+  Sideloads F-Droid, queues a small set of replacement apps for the
+  user to install via F-Droid afterwards, and switches on encrypted
+  DNS plus the network-only location mode.
+
+apps:
+  - id: org.fdroid.fdroid
+    source: sideload
+    apk: F-Droid.apk
+    url: https://f-droid.org/F-Droid.apk
+    note: >
+      F-Droid client (sideload — verify signature). Everything below
+      is installed *through* F-Droid once it is up.
+
+  - id: com.aurora.store
+    source: fdroid
+    note: >
+      Aurora Store fetches Play Store apps without a Google account.
+      Tradeoff: anonymous Aurora sessions are rate-limited and may
+      occasionally need a personal account.
+
+  - id: net.osmand.plus
+    source: fdroid
+    note: Offline maps. Replaces Google Maps for navigation and search.
+
+  - id: org.thunderdog.challegram
+    source: fdroid
+    note: Telegram client (Telegram X). Works without GMS.
+
+  - id: com.simplemobiletools.contacts.pro
+    source: fdroid
+    note: >
+      Local contacts app. The AOSP contacts app is also fine; pick one.
+
+settings:
+  - namespace: global
+    key: private_dns_mode
+    value: hostname
+    note: >
+      Force DNS-over-TLS. A captive portal that hijacks DNS will fail
+      until you flip this back to "off" temporarily.
+
+  - namespace: global
+    key: private_dns_specifier
+    value: dns.quad9.net
+    note: Default Quad9 endpoint. Replace with your preferred DoT host.
+
+  - namespace: secure
+    key: location_mode
+    value: "3"
+    note: >
+      LOCATION_MODE_BATTERY_SAVING (network-only). Avoids GPS-only
+      mode without enabling Google's fused-location backend. If you
+      install microG + UnifiedNlp later, raise this to 2 (high
+      accuracy).

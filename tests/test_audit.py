@@ -41,9 +41,8 @@ def _runner(answers: dict[str, str]):
     return run
 
 
-def test_clean_degoogled_device_has_no_concerns():
-    facts = _facts()
-    answers = {
+def _base_answers() -> dict[str, str]:
+    return {
         "pm list packages com.google.android.gms": "",
         "pm list packages com.google.android.gsf": "",
         "pm list packages com.android.vending": "",
@@ -51,31 +50,44 @@ def test_clean_degoogled_device_has_no_concerns():
         "pm list packages com.google.android.gm": "",
         "pm list packages com.google.android.youtube": "",
         "pm list packages com.google.android.inputmethod.latin": "",
+        "settings get global private_dns_mode": "off\n",
+        "settings get global private_dns_specifier": "null\n",
         "settings get secure lockscreen.disabled": "0\n",
     }
-    adb = Adb(serial="S1", runner=_runner(answers))
+
+
+def test_clean_degoogled_device_has_only_dns_concern():
+    facts = _facts()
+    adb = Adb(serial="S1", runner=_runner(_base_answers()))
     report = run_audit(adb, facts)
 
-    assert not report.has_concerns()
-    severities = {f.check: f.severity for f in report.findings}
-    assert severities["gms.present"] == Severity.OK
-    assert severities["google.client_packages"] == Severity.OK
-    assert severities["adb.tcp"] == Severity.OK
-    assert severities["lockscreen.present"] == Severity.OK
+    by_check = {f.check: f for f in report.findings}
+    assert by_check["gms.present"].severity == Severity.OK
+    assert by_check["google.client_packages"].severity == Severity.OK
+    assert by_check["adb.tcp"].severity == Severity.OK
+    assert by_check["lockscreen.present"].severity == Severity.OK
+    # Default LineageOS leaves Private DNS off; the audit flags it.
+    assert by_check["dns.private"].severity == Severity.WARN
+
+
+def test_private_dns_hostname_is_ok():
+    answers = _base_answers()
+    answers["settings get global private_dns_mode"] = "hostname\n"
+    answers["settings get global private_dns_specifier"] = "dns.quad9.net\n"
+    adb = Adb(serial="S1", runner=_runner(answers))
+    report = run_audit(adb, _facts())
+    by_check = {f.check: f for f in report.findings}
+    assert by_check["dns.private"].severity == Severity.OK
+    assert "dns.quad9.net" in by_check["dns.private"].detail
 
 
 def test_gms_present_and_adb_tcp_open_flag_concerns():
     facts = _facts(adb_tcp_port="5555")
-    answers = {
-        "pm list packages com.google.android.gms": "package:com.google.android.gms\n",
-        "pm list packages com.google.android.gsf": "package:com.google.android.gsf\n",
-        "pm list packages com.android.vending": "package:com.android.vending\n",
-        "pm list packages com.google.android.apps.maps": "",
-        "pm list packages com.google.android.gm": "",
-        "pm list packages com.google.android.youtube": "",
-        "pm list packages com.google.android.inputmethod.latin": "",
-        "settings get secure lockscreen.disabled": "1\n",
-    }
+    answers = _base_answers()
+    answers["pm list packages com.google.android.gms"] = "package:com.google.android.gms\n"
+    answers["pm list packages com.google.android.gsf"] = "package:com.google.android.gsf\n"
+    answers["pm list packages com.android.vending"] = "package:com.android.vending\n"
+    answers["settings get secure lockscreen.disabled"] = "1\n"
     adb = Adb(serial="S1", runner=_runner(answers))
     report = run_audit(adb, facts)
 
@@ -90,17 +102,7 @@ def test_gms_present_and_adb_tcp_open_flag_concerns():
 
 def test_non_lineage_rom_emits_info_finding():
     facts = _facts(is_lineage=False, lineage_version=None)
-    answers = {
-        "pm list packages com.google.android.gms": "",
-        "pm list packages com.google.android.gsf": "",
-        "pm list packages com.android.vending": "",
-        "pm list packages com.google.android.apps.maps": "",
-        "pm list packages com.google.android.gm": "",
-        "pm list packages com.google.android.youtube": "",
-        "pm list packages com.google.android.inputmethod.latin": "",
-        "settings get secure lockscreen.disabled": "0",
-    }
-    adb = Adb(serial="S1", runner=_runner(answers))
+    adb = Adb(serial="S1", runner=_runner(_base_answers()))
     report = run_audit(adb, facts)
     rom_finding = next(f for f in report.findings if f.check == "rom.lineage")
     assert rom_finding.severity == Severity.INFO

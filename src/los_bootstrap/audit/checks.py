@@ -136,6 +136,54 @@ def check_adb_tcp(_adb: Adb, facts: DeviceFacts) -> Iterable[AuditFinding]:
         )
 
 
+def check_private_dns(adb: Adb, _facts: DeviceFacts) -> Iterable[AuditFinding]:
+    mode = adb.shell("settings get global private_dns_mode").strip()
+    specifier = adb.shell("settings get global private_dns_specifier").strip()
+    if mode in ("", "null", "off"):
+        yield AuditFinding(
+            check="dns.private",
+            title="Private DNS is off",
+            severity=Severity.WARN,
+            detail=(
+                f"global private_dns_mode = {mode!r}. DNS lookups go to "
+                "whatever the network hands you, in cleartext."
+            ),
+            recommendation=(
+                "Set Private DNS to a hostname (DoT) like dns.quad9.net "
+                "in Settings > Network > Private DNS."
+            ),
+        )
+        return
+    if mode == "opportunistic":
+        yield AuditFinding(
+            check="dns.private",
+            title="Private DNS is opportunistic",
+            severity=Severity.INFO,
+            detail=(
+                "Android will use DoT when the upstream resolver supports "
+                "it, otherwise fall back to cleartext."
+            ),
+        )
+        return
+    if mode == "hostname":
+        yield AuditFinding(
+            check="dns.private",
+            title="Private DNS is enforced (DoT)",
+            severity=Severity.OK,
+            detail=(
+                f"global private_dns_mode = 'hostname', specifier = "
+                f"{specifier or '(unset)'!r}."
+            ),
+        )
+        return
+    yield AuditFinding(
+        check="dns.private",
+        title=f"Private DNS in unknown mode {mode!r}",
+        severity=Severity.INFO,
+        detail="Unrecognised private_dns_mode value; not interpreting.",
+    )
+
+
 def check_screen_lock(adb: Adb, _facts: DeviceFacts) -> Iterable[AuditFinding]:
     # `lockscreen.disabled` true means no lock at all on many AOSP ROMs.
     raw = adb.shell("settings get secure lockscreen.disabled").strip()
@@ -166,6 +214,7 @@ CHECKS: tuple[CheckFn, ...] = (
     check_gsf,
     check_common_google_packages,
     check_adb_tcp,
+    check_private_dns,
     check_screen_lock,
 )
 
