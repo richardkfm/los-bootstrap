@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "los-bootstrap"
+description = "CLI-first post-install assistant for LineageOS and degoogled Android ROMs."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["android", "lineageos", "adb", "privacy", "degoogled", "cli"]
+authors = [{ name = "los-bootstrap contributors" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Hardware",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "PyYAML>=6.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+]
+
+[project.scripts]
+los-bootstrap = "los_bootstrap.cli:main"
+
+[project.urls]
+Homepage = "https://example.invalid/los-bootstrap"
+Source = "https://example.invalid/los-bootstrap"
+Issues = "https://example.invalid/los-bootstrap/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"los_bootstrap" = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = { attr = "los_bootstrap.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,23 @@
+name: privacy-default
+description: >
+  Sensible defaults for a freshly installed degoogled LineageOS device.
+  Phase 1 only parses this file; nothing here is applied yet. The applier
+  arrives in Phase 2.
+
+apps:
+  - org.fdroid.fdroid
+  - com.aurora.store
+  - net.osmand.plus
+  - org.thunderdog.challegram
+  - com.simplemobiletools.contacts.pro
+
+settings:
+  - namespace: global
+    key: private_dns_mode
+    value: hostname
+  - namespace: global
+    key: private_dns_specifier
+    value: dns.quad9.net
+  - namespace: secure
+    key: location_mode
+    value: "3"
