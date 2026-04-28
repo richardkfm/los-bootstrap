@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import re
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, TextIO
 
 from .adb import Adb, AdbCommandError
+from . import fetch
+from .fetch import FetchError
 from .plan import Plan, PlanStep, StepKind
 
 
@@ -63,13 +66,16 @@ def apply_plan(
     *,
     dry_run: bool = False,
     out: TextIO = sys.stdout,
+    apk_dir: Optional[Path] = None,
 ) -> ApplyResult:
     """Run the executable steps in `plan` against `adb`.
 
     The caller is responsible for gating on `--confirm`. `dry_run`
-    prints the commands without running them.
+    prints the commands without running them. `apk_dir` is used as the
+    cache directory for downloaded APKs; a temp dir is created if needed.
     """
     result = ApplyResult(profile_name=plan.profile_name)
+    _dl_dir: Optional[Path] = apk_dir  # resolved on first download if still None
 
     out.write(f"Applying profile: {plan.profile_name}\n")
     if dry_run:
@@ -94,6 +100,30 @@ def apply_plan(
             continue
 
         if step.kind == StepKind.INSTALL_APK:
+            if step.download_url:
+                if dry_run:
+                    out.write(f"{prefix} fetch  : {step.download_url} (dry run)\n")
+                    result.results.append(StepResult(step=step, status="ok", detail="dry-run"))
+                    continue
+                if _dl_dir is None:
+                    _dl_dir = Path(tempfile.mkdtemp())
+                    out.write(f"note: downloading APKs to {_dl_dir}\n")
+                out.write(f"{prefix} fetch  : {step.download_url}\n")
+                try:
+                    apk_path = fetch.download_apk(step.download_url, _dl_dir)
+                except FetchError as exc:
+                    out.write(f"        error  : {exc}\n")
+                    result.results.append(StepResult(step=step, status="error", detail=str(exc)))
+                    continue
+                out.write(f"        run    : adb install -r {apk_path}\n")
+                try:
+                    stdout = adb.install_apk(str(apk_path))
+                    result.results.append(StepResult(step=step, status="ok", detail=stdout.strip()))
+                except AdbCommandError as exc:
+                    out.write(f"        error  : {exc}\n")
+                    result.results.append(StepResult(step=step, status="error", detail=str(exc)))
+                continue
+
             if step.missing_apk_path is not None or step.command is None:
                 out.write(
                     f"{prefix} skip   : {step.summary} "

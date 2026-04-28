@@ -83,6 +83,9 @@ the user can opt into.
   of non-destructive steps via `adb install` and `adb shell settings`
 - Built-in starter profiles: `minimal`, `privacy-default`,
   `messaging-light`, `max-tools`
+- Automatic APK downloads (on by default): `source: fdroid` entries are
+  resolved via the F-Droid API; `source: sideload` entries with a `url:`
+  field are fetched from that URL. Opt out with `--no-fetch`.
 
 **Excluded:** anything that requires root, anything that touches `/system`.
 
