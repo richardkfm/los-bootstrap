@@ -73,32 +73,56 @@ If you have more than one device connected, pass `--serial <id>`.
 - Renders findings as a human-readable report (or JSON).
 - Suggests bootstrap actions — without applying them.
 - Builds and applies **profiles**: a YAML-described list of apps to
-  install (via `adb install` for sideloaded APKs, or queued for
-  F-Droid / Aurora) and `settings put` toggles. Bundled profiles:
-  `minimal`, `privacy-default`, `messaging-light`, `max-tools`
-  (broadest non-Google bundle: store, browser, maps, messaging,
-  contacts/calendar, mail, media, productivity, password manager,
-  RSS / podcasts).
+  install and `settings put` toggles. Bundled profiles:
+  - `minimal` — F-Droid + Private DNS
+  - `privacy-default` — adds maps, contacts, a browser, and DoT
+  - `messaging-light` — Signal, Element, Telegram X
+  - `max-tools` — broadest non-Google bundle: store, browser, maps,
+    messaging, contacts/calendar, mail, media, productivity, password
+    manager, RSS/podcasts, and **ReVanced Manager** for ad-free YouTube
+
+### Automatic APK downloads
+
+APKs are downloaded automatically when `apply` runs — no manual
+staging required. Three download strategies are supported, declared
+directly in profile YAML:
+
+| Source in profile | How it's fetched |
+|---|---|
+| `source: sideload` + `url: https://…` | Downloaded directly |
+| `source: sideload` + `url: github://owner/repo` | Latest `.apk` release asset from GitHub |
+| `source: fdroid` | Resolved via the F-Droid API → downloaded from `f-droid.org/repo/` |
+| `source: aurora` | Manual — Aurora Store handles Play Store apps |
+
+Downloaded APKs are cached in `--apk-dir` so re-running `apply` skips
+the network if the file already exists. Pass `--no-fetch` to disable
+downloads entirely and revert to the old manual-staging behaviour.
+
+No new dependencies: the downloader uses Python's stdlib `urllib` only.
 
 ### Applying a profile
 
 ```bash
-# 1. (one-time) stage any sideload APKs the profile references
-mkdir -p ~/los-bootstrap-apks
-curl -L -o ~/los-bootstrap-apks/F-Droid.apk https://f-droid.org/F-Droid.apk
-# verify the signature before continuing.
+# dry-run — shows what would be downloaded and installed
+los-bootstrap plan --profile privacy-default
 
-# 2. dry-run: see exactly what would change
-los-bootstrap plan --profile privacy-default --apk-dir ~/los-bootstrap-apks
+# apply — downloads APKs and installs them, then pushes settings
+los-bootstrap apply --profile privacy-default --confirm
 
-# 3. apply
-los-bootstrap apply --profile privacy-default --apk-dir ~/los-bootstrap-apks --confirm
+# cache APKs in a local directory for offline re-runs
+los-bootstrap apply --profile privacy-default --apk-dir ~/los-apks --confirm
+
+# opt out of downloads (manual staging as before)
+los-bootstrap apply --profile privacy-default --no-fetch --apk-dir ~/los-apks --confirm
 ```
 
-`apply` will sideload any `source: sideload` apps it has APKs for, push
-each setting via `adb shell settings put`, and print the remaining
-F-Droid / Aurora apps as manual follow-ups (the tool never reaches out
-to a store on your behalf).
+The plan output shows a `↓` glyph for steps that will be downloaded
+and a `?` glyph for steps that require manual installation (Aurora
+Store apps). Everything else shows the exact `adb` command that will run.
+
+`apply` requires `--confirm` to execute any mutating command; `--dry-run`
+lets you preview the full command list without touching the device or
+the network.
 
 ## What it does NOT do (yet)
 
@@ -106,8 +130,8 @@ to a store on your behalf).
 - It does not configure microG, UnifiedNlp, or location backends.
 - It does not fetch or apply GCam ports / LMC XML configs.
 - It does not require or offer root.
-- It does not download APKs for you. Sideloaded APKs must already be
-  on disk and verified before `apply` runs.
+- It does not verify APK signatures — verify downloads out-of-band
+  for security-critical installs (F-Droid, ReVanced Manager).
 
 These are tracked in [`roadmap.md`](./roadmap.md).
 
