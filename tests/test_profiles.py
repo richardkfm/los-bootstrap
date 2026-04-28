@@ -19,7 +19,19 @@ from los_bootstrap.profiles import (
 
 def test_bundled_profiles_present():
     names = {p.name for p in list_bundled_profiles()}
-    assert {"minimal", "privacy-default", "messaging-light"} <= names
+    assert {"minimal", "privacy-default", "messaging-light", "max-tools"} <= names
+
+
+def test_max_tools_profile_loads():
+    p = find_profile("max-tools")
+    ids = [a.id for a in p.apps]
+    # The whole point of max-tools is broad coverage; sanity-check a few.
+    assert "org.fdroid.fdroid" in ids
+    assert "net.osmand.plus" in ids
+    assert "com.bitwarden.authenticator" in ids
+    # And it should still respect the schema.
+    for a in p.apps:
+        assert a.source in {"fdroid", "aurora", "sideload"}
 
 
 def test_loads_bundled_privacy_default():

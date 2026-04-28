@@ -81,7 +81,8 @@ the user can opt into.
 - `los-bootstrap plan --profile <name>` — dry-run a profile
 - `los-bootstrap apply --profile <name> --confirm` — guided execution
   of non-destructive steps via `adb install` and `adb shell settings`
-- Built-in starter profiles: `minimal`, `privacy-default`, `messaging-light`
+- Built-in starter profiles: `minimal`, `privacy-default`,
+  `messaging-light`, `max-tools`
 
 **Excluded:** anything that requires root, anything that touches `/system`.
 

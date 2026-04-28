@@ -77,7 +77,10 @@ If you have more than one device connected, pass `--serial <id>`.
 - Builds and applies **profiles**: a YAML-described list of apps to
   install (via `adb install` for sideloaded APKs, or queued for
   F-Droid / Aurora) and `settings put` toggles. Bundled profiles:
-  `minimal`, `privacy-default`, `messaging-light`.
+  `minimal`, `privacy-default`, `messaging-light`, `max-tools`
+  (broadest non-Google bundle: store, browser, maps, messaging,
+  contacts/calendar, mail, media, productivity, password manager,
+  RSS / podcasts).
 
 ### Applying a profile
 

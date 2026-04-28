@@ -1,0 +1,144 @@
+name: max-tools
+description: |
+  Maximum everyday functionality on a degoogled device. The goal is to
+  cover the categories most people miss after leaving Google: a Play
+  Store substitute, maps, browser, messaging, contacts/calendar, media,
+  notes, files, password manager, RSS, podcasts, and a 2FA app — all
+  without GMS. This is the largest bundle; expect a longer first-boot.
+
+  Tradeoffs: more apps means more to keep up to date and more attack
+  surface. F-Droid auto-updates do not run without user interaction;
+  budget a minute per week for the F-Droid update screen, or wire up
+  the privileged extension separately.
+
+apps:
+  - id: org.fdroid.fdroid
+    source: sideload
+    apk: F-Droid.apk
+    url: https://f-droid.org/F-Droid.apk
+    note: F-Droid client (sideload — verify signature).
+
+  - id: com.aurora.store
+    source: fdroid
+    note: >
+      Aurora Store. Fetches Play Store apps anonymously. Tradeoff:
+      anonymous sessions are rate-limited; some apps refuse to run
+      without GMS regardless of how you install them.
+
+  # Browser
+  - id: org.mozilla.fennec_fdroid
+    source: fdroid
+    note: Fennec (Firefox build for F-Droid). Solid default browser.
+
+  # Maps and location
+  - id: net.osmand.plus
+    source: fdroid
+    note: OsmAnd — offline maps and navigation. Replaces Google Maps.
+  - id: app.organicmaps
+    source: fdroid
+    note: >
+      Organic Maps. Lighter alternative to OsmAnd; better at quick
+      lookups, weaker on routing. Pick one if you don't want both.
+
+  # Messaging
+  - id: org.thoughtcrime.securesms
+    source: aurora
+    note: >
+      Signal. No-GMS path uses WebSocket polling for delivery.
+      Tradeoff: a small but real battery and latency cost.
+  - id: im.vector.app
+    source: fdroid
+    note: Element (Matrix client). Works fine without GMS.
+  - id: org.thunderdog.challegram
+    source: fdroid
+    note: Telegram X. Works fine without GMS.
+
+  # Contacts / calendar / mail
+  - id: com.simplemobiletools.contacts.pro
+    source: fdroid
+    note: Local-first contacts app.
+  - id: ws.xsoh.etar
+    source: fdroid
+    note: Etar — open-source calendar UI on top of AOSP CalendarProvider.
+  - id: com.fsck.k9
+    source: fdroid
+    note: K-9 Mail. IMAP/SMTP without Gmail.
+
+  # Media
+  - id: org.schabi.newpipe
+    source: fdroid
+    note: NewPipe — YouTube/SoundCloud frontend, no Google account.
+  - id: org.videolan.vlc
+    source: fdroid
+    note: VLC media player.
+  - id: deltachat.android
+    source: fdroid
+    note: Delta Chat — chat over email, no separate server account.
+
+  # Productivity
+  - id: it.niedermann.owncloud.notes
+    source: fdroid
+    note: Nextcloud Notes (works standalone too).
+  - id: org.documentfoundation.libreoffice
+    source: fdroid
+    note: LibreOffice viewer/editor.
+  - id: com.machiav3lli.fdroid
+    source: fdroid
+    note: >
+      Neo Store — alternative F-Droid client with faster updates and
+      better repo management. Optional; F-Droid alone is fine.
+
+  # Files / sync
+  - id: com.nextcloud.client
+    source: fdroid
+    note: Nextcloud client. Bring your own server.
+  - id: com.amaze.filemanager
+    source: fdroid
+    note: Amaze File Manager.
+
+  # Security / auth
+  - id: com.bitwarden.authenticator
+    source: aurora
+    note: >
+      Bitwarden Authenticator (TOTP). Aurora Store; no GMS required.
+      Tradeoff: cloud sync needs a Bitwarden account.
+  - id: com.x8bit.bitwarden
+    source: aurora
+    note: Bitwarden password manager. Self-hostable via Vaultwarden.
+
+  # RSS / podcasts / read-later
+  - id: de.danoeh.antennapod
+    source: fdroid
+    note: AntennaPod — podcasts.
+  - id: com.nononsenseapps.feeder
+    source: fdroid
+    note: Feeder — local RSS reader.
+
+settings:
+  - namespace: global
+    key: private_dns_mode
+    value: hostname
+    note: >
+      Force DNS-over-TLS. A captive portal that hijacks DNS will fail
+      until you flip this back to "off" temporarily.
+
+  - namespace: global
+    key: private_dns_specifier
+    value: dns.quad9.net
+    note: Default Quad9. Replace with your preferred DoT host.
+
+  - namespace: secure
+    key: location_mode
+    value: "3"
+    note: >
+      LOCATION_MODE_BATTERY_SAVING (network-only). Doesn't enable
+      Google's fused-location backend. Raise to 2 if you install
+      microG + UnifiedNlp later.
+
+  - namespace: global
+    key: install_non_market_apps
+    value: "1"
+    note: >
+      Allow installs from sources other than the Play Store. Required
+      for F-Droid and sideloaded APKs. Tradeoff: you must trust each
+      installer source individually; review them in Settings.
