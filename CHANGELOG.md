@@ -6,6 +6,32 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-29
+
+### Added
+- Phase 5: camera / GCam port profiles.
+- `los-bootstrap camera list-profiles` — list all known per-device GCam port
+  profiles. No device connection required.
+- `los-bootstrap camera show <codename>` — print the full GCam port profile for
+  a device, including port name, verified status, source guidance, and the exact
+  `adb push` command to apply each XML config.
+- `src/los_bootstrap/camera/` package: `models.py` (CameraPort, CameraProfile,
+  XmlConfig dataclasses), `profiles.py` (static CAMERA_PROFILES tuple),
+  `report.py` (render_profile_list, render_profile).
+- `find_camera_profile(codename)` — case-insensitive codename lookup exposed
+  from the camera package public API.
+- Bundled GCam port profiles for five real devices: Google Pixel 7 (panther),
+  Google Pixel 6 (oriole), Xiaomi Redmi Note 10 (sunny), OnePlus 9 (lemonade),
+  and Fairphone 4 (FP4). Each profile includes: verified/unverified tag per
+  port, source guidance for obtaining the APK, device-specific notes, and XML
+  config entries with device path and apply hint.
+- `profiles_data/camera.yml` — bootstrap profile for sideloading LMC 8.4.
+  Installs from a manually staged `lmc84.apk`; GCam APKs are never
+  auto-fetched. Pairs with `camera show <codename>` for XML config guidance.
+- XML config path guidance for LMC 8.4 and BSG 9.3: all XML files are expected
+  at `/sdcard/GCam/Config/` (standard LMC path). Apply hint in each profile
+  shows the exact `adb push` command.
+
 ## [0.5.0] - 2026-04-29
 
 ### Added

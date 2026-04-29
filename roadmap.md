@@ -113,7 +113,7 @@ documented downside. ✓ Shipped in 0.4.0.
 
 ---
 
-## Phase 4 — Location / maps integration (current)
+## Phase 4 — Location / maps integration
 
 **Goal:** make degoogled location workable for everyday apps (Telegram
 location share, OsmAnd, etc.) without pretending it is solved.
@@ -132,7 +132,7 @@ reliably diagnoses the common failure modes. ✓ Shipped in 0.5.0.
 
 ---
 
-## Phase 5 — Camera / GCam profiles
+## Phase 5 — Camera / GCam profiles (current)
 
 **Goal:** treat camera tuning as the device-specific problem it is, and
 help the user without overpromising.
@@ -140,13 +140,13 @@ help the user without overpromising.
 **Included:**
 - GCam port helper profiles (per-device, contributor-maintained)
 - LMC / XML config path guidance
-- `los-bootstrap camera list-profiles` and `... show <profile>`
-- Verification steps before/after applying an XML config
+- `los-bootstrap camera list-profiles` and `... show <codename>`
+- `profiles_data/camera.yml` bootstrap profile for sideloading LMC 8.4
 
 **Excluded:** distributing GCam APKs (license concerns). Auto-tuning.
 
 **Exit criteria:** at least three popular devices have working profiles
-contributed by humans, not generated.
+contributed by humans, not generated. ✓ Shipped in 0.6.0 with five devices.
 
 ---
 
