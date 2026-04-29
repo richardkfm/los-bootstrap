@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Living instruction file for any Claude Code session working on this repo.
+Living instruction file for any human contributors or Claude Code session working on this repo.
 Read this top-to-bottom before making changes.
 
 ## Project purpose
