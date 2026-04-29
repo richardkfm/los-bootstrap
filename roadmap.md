@@ -94,7 +94,7 @@ the user can opt into.
 
 ---
 
-## Phase 3 — Hardening assistant (current)
+## Phase 3 — Hardening assistant ✓
 
 **Goal:** opinionated but transparent hardening guidance, with explicit
 tradeoffs.
@@ -109,11 +109,11 @@ tradeoffs.
 **Excluded:** Magisk / KernelSU module installation. Custom kernel work.
 
 **Exit criteria:** every recommendation has a documented rationale and a
-documented downside.
+documented downside. ✓ Shipped in 0.4.0.
 
 ---
 
-## Phase 4 — Location / maps integration
+## Phase 4 — Location / maps integration (current)
 
 **Goal:** make degoogled location workable for everyday apps (Telegram
 location share, OsmAnd, etc.) without pretending it is solved.
@@ -123,11 +123,12 @@ location share, OsmAnd, etc.) without pretending it is solved.
 - Backend selection helper (Mozilla, DejaVu, local-only)
 - Compatibility matrix: which apps work / partially work / don't
 - `los-bootstrap location doctor` — diagnose location stack
+- `los-bootstrap location compat` — app compatibility matrix
 
 **Excluded:** flashing microG-signed ROMs. Anything proprietary.
 
 **Exit criteria:** the limitations doc is accurate and the doctor command
-reliably diagnoses the common failure modes.
+reliably diagnoses the common failure modes. ✓ Shipped in 0.5.0.
 
 ---
 

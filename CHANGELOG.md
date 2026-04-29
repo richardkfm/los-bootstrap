@@ -6,6 +6,27 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-29
+
+### Added
+- Phase 4: location / maps integration.
+- `los-bootstrap location doctor` — read-only diagnostic of the device's
+  location stack: checks whether location is enabled, whether real GMS
+  conflicts with microG, whether microG GmsCore is installed, whether
+  microG has the `FAKE_PACKAGE_SIGNATURE` (signature spoofing) permission
+  granted, and which UnifiedNlp network-location backends are installed.
+  Every finding carries a *why* and a *tradeoff*, matching Phase 3 style.
+- `los-bootstrap location compat` — print the static app compatibility
+  matrix showing which apps work fully, partially (needs microG), GPS-only,
+  or not at all on a degoogled ROM. No device connection required.
+- `src/los_bootstrap/location/` package: `models.py` (data classes),
+  `checks.py` (five check functions + `run_location_doctor()` orchestrator),
+  `report.py` (`render_location_report()` and `render_compat_matrix()`),
+  `compat.py` (static `COMPAT_MATRIX` with 14 real-world app entries).
+- Compatibility matrix covers: OsmAnd, Organic Maps, Magic Earth, Google
+  Maps, Telegram, Signal, WhatsApp, Element, Firefox, Brave, Chromium /
+  Vanadium, Uber / Lyft, F-Droid, and weather apps.
+
 ## [0.4.0] - 2026-04-29
 
 ### Added

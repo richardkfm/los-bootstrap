@@ -15,6 +15,11 @@ Phase 2 commands:
 
 Phase 3 commands:
     harden     run hardening checks and (optionally) apply fixes interactively
+
+Phase 4 commands:
+    location   location stack diagnostics and app compatibility matrix
+               location doctor  — diagnose the location stack on the connected device
+               location compat  — show app location compatibility matrix (no device needed)
 """
 
 from __future__ import annotations
@@ -32,6 +37,7 @@ from .bootstrap import recommendations
 from .device import collect as collect_device
 from .logo import banner
 from .harden import render_harden_report, run_harden_checks, run_interactive
+from .location import render_compat_matrix, render_location_report, run_location_doctor
 from .plan import build_plan, render_plan
 from .profiles import (
     ProfileError,
@@ -148,6 +154,20 @@ def _build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Print fix commands without executing them (interactive mode only).",
+    )
+
+    p_location = sub.add_parser(
+        "location",
+        help="Location stack diagnostics and app compatibility guidance.",
+    )
+    p_location_sub = p_location.add_subparsers(dest="location_command", required=True)
+    p_location_sub.add_parser(
+        "doctor",
+        help="Diagnose the location stack on the connected device.",
+    )
+    p_location_sub.add_parser(
+        "compat",
+        help="Show the app location compatibility matrix (no device needed).",
     )
 
     return parser
@@ -275,6 +295,19 @@ def cmd_harden(args: argparse.Namespace) -> int:
     return 2 if report.has_failures() else 0
 
 
+def cmd_location_doctor(args: argparse.Namespace) -> int:
+    adb = _resolve_target(args.serial)
+    facts = collect_device(adb)
+    report = run_location_doctor(adb, facts)
+    print(render_location_report(report), end="")
+    return 2 if report.has_failures() else 0
+
+
+def cmd_location_compat() -> int:
+    print(render_compat_matrix(), end="")
+    return 0
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     profile = find_profile(
         args.profile,
@@ -324,6 +357,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return cmd_apply(args)
         if args.command == "harden":
             return cmd_harden(args)
+        if args.command == "location":
+            if args.location_command == "doctor":
+                return cmd_location_doctor(args)
+            if args.location_command == "compat":
+                return cmd_location_compat()
     except AdbNotFoundError as exc:
         sys.stderr.write(f"error: {exc}\n")
         sys.stderr.write("Install Android platform-tools so `adb` is on PATH.\n")
