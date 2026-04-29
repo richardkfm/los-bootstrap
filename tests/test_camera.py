@@ -80,6 +80,7 @@ def test_known_devices_present():
     assert "panther" in codenames, "Pixel 7 (panther) expected in profiles"
     assert "oriole" in codenames, "Pixel 6 (oriole) expected in profiles"
     assert "sunny" in codenames, "Redmi Note 10 (sunny) expected in profiles"
+    assert "renoir" in codenames, "Mi 11 Lite 5G (renoir) expected in profiles"
 
 
 def test_profiles_exported_from_package():

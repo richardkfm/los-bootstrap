@@ -240,4 +240,46 @@ CAMERA_PROFILES: Tuple[CameraProfile, ...] = (
         ),
     ),
 
+    # ── Xiaomi Mi 11 Lite 5G (renoir) ────────────────────────────────────────
+    CameraProfile(
+        codename="renoir",
+        display_name="Xiaomi Mi 11 Lite 5G",
+        notes=(
+            "Mi 11 Lite 5G (Snapdragon 780G) confirmed working with LMC 8.4 on "
+            "LineageOS. Tested by a contributor running LMC 8.4 with an XML config "
+            "from celsoazevedo.com. Profile added from real-world usage report."
+        ),
+        ports=(
+            CameraPort(
+                name="LMC 8.4 R17",
+                package="com.google.android.GoogleCamera",
+                source_hint=(
+                    "Download LMC 8.4 R17 for Snapdragon 780G from celsoazevedo.com. "
+                    "Stage as 'lmc84.apk' in --apk-dir."
+                ),
+                verified=True,
+                notes=(
+                    "Confirmed working on Mi 11 Lite 5G / LineageOS. "
+                    "Use the Snapdragon 780G XML config from the same page on "
+                    "celsoazevedo.com as the APK download."
+                ),
+                xml_configs=(
+                    XmlConfig(
+                        filename="<780G config from celsoazevedo.com>",
+                        device_path="/sdcard/GCam/Config/",
+                        description=(
+                            "Snapdragon 780G XML config from celsoazevedo.com. "
+                            "Exact filename varies by LMC 8.4 build; use the config "
+                            "linked on the same page as the APK download."
+                        ),
+                        apply_hint=(
+                            "adb push <config>.xml /sdcard/GCam/Config/ "
+                            "then open LMC 8.4 > ⋮ > Configs > Load."
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+
 )
