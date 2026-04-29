@@ -6,6 +6,12 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Added
+- `max-tools` profile now includes Wero (`eu.epicompany.wero.wallet`)
+  via Aurora Store as an EU payment option. Note documents the
+  regional limitation and the Play Integrity attestation wall that
+  most payment apps hit on degoogled ROMs.
+
 ## [0.2.0] - 2026-04-28
 
 ### Added
