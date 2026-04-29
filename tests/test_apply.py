@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
+from unittest.mock import patch
 
 from los_bootstrap.adb import Adb, AdbResult
 from los_bootstrap.apply import apply_plan
+from los_bootstrap.fetch import FetchError
 from los_bootstrap.plan import Plan, PlanStep, StepKind
 
 
@@ -149,3 +151,62 @@ def test_apply_reports_install_failures():
     assert result.had_errors()
     assert result.results[0].status == "error"
     assert "INSUFFICIENT_STORAGE" in result.results[0].detail
+
+
+def test_apply_downloads_and_installs_apk(tmp_path):
+    downloaded = tmp_path / "org.fdroid.fdroid_1010059.apk"
+    step = PlanStep(
+        kind=StepKind.INSTALL_APK,
+        summary="download + install org.fdroid.fdroid",
+        target="org.fdroid.fdroid",
+        download_url="fdroid://org.fdroid.fdroid",
+    )
+    plan = _plan((step,))
+    record: list[list[str]] = []
+    adb = Adb(serial="S1", runner=_make_runner(record))
+    out = io.StringIO()
+    with patch("los_bootstrap.apply.fetch.download_apk", return_value=downloaded) as mock_dl:
+        result = apply_plan(adb, plan, out=out, apk_dir=tmp_path)
+    mock_dl.assert_called_once_with("fdroid://org.fdroid.fdroid", tmp_path)
+    assert len(record) == 1
+    assert record[0][3] == "install"
+    assert result.results[0].status == "ok"
+
+
+def test_apply_dry_run_skips_download():
+    step = PlanStep(
+        kind=StepKind.INSTALL_APK,
+        summary="download + install org.fdroid.fdroid",
+        target="org.fdroid.fdroid",
+        download_url="fdroid://org.fdroid.fdroid",
+    )
+    plan = _plan((step,))
+    record: list[list[str]] = []
+    adb = Adb(serial="S1", runner=_make_runner(record))
+    out = io.StringIO()
+    with patch("los_bootstrap.apply.fetch.download_apk") as mock_dl:
+        result = apply_plan(adb, plan, dry_run=True, out=out)
+    mock_dl.assert_not_called()
+    assert record == []
+    assert result.results[0].status == "ok"
+
+
+def test_apply_records_fetch_error_as_error(tmp_path):
+    step = PlanStep(
+        kind=StepKind.INSTALL_APK,
+        summary="download + install com.example.app",
+        target="com.example.app",
+        download_url="https://example.com/app.apk",
+    )
+    plan = _plan((step,))
+    record: list[list[str]] = []
+    adb = Adb(serial="S1", runner=_make_runner(record))
+    out = io.StringIO()
+    with patch(
+        "los_bootstrap.apply.fetch.download_apk",
+        side_effect=FetchError("HTTP 404 downloading https://example.com/app.apk"),
+    ):
+        result = apply_plan(adb, plan, out=out, apk_dir=tmp_path)
+    assert record == []
+    assert result.results[0].status == "error"
+    assert "404" in result.results[0].detail

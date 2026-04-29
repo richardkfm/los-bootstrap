@@ -49,7 +49,7 @@ def test_plan_skips_installed_apps_and_already_set_settings(tmp_path):
     apk = tmp_path / "F-Droid.apk"
     apk.write_bytes(b"\x00")
     answers = {
-        # F-Droid already installed → skip; OsmAnd missing → manual; Aurora missing → manual
+        # F-Droid already installed → skip; OsmAnd missing → download; Aurora missing → manual
         "pm list packages org.fdroid.fdroid": "package:org.fdroid.fdroid\n",
         "pm list packages net.osmand.plus": "",
         "pm list packages com.aurora.store": "",
@@ -62,7 +62,10 @@ def test_plan_skips_installed_apps_and_already_set_settings(tmp_path):
 
     by_target = {s.target: s for s in plan.steps}
     assert by_target["org.fdroid.fdroid"].kind == StepKind.SKIP
-    assert by_target["net.osmand.plus"].kind == StepKind.MANUAL_INSTALL
+    # fdroid source + fetch=True (default) → INSTALL_APK with download_url
+    assert by_target["net.osmand.plus"].kind == StepKind.INSTALL_APK
+    assert by_target["net.osmand.plus"].download_url == "fdroid://net.osmand.plus"
+    # aurora always manual
     assert by_target["com.aurora.store"].kind == StepKind.MANUAL_INSTALL
     assert by_target["global.private_dns_mode"].kind == StepKind.SKIP
     assert by_target["global.private_dns_specifier"].kind == StepKind.SET_SETTING
@@ -122,6 +125,79 @@ def test_render_plan_includes_summary_counts(tmp_path):
     text = render_plan(plan)
     assert "Profile: t" in text
     assert "Summary:" in text
+    # 1 sideload + 1 fdroid-download + 2 settings = 4 executable, 1 manual (aurora), 0 skipped
+    assert "4 to run" in text
+    assert "1 manual" in text
+
+
+def test_render_plan_no_fetch_shows_manual_for_fdroid(tmp_path):
+    apk = tmp_path / "F-Droid.apk"
+    apk.write_bytes(b"\x00")
+    answers = {
+        "pm list packages org.fdroid.fdroid": "",
+        "pm list packages net.osmand.plus": "",
+        "pm list packages com.aurora.store": "",
+        "settings get global private_dns_mode": "off\n",
+        "settings get global private_dns_specifier": "null\n",
+    }
+    adb = Adb(serial="S1", runner=_runner(answers))
+    plan = build_plan(adb, _sample_profile(), apk_dir=tmp_path, fetch=False)
+    text = render_plan(plan)
     # 1 sideload + 2 settings = 3 executable, 2 manual, 0 skipped
     assert "3 to run" in text
     assert "2 manual" in text
+
+
+def test_plan_fdroid_fetch_produces_install_apk_with_download_url():
+    answers = {"pm list packages net.osmand.plus": ""}
+    profile = Profile(
+        name="t",
+        description="",
+        apps=(AppEntry(id="net.osmand.plus", source="fdroid", note="offline maps"),),
+        settings=(),
+    )
+    adb = Adb(serial="S1", runner=_runner(answers))
+    plan = build_plan(adb, profile, fetch=True)
+    step = plan.steps[0]
+    assert step.kind == StepKind.INSTALL_APK
+    assert step.download_url == "fdroid://net.osmand.plus"
+    assert step.command is None
+
+
+def test_plan_fdroid_no_fetch_produces_manual_install():
+    answers = {"pm list packages net.osmand.plus": ""}
+    profile = Profile(
+        name="t",
+        description="",
+        apps=(AppEntry(id="net.osmand.plus", source="fdroid"),),
+        settings=(),
+    )
+    adb = Adb(serial="S1", runner=_runner(answers))
+    plan = build_plan(adb, profile, fetch=False)
+    step = plan.steps[0]
+    assert step.kind == StepKind.MANUAL_INSTALL
+    assert step.download_url is None
+
+
+def test_plan_sideload_missing_with_url_fetches_when_fetch_true(tmp_path):
+    answers = {"pm list packages org.fdroid.fdroid": ""}
+    profile = Profile(
+        name="t",
+        description="",
+        apps=(
+            AppEntry(
+                id="org.fdroid.fdroid",
+                source="sideload",
+                apk="F-Droid.apk",
+                url="https://f-droid.org/F-Droid.apk",
+            ),
+        ),
+        settings=(),
+    )
+    adb = Adb(serial="S1", runner=_runner(answers))
+    # APK not present in tmp_path but URL is set and fetch=True
+    plan = build_plan(adb, profile, apk_dir=tmp_path, fetch=True)
+    step = plan.steps[0]
+    assert step.kind == StepKind.INSTALL_APK
+    assert step.download_url == "https://f-droid.org/F-Droid.apk"
+    assert step.missing_apk_path is None

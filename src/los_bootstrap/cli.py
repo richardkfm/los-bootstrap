@@ -86,6 +86,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--apk-dir",
         help="Directory containing APKs referenced by sideload steps.",
     )
+    p_plan.add_argument(
+        "--no-fetch",
+        action="store_true",
+        help="Skip automatic APK downloads; sideload and F-Droid entries will be marked manual.",
+    )
 
     p_apply = sub.add_parser("apply", help="Execute a profile against the device.")
     p_apply.add_argument("--profile", required=True, help="Profile name or path.")
@@ -97,7 +102,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_apply.add_argument(
         "--apk-dir",
-        help="Directory containing APKs referenced by sideload steps.",
+        help="Directory containing APKs referenced by sideload steps, or download cache.",
+    )
+    p_apply.add_argument(
+        "--no-fetch",
+        action="store_true",
+        help="Skip automatic APK downloads; sideload and F-Droid entries will be marked manual.",
     )
     p_apply.add_argument(
         "--confirm",
@@ -212,7 +222,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
     )
     adb = _resolve_target(args.serial)
     apk_dir = Path(args.apk_dir) if args.apk_dir else None
-    plan = build_plan(adb, profile, apk_dir=apk_dir)
+    plan = build_plan(adb, profile, apk_dir=apk_dir, fetch=not args.no_fetch)
     print(render_plan(plan), end="")
     return 0
 
@@ -224,7 +234,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
     )
     adb = _resolve_target(args.serial)
     apk_dir = Path(args.apk_dir) if args.apk_dir else None
-    plan = build_plan(adb, profile, apk_dir=apk_dir)
+    plan = build_plan(adb, profile, apk_dir=apk_dir, fetch=not args.no_fetch)
 
     if not args.confirm and not args.dry_run:
         sys.stderr.write(render_plan(plan))
@@ -235,7 +245,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
         )
         return 2
 
-    result = apply_plan(adb, plan, dry_run=args.dry_run)
+    result = apply_plan(adb, plan, dry_run=args.dry_run, apk_dir=apk_dir)
     return 1 if result.had_errors() else 0
 
 

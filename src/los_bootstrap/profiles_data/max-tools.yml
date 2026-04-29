@@ -127,6 +127,26 @@ apps:
       cleanly and still refuse to authorise transactions. POS support
       is planned to roll out through 2026.
 
+  # Patching
+  - id: app.revanced.manager.flutter
+    source: sideload
+    apk: revanced-manager.apk
+    url: github://ReVanced/revanced-manager
+    note: >
+      ReVanced Manager — patches YouTube and other apps to remove ads and
+      add features (e.g. background playback). Downloaded from the latest
+      GitHub release. Tradeoff: patched APKs are unsigned by Google; Play
+      Integrity checks will fail in those apps.
+  - id: com.google.android.youtube
+    source: sideload
+    apk: youtube.apk
+    note: >
+      YouTube APK for ReVanced patching. ReVanced requires a specific
+      version; check the ReVanced Manager "Patcher" tab for the
+      recommended version, then download it from apkmirror.com and
+      stage it as youtube.apk in --apk-dir. No auto-download: YouTube
+      is proprietary and version-pinned.
+
 settings:
   - namespace: global
     key: private_dns_mode
