@@ -12,9 +12,9 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 
 It does **not** flash ROMs. It assumes the ROM is already installed.
 
-## Current scope (Phase 3, version 0.4.x)
+## Current scope (Phase 4, version 0.5.x)
 
-Audit MVP, bootstrap profiles, and the hardening assistant:
+Audit MVP, bootstrap profiles, hardening assistant, and location / maps integration:
 
 - Phase 1 (still in place):
   - Detect connected devices over ADB
@@ -31,7 +31,7 @@ Audit MVP, bootstrap profiles, and the hardening assistant:
     plan via `adb install` and `adb shell settings put`
   - Bundled starter profiles: `minimal`, `privacy-default`,
     `messaging-light`, `max-tools`, shipped as package data
-- Phase 3 (current):
+- Phase 3 (still in place):
   - `los-bootstrap harden` — read-only lockdown report with *why* and
     *tradeoff* for every finding
   - `los-bootstrap harden --interactive` — walk through each WARN/FAIL
@@ -40,9 +40,16 @@ Audit MVP, bootstrap profiles, and the hardening assistant:
   - Checks: developer options, USB debugging, screen lock, encryption
     state, unknown-sources flag, verified boot state, lockdown power-menu
     option, SELinux mode (root-only)
-- Scaffold `location/` and `camera/` packages — placeholder only
+- Phase 4 (current):
+  - `los-bootstrap location doctor` — read-only diagnostic of the location
+    stack: location enabled, GMS conflict, microG presence, signature
+    spoofing grant, UnifiedNlp backend inventory
+  - `los-bootstrap location compat` — static app compatibility matrix
+    (no device connection required)
+  - `location/` package: `models.py`, `checks.py`, `report.py`, `compat.py`
+- Scaffold `camera/` package — placeholder only
 
-If a change does not fit Phase 3, it goes in the roadmap, not the code.
+If a change does not fit Phase 4, it goes in the roadmap, not the code.
 
 ## Non-goals
 
@@ -76,10 +83,16 @@ src/los_bootstrap/
         privacy-default.yml
         messaging-light.yml
         max-tools.yml
-    location/              # SCAFFOLD — Phase 4
+    location/              # Phase 4 — location stack diagnostics
+        __init__.py
+        models.py          # LocationFinding, LocationReport, LocationStatus
+        checks.py          # check functions + run_location_doctor()
+        report.py          # render_location_report(), render_compat_matrix()
+        compat.py          # static COMPAT_MATRIX (app compatibility data)
     camera/                # SCAFFOLD — Phase 5
 tests/
     test_audit.py          # pytest, mocks adb
+    test_location.py       # pytest, mocks adb
 ```
 
 Design rules:
@@ -92,7 +105,8 @@ Design rules:
 - **Modes are separate concepts:**
   - *audit mode* — read-only (Phase 1)
   - *bootstrap mode* — propose/apply profile actions (Phase 2, current)
-  - *hardening mode* — opinionated lockdown with explicit tradeoffs (P3+)
+  - *hardening mode* — opinionated lockdown with explicit tradeoffs (P3)
+  - *location mode* — read-only location stack diagnostics (P4, current)
 - **Mutation is gated.** The applier is the only place that calls
   mutating ADB methods (`install_apk`, `setting_put`), and only after
   the user passes `--confirm`. `plan` is read-only; so is everything
