@@ -133,6 +133,14 @@ def test_render_profile_list_contains_show_hint():
     assert "camera show" in text
 
 
+def test_render_profile_list_contains_unlisted_device_guidance():
+    text = render_profile_list()
+    assert "Device not listed?" in text
+    assert "celsoazevedo" in text
+    assert "ro.board.platform" in text
+    assert "XDA" in text
+
+
 def test_render_profile_list_ends_with_newline():
     text = render_profile_list()
     assert text.endswith("\n")

@@ -331,7 +331,14 @@ def cmd_camera_show(codename: str) -> int:
         sys.stderr.write(
             f"No camera profile found for codename {codename!r}.\n"
             f"Known codenames: {known}\n"
-            "Use `camera list-profiles` to see all available profiles.\n"
+            "\n"
+            "GCam ports are matched by SoC, not device name — your device may\n"
+            "still work with a port built for the same chip family.\n"
+            "\n"
+            "  1. Find your SoC: adb shell getprop ro.board.platform\n"
+            "  2. Browse celsoazevedo.com for a build matching your SoC.\n"
+            "  3. Check your device's XDA thread for the recommended port + XML.\n"
+            "  4. If you find a working combo, open a PR to add it to this tool.\n"
         )
         return 2
     print(render_profile(profile), end="")
