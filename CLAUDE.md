@@ -12,9 +12,9 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 
 It does **not** flash ROMs. It assumes the ROM is already installed.
 
-## Current scope (Phase 2, version 0.3.x)
+## Current scope (Phase 3, version 0.4.x)
 
-Audit MVP plus reviewable bootstrap profiles:
+Audit MVP, bootstrap profiles, and the hardening assistant:
 
 - Phase 1 (still in place):
   - Detect connected devices over ADB
@@ -23,7 +23,7 @@ Audit MVP plus reviewable bootstrap profiles:
     ADB-over-network, Private DNS, lockscreen presence)
   - Render a human-readable text report (and `--json`)
   - Surface non-binding bootstrap recommendations
-- Phase 2 (current):
+- Phase 2 (still in place):
   - Profile schema with apps (source: `fdroid` / `aurora` / `sideload`)
     and settings (`namespace`, `key`, `value`, `note`)
   - `los-bootstrap plan --profile <name>` — dry-run a profile
@@ -31,9 +31,18 @@ Audit MVP plus reviewable bootstrap profiles:
     plan via `adb install` and `adb shell settings put`
   - Bundled starter profiles: `minimal`, `privacy-default`,
     `messaging-light`, `max-tools`, shipped as package data
+- Phase 3 (current):
+  - `los-bootstrap harden` — read-only lockdown report with *why* and
+    *tradeoff* for every finding
+  - `los-bootstrap harden --interactive` — walk through each WARN/FAIL
+    finding and offer to apply the fix (gated on `--confirm`)
+  - `los-bootstrap harden --root` — adds SELinux check via `su`
+  - Checks: developer options, USB debugging, screen lock, encryption
+    state, unknown-sources flag, verified boot state, lockdown power-menu
+    option, SELinux mode (root-only)
 - Scaffold `location/` and `camera/` packages — placeholder only
 
-If a change does not fit Phase 2, it goes in the roadmap, not the code.
+If a change does not fit Phase 3, it goes in the roadmap, not the code.
 
 ## Non-goals
 

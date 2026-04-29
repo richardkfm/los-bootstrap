@@ -6,7 +6,27 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-29
+
 ### Added
+- Phase 3: hardening assistant. `los-bootstrap harden` runs a suite of
+  read-only lockdown checks and prints a report with severity, rationale,
+  and tradeoff for every finding.
+- `los-bootstrap harden --interactive` walks through each WARN/FAIL finding
+  one at a time, explains the *why* and *tradeoff*, and offers to apply the
+  fix. Fixes only execute with `--confirm`; `--dry-run` previews the exact
+  `adb shell` command without running it.
+- `los-bootstrap harden --root` adds SELinux-mode check via `su -c getenforce`.
+  Root-only checks are skipped entirely when `--root` is not passed.
+- Hardening checks implemented: developer options (`dev.options`), USB
+  debugging (`dev.adb`), screen lock (`sec.screen_lock`), storage
+  encryption (`sec.encryption`), unknown-sources flag
+  (`sec.unknown_sources`), verified boot state (`sec.verified_boot`),
+  lockdown power-menu option (`sec.lockdown_menu`), and SELinux mode
+  (`sec.selinux`, root-only).
+- `src/los_bootstrap/harden/` package: `models.py` (data classes),
+  `checks.py` (check implementations + orchestrator), `report.py` (text
+  renderer), `interactive.py` (walk-through engine).
 - `max-tools` profile now includes Wero (`eu.epicompany.wero.wallet`)
   via Aurora Store as an EU payment option. Note documents the
   regional limitation and the Play Integrity attestation wall that
