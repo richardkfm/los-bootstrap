@@ -11,9 +11,10 @@ A CLI-first post-install assistant for **LineageOS** and other
 AOSP-derived, degoogled Android ROMs. It does not flash ROMs. It helps
 with everything that comes *after* you flash.
 
-> **Status:** Phase 2 — Bootstrap profiles. Read-only by default; the
-> `apply` command only runs mutating `adb` invocations with explicit
-> `--confirm`. See [`roadmap.md`](./roadmap.md) for what comes next.
+> **Status:** Phase 3 — Hardening assistant. Read-only by default;
+> mutating commands (`apply`, `harden --interactive --confirm`) only run
+> with explicit `--confirm`. See [`roadmap.md`](./roadmap.md) for what
+> comes next.
 
 ## Why
 
@@ -54,6 +55,11 @@ los-bootstrap recommend          # non-binding bootstrap suggestions
 los-bootstrap profiles list                       # list bundled profiles
 los-bootstrap plan    --profile privacy-default   # dry-run a profile
 los-bootstrap apply   --profile privacy-default --confirm
+
+los-bootstrap harden                              # lockdown report with why + tradeoff
+los-bootstrap harden --interactive                # walk through findings, show fix commands
+los-bootstrap harden --interactive --confirm      # walk through and apply fixes via adb
+los-bootstrap harden --root                       # add SELinux check (needs su access)
 ```
 
 If you have more than one device connected, pass `--serial <id>`.
@@ -80,6 +86,22 @@ If you have more than one device connected, pass `--serial <id>`.
   - `max-tools` — broadest non-Google bundle: store, browser, maps,
     messaging, contacts/calendar, mail, media, productivity, password
     manager, RSS/podcasts, and **ReVanced Manager** for ad-free YouTube
+- Runs **hardening checks** and guides you through each one:
+
+  | Check | What it detects |
+  |---|---|
+  | `dev.options` | Developer options enabled |
+  | `dev.adb` | USB debugging (ADB) enabled |
+  | `sec.screen_lock` | Screen lock disabled |
+  | `sec.encryption` | Unencrypted storage |
+  | `sec.unknown_sources` | Global unknown-sources install flag |
+  | `sec.verified_boot` | Bootloader unlocked / verification failed |
+  | `sec.lockdown_menu` | Lockdown option absent from power menu |
+  | `sec.selinux` | SELinux permissive (`--root` only) |
+
+  Every finding explains *why* it matters and *what you give up* by
+  hardening it. `--interactive` walks through each WARN/FAIL one at a
+  time and offers to apply the fix; `--confirm` is required to execute.
 
 ### Automatic APK downloads
 
@@ -129,7 +151,7 @@ the network.
 - It does not flash anything.
 - It does not configure microG, UnifiedNlp, or location backends.
 - It does not fetch or apply GCam ports / LMC XML configs.
-- It does not require or offer root.
+- Root is opt-in (`harden --root`) and only used to read SELinux state.
 - It does not verify APK signatures — verify downloads out-of-band
   for security-critical installs (F-Droid, ReVanced Manager).
 
