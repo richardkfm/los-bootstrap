@@ -114,6 +114,19 @@ apps:
     source: fdroid
     note: Feeder — local RSS reader.
 
+  # Payment (EU)
+  - id: eu.epicompany.wero.wallet
+    source: aurora
+    note: >
+      Wero (EPI). EU instant-payments wallet; standalone app is rolling
+      out via specific banks (e.g. Postbank DE, La Banque Postale FR)
+      and most people will reach Wero through their existing bank app
+      instead. Tradeoffs: (1) regional — outside the EU this is dead
+      weight; (2) like other payment apps it usually requires Play
+      Integrity attestation, so on a degoogled ROM the app may install
+      cleanly and still refuse to authorise transactions. POS support
+      is planned to roll out through 2026.
+
   # Patching
   - id: app.revanced.manager.flutter
     source: sideload
