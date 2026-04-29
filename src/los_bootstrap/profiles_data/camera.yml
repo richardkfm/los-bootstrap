@@ -1,0 +1,32 @@
+name: camera
+description: |
+  GCam port (LMC 8.4) bootstrap profile.
+
+  Installs LMC 8.4 R17 from a manually staged APK.
+  GCam APKs are proprietary Google Camera builds — they are never
+  auto-fetched by this tool.
+
+  Steps:
+    1. Download LMC 8.4 R17 for your device from celsoazevedo.com
+       or your device's XDA GCam thread. Pick the build that matches
+       your SoC (e.g. Snapdragon 888, Tensor G2).
+    2. Rename the APK to 'lmc84.apk' and place it in --apk-dir.
+    3. Run:
+         los-bootstrap apply --profile camera --apk-dir <dir> --confirm
+
+  After install, push an XML config for your device:
+    los-bootstrap camera show <your-device-codename>
+
+  The `camera show` command lists the correct XML path and the
+  exact `adb push` command for your device.
+
+apps:
+  - package: com.google.android.GoogleCamera
+    source: sideload
+    apk: lmc84.apk
+    note: |
+      LMC 8.4 GCam port — manually stage the build for your device's SoC
+      at --apk-dir/lmc84.apk before running apply.
+      Download from celsoazevedo.com. Do NOT use --fetch; GCam is proprietary.
+
+settings: []

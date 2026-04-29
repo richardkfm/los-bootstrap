@@ -12,9 +12,10 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 
 It does **not** flash ROMs. It assumes the ROM is already installed.
 
-## Current scope (Phase 4, version 0.5.x)
+## Current scope (Phase 5, version 0.6.x)
 
-Audit MVP, bootstrap profiles, hardening assistant, and location / maps integration:
+Audit MVP, bootstrap profiles, hardening assistant, location / maps integration,
+and camera / GCam port profiles:
 
 - Phase 1 (still in place):
   - Detect connected devices over ADB
@@ -30,7 +31,7 @@ Audit MVP, bootstrap profiles, hardening assistant, and location / maps integrat
   - `los-bootstrap apply --profile <name> --confirm` — execute the
     plan via `adb install` and `adb shell settings put`
   - Bundled starter profiles: `minimal`, `privacy-default`,
-    `messaging-light`, `max-tools`, shipped as package data
+    `messaging-light`, `max-tools`, `camera`, shipped as package data
 - Phase 3 (still in place):
   - `los-bootstrap harden` — read-only lockdown report with *why* and
     *tradeoff* for every finding
@@ -40,16 +41,24 @@ Audit MVP, bootstrap profiles, hardening assistant, and location / maps integrat
   - Checks: developer options, USB debugging, screen lock, encryption
     state, unknown-sources flag, verified boot state, lockdown power-menu
     option, SELinux mode (root-only)
-- Phase 4 (current):
+- Phase 4 (still in place):
   - `los-bootstrap location doctor` — read-only diagnostic of the location
     stack: location enabled, GMS conflict, microG presence, signature
     spoofing grant, UnifiedNlp backend inventory
   - `los-bootstrap location compat` — static app compatibility matrix
     (no device connection required)
   - `location/` package: `models.py`, `checks.py`, `report.py`, `compat.py`
-- Scaffold `camera/` package — placeholder only
+- Phase 5 (current):
+  - `los-bootstrap camera list-profiles` — list all known per-device GCam
+    port profiles (no device connection required)
+  - `los-bootstrap camera show <codename>` — show full port details and XML
+    config path guidance for a device
+  - `camera/` package: `models.py`, `profiles.py`, `report.py`
+  - `profiles_data/camera.yml` — sideload bootstrap profile for LMC 8.4
+  - Five device profiles: Pixel 7, Pixel 6, Redmi Note 10, OnePlus 9,
+    Fairphone 4
 
-If a change does not fit Phase 4, it goes in the roadmap, not the code.
+If a change does not fit Phase 5, it goes in the roadmap, not the code.
 
 ## Non-goals
 
@@ -89,10 +98,15 @@ src/los_bootstrap/
         checks.py          # check functions + run_location_doctor()
         report.py          # render_location_report(), render_compat_matrix()
         compat.py          # static COMPAT_MATRIX (app compatibility data)
-    camera/                # SCAFFOLD — Phase 5
+    camera/                # Phase 5 — GCam port profiles (no ADB required)
+        __init__.py
+        models.py          # CameraPort, CameraProfile, XmlConfig
+        profiles.py        # static CAMERA_PROFILES (per-device data)
+        report.py          # render_profile_list(), render_profile()
 tests/
     test_audit.py          # pytest, mocks adb
     test_location.py       # pytest, mocks adb
+    test_camera.py         # pytest, no adb (static data only)
 ```
 
 Design rules:
@@ -104,9 +118,10 @@ Design rules:
   profiles, not in `if codename == "..."` branches.
 - **Modes are separate concepts:**
   - *audit mode* — read-only (Phase 1)
-  - *bootstrap mode* — propose/apply profile actions (Phase 2, current)
+  - *bootstrap mode* — propose/apply profile actions (Phase 2)
   - *hardening mode* — opinionated lockdown with explicit tradeoffs (P3)
-  - *location mode* — read-only location stack diagnostics (P4, current)
+  - *location mode* — read-only location stack diagnostics (P4)
+  - *camera mode* — static GCam port profiles, no ADB required (P5, current)
 - **Mutation is gated.** The applier is the only place that calls
   mutating ADB methods (`install_apk`, `setting_put`), and only after
   the user passes `--confirm`. `plan` is read-only; so is everything

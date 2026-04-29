@@ -20,6 +20,11 @@ Phase 4 commands:
     location   location stack diagnostics and app compatibility matrix
                location doctor  — diagnose the location stack on the connected device
                location compat  — show app location compatibility matrix (no device needed)
+
+Phase 5 commands:
+    camera     GCam port profiles and XML config guidance (no device needed)
+               camera list-profiles  — list all known device GCam port profiles
+               camera show <codename>  — show full profile for a device codename
 """
 
 from __future__ import annotations
@@ -36,6 +41,7 @@ from .audit import run_audit
 from .bootstrap import recommendations
 from .device import collect as collect_device
 from .logo import banner
+from .camera import CAMERA_PROFILES, find_camera_profile, render_profile, render_profile_list
 from .harden import render_harden_report, run_harden_checks, run_interactive
 from .location import render_compat_matrix, render_location_report, run_location_doctor
 from .plan import build_plan, render_plan
@@ -170,6 +176,24 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Show the app location compatibility matrix (no device needed).",
     )
 
+    p_camera = sub.add_parser(
+        "camera",
+        help="GCam port profiles and XML config path guidance (no device needed).",
+    )
+    p_camera_sub = p_camera.add_subparsers(dest="camera_command", required=True)
+    p_camera_sub.add_parser(
+        "list-profiles",
+        help="List all known device GCam port profiles.",
+    )
+    p_camera_show = p_camera_sub.add_parser(
+        "show",
+        help="Show full GCam port profile for a device codename.",
+    )
+    p_camera_show.add_argument(
+        "codename",
+        help="Device codename (ro.product.device), e.g. panther, oriole, sunny.",
+    )
+
     return parser
 
 
@@ -295,6 +319,32 @@ def cmd_harden(args: argparse.Namespace) -> int:
     return 2 if report.has_failures() else 0
 
 
+def cmd_camera_list_profiles() -> int:
+    print(render_profile_list(), end="")
+    return 0
+
+
+def cmd_camera_show(codename: str) -> int:
+    profile = find_camera_profile(codename)
+    if profile is None:
+        known = ", ".join(p.codename for p in CAMERA_PROFILES)
+        sys.stderr.write(
+            f"No camera profile found for codename {codename!r}.\n"
+            f"Known codenames: {known}\n"
+            "\n"
+            "GCam ports are matched by SoC, not device name — your device may\n"
+            "still work with a port built for the same chip family.\n"
+            "\n"
+            "  1. Find your SoC: adb shell getprop ro.board.platform\n"
+            "  2. Browse celsoazevedo.com for a build matching your SoC.\n"
+            "  3. Check your device's XDA thread for the recommended port + XML.\n"
+            "  4. If you find a working combo, open a PR to add it to this tool.\n"
+        )
+        return 2
+    print(render_profile(profile), end="")
+    return 0
+
+
 def cmd_location_doctor(args: argparse.Namespace) -> int:
     adb = _resolve_target(args.serial)
     facts = collect_device(adb)
@@ -362,6 +412,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 return cmd_location_doctor(args)
             if args.location_command == "compat":
                 return cmd_location_compat()
+        if args.command == "camera":
+            if args.camera_command == "list-profiles":
+                return cmd_camera_list_profiles()
+            if args.camera_command == "show":
+                return cmd_camera_show(args.codename)
     except AdbNotFoundError as exc:
         sys.stderr.write(f"error: {exc}\n")
         sys.stderr.write("Install Android platform-tools so `adb` is on PATH.\n")
