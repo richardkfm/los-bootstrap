@@ -71,7 +71,7 @@ Version `0.1.0` tagged on first publish.
 
 ---
 
-## Phase 2 — Bootstrap profiles (current)
+## Phase 2 — Bootstrap profiles
 
 **Goal:** turn YAML profiles into actionable, reviewable bootstrap plans
 the user can opt into.
@@ -94,7 +94,7 @@ the user can opt into.
 
 ---
 
-## Phase 3 — Hardening assistant
+## Phase 3 — Hardening assistant (current)
 
 **Goal:** opinionated but transparent hardening guidance, with explicit
 tradeoffs.

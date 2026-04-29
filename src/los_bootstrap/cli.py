@@ -12,6 +12,9 @@ Phase 2 commands:
     profiles   list bundled profiles
     plan       dry-run a profile against the connected device
     apply      execute a profile (requires --confirm)
+
+Phase 3 commands:
+    harden     run hardening checks and (optionally) apply fixes interactively
 """
 
 from __future__ import annotations
@@ -28,6 +31,7 @@ from .audit import run_audit
 from .bootstrap import recommendations
 from .device import collect as collect_device
 from .logo import banner
+from .harden import render_harden_report, run_harden_checks, run_interactive
 from .plan import build_plan, render_plan
 from .profiles import (
     ProfileError,
@@ -118,6 +122,32 @@ def _build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Print each command without running it.",
+    )
+
+    p_harden = sub.add_parser(
+        "harden",
+        help="Run hardening checks and optionally apply fixes.",
+    )
+    p_harden.add_argument(
+        "--interactive",
+        "-i",
+        action="store_true",
+        help="Walk through each finding interactively, offering to apply fixes.",
+    )
+    p_harden.add_argument(
+        "--root",
+        action="store_true",
+        help="Include root-only checks (requires adb root / su access).",
+    )
+    p_harden.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Required to actually apply fix commands in interactive mode.",
+    )
+    p_harden.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print fix commands without executing them (interactive mode only).",
     )
 
     return parser
@@ -227,6 +257,24 @@ def cmd_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_harden(args: argparse.Namespace) -> int:
+    adb = _resolve_target(args.serial)
+    facts = collect_device(adb)
+    report = run_harden_checks(adb, facts, root=args.root)
+
+    if args.interactive:
+        run_interactive(
+            report,
+            adb,
+            confirm=args.confirm,
+            dry_run=args.dry_run,
+        )
+        return 0
+
+    print(render_harden_report(report), end="")
+    return 2 if report.has_failures() else 0
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     profile = find_profile(
         args.profile,
@@ -274,6 +322,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return cmd_plan(args)
         if args.command == "apply":
             return cmd_apply(args)
+        if args.command == "harden":
+            return cmd_harden(args)
     except AdbNotFoundError as exc:
         sys.stderr.write(f"error: {exc}\n")
         sys.stderr.write("Install Android platform-tools so `adb` is on PATH.\n")
