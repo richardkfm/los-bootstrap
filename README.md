@@ -42,7 +42,7 @@ honest:
 Requires Python 3.10+ and the `adb` binary on `$PATH`.
 
 ```bash
-git clone <this-repo> los-bootstrap
+git clone https://github.com/richardkfm/los-bootstrap
 cd los-bootstrap
 pip install -e .
 ```
