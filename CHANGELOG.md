@@ -6,6 +6,36 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-30
+
+### Added
+- Phase 6: interactive wizard. Running `los-bootstrap` with no arguments now
+  launches a menu-based guided flow covering audit, harden, bootstrap,
+  location, and camera in a single session. No subcommand knowledge required.
+- `src/los_bootstrap/wizard/` package: `menu.py` (screen routing and
+  `WizardContext`), `prompt.py` (questionary adapter with `input()` fallback),
+  `prose.py` (contextual prose for all 15 audit/harden findings),
+  `render.py` (grouped finding display and full finding detail helpers).
+- Enriched output on all finding renderers: findings are now grouped into
+  actionable issues and informational sections. PASS findings show as a
+  compact tick-only line; FAIL/WARN findings show wrapped prose paragraphs
+  with clearly labelled `→ Fix:` and `⚠ Tradeoff:` blocks.
+- `--verbose` flag on `audit` and `harden` subcommands to get the wizard-style
+  enriched prose without entering the interactive wizard.
+- `questionary>=2.0` added as an optional `[wizard]` extra; the wizard falls
+  back to numbered `input()` prompts when questionary is not installed.
+
+### Changed
+- `los-bootstrap` with no arguments now launches the interactive wizard
+  instead of printing help text. Use `los-bootstrap --help` for the full
+  command reference.
+- All finding renderers (`report.py`, `harden/report.py`,
+  `location/report.py`) now omit the internal `id:` and raw `state:` fields
+  from default output. Findings are grouped by severity and long prose is
+  word-wrapped at 72 characters. The `--json` output is unchanged.
+- `roadmap.md`: Phase 6 is now the interactive wizard; former Phase 6
+  (device profile ecosystem) becomes Phase 7.
+
 ## [0.6.1] - 2026-04-30
 
 ### Fixed

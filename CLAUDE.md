@@ -12,10 +12,20 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 
 It does **not** flash ROMs. It assumes the ROM is already installed.
 
-## Current scope (Phase 5, version 0.6.x)
+## Current scope (Phase 6, version 0.7.x)
 
 Audit MVP, bootstrap profiles, hardening assistant, location / maps integration,
-and camera / GCam port profiles:
+camera / GCam port profiles, and interactive wizard with enriched output:
+
+- Phase 1–5 (still in place): see prior changelog entries
+- Phase 6 (current):
+  - `los-bootstrap` (no args) — launches an interactive guided wizard
+  - Menu-based navigation using `questionary` (with `input()` fallback)
+  - `wizard/` package: `menu.py`, `prompt.py`, `prose.py`, `render.py`
+  - Enriched finding output: grouped severity sections, word-wrapped prose,
+    `→ Fix:` and `⚠ Tradeoff:` labels
+  - `--verbose` flag on `audit` and `harden` for enriched prose output
+    without entering the wizard
 
 - Phase 1 (still in place):
   - Detect connected devices over ADB

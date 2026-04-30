@@ -150,7 +150,33 @@ contributed by humans, not generated. ✓ Shipped in 0.6.0 with five devices.
 
 ---
 
-## Phase 6 — Device profile ecosystem
+## Phase 6 — Interactive wizard and enriched output (current)
+
+**Goal:** lower the entry barrier by making `los-bootstrap` (no args)
+launch a guided menu that covers audit → harden → bootstrap in a single
+session. Enrich finding output with grouped severity sections, word-wrapped
+prose, and contextual "what does this mean for me?" explanations.
+
+**Included:**
+- `los-bootstrap` (no args) → interactive wizard flow
+- Menu-based navigation (questionary with `input()` fallback)
+- `WizardContext` that caches ADB calls across back-navigation
+- Offline mode: camera and location-compat available without a device
+- Enriched grouped rendering for all finding reports (audit, harden,
+  location). PASS findings compact; FAIL/WARN findings prose-wrapped with
+  `→ Fix:` and `⚠ Tradeoff:` labels
+- `wizard/prose.py` — extended contextual prose for all 15 audit/harden
+  check IDs, accessible via `--verbose` on `audit` and `harden`
+- All existing subcommands unchanged (backward compat)
+
+**Excluded:** no new ADB checks, no new profiles.
+
+**Exit criteria:** a first-time user can complete audit + basic harden in
+one guided session without reading the README.
+
+---
+
+## Phase 7 — Device profile ecosystem
 
 **Goal:** make device-specific knowledge pluggable so the tool stays
 useful as the LineageOS device list shifts.

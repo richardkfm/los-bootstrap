@@ -213,8 +213,8 @@ def test_render_all_pass():
     adb = Adb(serial="S1", runner=_runner(_base_answers()))
     report = run_harden_checks(adb, _facts())
     text = render_harden_report(report)
-    assert "PASS" in text
-    assert "Summary: all checks passed." in text
+    assert "Passing checks" in text
+    assert "All checks passed." in text
 
 
 def test_render_shows_failures():
@@ -224,10 +224,9 @@ def test_render_shows_failures():
     adb = Adb(serial="S1", runner=_runner(answers))
     report = run_harden_checks(adb, _facts())
     text = render_harden_report(report)
-    assert "FAIL" in text
-    assert "WARN" in text
-    assert "Summary:" in text
-    assert "fail" in text
+    assert "✗" in text   # FAIL glyph
+    assert "!" in text   # WARN glyph
+    assert "issues need attention" in text
 
 
 # ── Interactive mode ──────────────────────────────────────────────────────────

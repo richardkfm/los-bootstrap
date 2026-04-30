@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import textwrap
 from dataclasses import asdict
 from typing import Optional
 
@@ -10,18 +11,26 @@ from .audit.models import AuditReport, Severity
 from .device import DeviceFacts
 
 
-SEV_GLYPH = {
+_SEV_GLYPH = {
     Severity.INFO: "·",
     Severity.OK: "✓",
     Severity.WARN: "!",
     Severity.HIGH: "✗",
 }
 
+_ACTIONABLE = {Severity.WARN, Severity.HIGH}
+_PASSING = {Severity.OK}
+_INFO = {Severity.INFO}
+
+
+def _wrap(text: str, indent: str, width: int = 72) -> str:
+    return textwrap.fill(text, width=width, initial_indent=indent, subsequent_indent=indent)
+
 
 def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
     lines: list[str] = []
     lines.append("Device")
-    lines.append("------")
+    lines.append("──────")
     lines.append(f"  Serial          : {facts.serial or '(default)'}")
     lines.append(f"  Manufacturer    : {facts.manufacturer}")
     lines.append(f"  Model           : {facts.model}")
@@ -37,24 +46,56 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
     if report is not None:
         lines.append("")
         lines.append("Audit findings")
-        lines.append("--------------")
+        lines.append("──────────────")
+
         if not report.findings:
             lines.append("  (no findings)")
-        for f in report.findings:
-            glyph = SEV_GLYPH[f.severity]
-            lines.append(f"  [{glyph}] {f.severity.value.upper():4} {f.title}")
-            lines.append(f"        id     : {f.check}")
-            lines.append(f"        detail : {f.detail}")
-            if f.recommendation:
-                lines.append(f"        suggest: {f.recommendation}")
+        else:
+            actionable = [f for f in report.findings if f.severity in _ACTIONABLE]
+            passing = [f for f in report.findings if f.severity in _PASSING]
+            info = [f for f in report.findings if f.severity in _INFO]
+
+            if actionable:
+                count = len(actionable)
+                noun = "issue" if count == 1 else "issues"
+                lines.append(f"\n  {count} {noun} to address")
+                lines.append("  " + "─" * 22)
+                for f in actionable:
+                    glyph = _SEV_GLYPH[f.severity]
+                    lines.append("")
+                    lines.append(f"  {glyph}  {f.title}")
+                    if f.detail:
+                        lines.append(_wrap(f.detail, "     "))
+                    if f.recommendation:
+                        lines.append("")
+                        lines.append(_wrap(f"→ How to fix: {f.recommendation}", "     "))
+
+            if passing:
+                lines.append("\n  Passing checks")
+                lines.append("  " + "─" * 14)
+                for f in passing:
+                    glyph = _SEV_GLYPH[f.severity]
+                    lines.append(f"  {glyph}  {f.title}")
+
+            if info:
+                lines.append("\n  For your information")
+                lines.append("  " + "─" * 20)
+                for f in info:
+                    glyph = _SEV_GLYPH[f.severity]
+                    lines.append("")
+                    lines.append(f"  {glyph}  {f.title}")
+                    if f.detail:
+                        lines.append(_wrap(f.detail, "     "))
+
+        lines.append("")
         if report.has_concerns():
             warn = len(report.by_severity(Severity.WARN))
             high = len(report.by_severity(Severity.HIGH))
-            lines.append("")
-            lines.append(f"  Summary: {high} high, {warn} warn.")
+            total = warn + high
+            noun = "issue" if total == 1 else "issues"
+            lines.append(f"  {total} {noun} need attention.")
         else:
-            lines.append("")
-            lines.append("  Summary: no concerns flagged.")
+            lines.append("  No concerns flagged.")
 
     return "\n".join(lines) + "\n"
 

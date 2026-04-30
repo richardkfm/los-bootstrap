@@ -74,7 +74,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Use the single-line banner instead of the full logo.",
     )
 
-    sub = parser.add_subparsers(dest="command", required=True)
+    sub = parser.add_subparsers(dest="command", required=False)
 
     sub.add_parser("version", help="Print version and exit.")
     sub.add_parser("devices", help="List ADB-connected devices.")
@@ -198,6 +198,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _print_banner(args: argparse.Namespace) -> None:
+    if args.command is None:
+        return  # wizard controls its own screen
     if args.no_banner or args.command == "version":
         return
     sys.stderr.write(banner(compact=args.compact_banner))
@@ -386,6 +388,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     _print_banner(args)
 
     try:
+        if args.command is None:
+            from .wizard import run_wizard
+            return run_wizard(getattr(args, "serial", None))
+
         if args.command == "version":
             return cmd_version()
         if args.command == "devices":

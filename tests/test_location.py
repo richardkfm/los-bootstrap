@@ -276,8 +276,8 @@ def test_render_location_report_pass():
     report = run_location_doctor(adb, _facts())
     text = render_location_report(report)
     assert "Location stack doctor" in text
-    assert "PASS" in text
-    assert "Summary: location stack looks healthy." in text
+    assert "Passing checks" in text
+    assert "Location stack looks healthy." in text
 
 
 def test_render_location_report_failures():
@@ -288,10 +288,9 @@ def test_render_location_report_failures():
     adb = Adb(serial="S1", runner=_runner(shell, pm))
     report = run_location_doctor(adb, _facts())
     text = render_location_report(report)
-    assert "FAIL" in text
-    assert "WARN" in text
-    assert "Summary:" in text
-    assert "fail" in text
+    assert "✗" in text   # FAIL glyph
+    assert "!" in text   # WARN glyph
+    assert "issues need attention" in text
 
 
 def test_render_location_report_empty():
