@@ -23,6 +23,9 @@ with everything that comes *after* you flash.
 > only run with explicit `--confirm`. See [`roadmap.md`](./roadmap.md)
 > for what comes next.
 
+
+<img width="426" height="240" alt="losbtstrp" src="https://github.com/user-attachments/assets/acef65f7-a59b-486f-a5cd-3c0abddbb7a1" />
+
 ## Why
 
 Once LineageOS is installed, the next few hours are usually spent
