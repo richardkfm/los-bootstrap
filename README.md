@@ -45,6 +45,17 @@ honest:
 
 Requires Python 3.10+ and the `adb` binary on `$PATH`.
 
+**Getting Python, pip, and adb:**
+- **macOS:** `brew install python android-platform-tools`
+- **Ubuntu/Debian:** `sudo apt install python3 python3-pip android-tools-adb`
+- **Arch Linux:** `sudo pacman -S python python-pip android-tools`
+- **Windows:** Download from [python.org](https://www.python.org/downloads/) and
+  [Android SDK tools](https://developer.android.com/studio/command-line/adb)
+- **Other platforms:** See [Python docs](https://www.python.org/downloads/) and
+  [ADB setup guide](https://developer.android.com/studio/command-line/adb)
+
+### Clone and install
+
 ```bash
 git clone https://github.com/richardkfm/los-bootstrap
 cd los-bootstrap
@@ -56,6 +67,13 @@ pip install -e .
 The virtual environment approach keeps your system Python clean and is
 recommended for all platforms. Activate it each time with
 `source venv/bin/activate`, or `deactivate` to exit.
+
+**Non-bash shells (fish, etc.)?** The venv activate script is bash/zsh-only.
+For **fish shell**, use:
+```bash
+source venv/bin/activate.fish
+```
+For other shells, temporarily switch to bash: `bash` then `source venv/bin/activate`.
 
 **Arch Linux / PEP 668 error?** Modern Python distributions (including Arch)
 protect system Python with PEP 668. The virtual environment setup above
