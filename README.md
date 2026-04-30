@@ -48,8 +48,19 @@ Requires Python 3.10+ and the `adb` binary on `$PATH`.
 ```bash
 git clone https://github.com/richardkfm/los-bootstrap
 cd los-bootstrap
+python -m venv venv
+source venv/bin/activate
 pip install -e .
 ```
+
+The virtual environment approach keeps your system Python clean and is
+recommended for all platforms. Activate it each time with
+`source venv/bin/activate`, or `deactivate` to exit.
+
+**Arch Linux / PEP 668 error?** Modern Python distributions (including Arch)
+protect system Python with PEP 668. The virtual environment setup above
+handles this. If you see `externally-managed-environment`, ensure you've
+created and activated the venv before running `pip install`.
 
 **Windows users:** pip installs the `los-bootstrap` script into a `Scripts`
 folder that is often not on `PATH`. If PowerShell reports the command is not
