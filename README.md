@@ -8,7 +8,7 @@
 ```
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.6.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.7.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
@@ -18,10 +18,11 @@ A CLI-first post-install assistant for **LineageOS** and other
 AOSP-derived, degoogled Android ROMs. It does not flash ROMs. It helps
 with everything that comes *after* you flash.
 
-> **Status:** Phase 5 — Camera / GCam port profiles. Read-only by
-> default; mutating commands (`apply`, `harden --interactive --confirm`)
-> only run with explicit `--confirm`. See [`roadmap.md`](./roadmap.md)
-> for what comes next.
+> **Status:** Phase 6 — Interactive wizard and enriched output. Run
+> `los-bootstrap` with no arguments to launch a guided menu. All existing
+> subcommands still work unchanged. Mutating commands (`apply`,
+> `harden --interactive --confirm`) only run with explicit `--confirm`.
+> See [`roadmap.md`](./roadmap.md) for what comes next.
 
 
 <img width="426" height="240" alt="losbtstrp" src="https://github.com/user-attachments/assets/acef65f7-a59b-486f-a5cd-3c0abddbb7a1" />
@@ -69,6 +70,12 @@ $s = python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
 ## Quick start
 
 Plug in your phone, enable USB debugging, accept the RSA prompt, then:
+
+```bash
+los-bootstrap                    # launch the interactive guided wizard (new in 0.7.0)
+```
+
+Or use individual subcommands directly:
 
 ```bash
 los-bootstrap devices            # list connected devices
@@ -224,6 +231,48 @@ los-bootstrap apply --profile camera --apk-dir ~/los-apks --confirm
 # 3. Push the XML config (get the exact command from camera show)
 los-bootstrap camera show <your-codename>
 ```
+
+### Interactive wizard and enriched output (Phase 6)
+
+Run `los-bootstrap` with no arguments to launch the guided wizard:
+
+- Detects your connected device and enters offline mode if none is found
+- Main menu: Audit → Harden → Bootstrap → Location → Camera
+- **Audit screen** — runs all checks and shows findings grouped into
+  *issues to address* and *passing checks*, with word-wrapped prose
+- **Drill-down** — select any finding for a full "what's happening / why
+  it matters / how to fix it / tradeoff" explanation
+- **Harden screen** — choose read-only report or interactive walk-through;
+  per-finding confirmation before applying any fix
+- **Bootstrap screen** — profile picker → plan review → apply with
+  confirmation
+- **Location / Camera screens** — same diagnostics as the subcommands
+- **Offline mode** — no ADB device? Camera and Location compat still work
+
+All finding renderers are also improved in standalone (non-wizard) mode:
+findings are now grouped by severity, long prose is wrapped at 72 chars,
+and `→ Fix:` / `⚠ Tradeoff:` labels replace the old flat field list.
+
+```
+  ✗  Location disabled
+     Location must be on for GPS, network, and passive providers to
+     function. With it off, every app requesting a location fix receives
+     nothing, regardless of backends or microG installed.
+
+     → Fix: Settings › Location › Use location — toggle on.
+     ⚠  Tradeoff: Enabling location allows apps with location permission
+        to request your position. Only individually granted apps receive
+        results.
+```
+
+**Optional dependency:** install `questionary` for arrow-key menus:
+
+```bash
+pip install "los-bootstrap[wizard]"
+```
+
+Without it the wizard falls back to numbered `input()` prompts and works
+everywhere.
 
 ## What it does NOT do
 
