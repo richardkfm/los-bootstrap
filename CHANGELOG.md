@@ -6,6 +6,12 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-04-30
+
+### Fixed
+- README Install section now includes a Windows PATH note explaining how to
+  add the Python `Scripts` folder for the current session and permanently.
+
 ## [0.6.0] - 2026-04-29
 
 ### Added

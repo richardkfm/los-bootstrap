@@ -47,6 +47,22 @@ cd los-bootstrap
 pip install -e .
 ```
 
+**Windows users:** pip installs the `los-bootstrap` script into a `Scripts`
+folder that is often not on `PATH`. If PowerShell reports the command is not
+recognised, add the folder for the current session:
+
+```powershell
+$env:PATH += ";$(python -c 'import sysconfig; print(sysconfig.get_path(\"scripts\"))')"
+```
+
+To make it permanent across all sessions, run the same query through
+`[Environment]::SetEnvironmentVariable` and restart PowerShell:
+
+```powershell
+$s = python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
+[Environment]::SetEnvironmentVariable("PATH", "$env:PATH;$s", "User")
+```
+
 ## Quick start
 
 Plug in your phone, enable USB debugging, accept the RSA prompt, then:
