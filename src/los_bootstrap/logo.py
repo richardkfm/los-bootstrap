@@ -6,20 +6,16 @@ exact glyphs are easy to find when someone wants to tweak the brand.
 
 from . import __version__
 
-# Two fonts deliberately combined:
-#   - "LOS" in a chunky shadow-block style (visual anchor)
-#   - "BOOTSTRAP" in a thin double-line capital style (technical feel)
-# A vertical separator joins them, with a tagline column on the right.
 LOGO = r"""
    ██╗      ██████╗ ███████╗  ╷  ╔╗ ╔═╗╔═╗╔╦╗╔═╗╔╦╗╦═╗╔═╗╔═╗
    ██║     ██╔═══██╗██╔════╝  │  ╠╩╗║ ║║ ║ ║ ╚═╗ ║ ╠╦╝╠═╣╠═╝
    ██║     ██║   ██║███████╗  │  ╚═╝╚═╝╚═╝ ╩ ╚═╝ ╩ ╩╚═╩ ╩╩
-   ██║     ██║   ██║╚════██║  │   post-install · degoogled
-   ███████╗╚██████╔╝███████║  │   adb-driven · audit-first
+   ██║     ██║   ██║╚════██║  │
+   ███████╗╚██████╔╝███████║  │
    ╚══════╝ ╚═════╝ ╚══════╝  ╵
 """
 
-COMPACT = "« los · bootstrap »  post-install / degoogled / audit-first"
+COMPACT = "« los · bootstrap »"
 
 
 def banner(version: str = __version__, compact: bool = False) -> str:

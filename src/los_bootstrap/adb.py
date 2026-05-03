@@ -127,6 +127,25 @@ class Adb:
             f"settings put {namespace} {key} {shlex.quote(value)}"
         )
 
+    def reboot(self, target: Optional[str] = None) -> None:
+        """Reboot device, optionally to 'bootloader' or 'recovery'. Mutating."""
+        args = ["reboot"]
+        if target:
+            args.append(target)
+        result = self.raw(*args)
+        if result.returncode != 0:
+            raise AdbCommandError(f"adb reboot failed: {result.stderr.strip()}")
+
+    def sideload(self, zip_path: str) -> str:
+        """Run `adb sideload <zip>`. Device must be in recovery sideload mode. Mutating."""
+        result = self.raw("sideload", zip_path)
+        if result.returncode != 0:
+            raise AdbCommandError(
+                f"adb sideload {zip_path} failed: "
+                f"{(result.stderr or result.stdout).strip()}"
+            )
+        return result.stdout
+
 
 def parse_devices(stdout: str) -> list[AdbDevice]:
     """Parse the output of `adb devices`."""

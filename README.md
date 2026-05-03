@@ -2,26 +2,27 @@
    ██╗      ██████╗ ███████╗  ╷  ╔╗ ╔═╗╔═╗╔╦╗╔═╗╔╦╗╦═╗╔═╗╔═╗
    ██║     ██╔═══██╗██╔════╝  │  ╠╩╗║ ║║ ║ ║ ╚═╗ ║ ╠╦╝╠═╣╠═╝
    ██║     ██║   ██║███████╗  │  ╚═╝╚═╝╚═╝ ╩ ╚═╝ ╩ ╩╚═╩ ╩╩
-   ██║     ██║   ██║╚════██║  │   post-install · degoogled
-   ███████╗╚██████╔╝███████║  │   adb-driven · audit-first
+   ██║     ██║   ██║╚════██║  │
+   ███████╗╚██████╔╝███████║  │
    ╚══════╝ ╚═════╝ ╚══════╝  ╵
 ```
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.7.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CLAUDE.md)
 
-A CLI-first post-install assistant for **LineageOS** and other
-AOSP-derived, degoogled Android ROMs. It does not flash ROMs. It helps
-with everything that comes *after* you flash.
+A CLI-first toolkit for **LineageOS** and other AOSP-derived, degoogled
+Android ROMs — covering the full journey from locked bootloader to a
+hardened, privacy-audited daily driver.
 
-> **Status:** Phase 6 — Interactive wizard and enriched output. Run
-> `los-bootstrap` with no arguments to launch a guided menu. All existing
-> subcommands still work unchanged. Mutating commands (`apply`,
-> `harden --interactive --confirm`) only run with explicit `--confirm`.
+> **Status:** Phase 8 — ROM flashing assistant. `los-bootstrap flash`
+> guides you through bootloader unlock and ROM sideload with
+> manufacturer-specific steps for Pixel, OnePlus, Fairphone, Motorola,
+> Samsung (Heimdall), and Xiaomi (Mi Unlock Tool). All prior subcommands
+> are unchanged. Mutating commands only run with explicit `--confirm`.
 > See [`roadmap.md`](./roadmap.md) for what comes next.
 
 
@@ -29,16 +30,23 @@ with everything that comes *after* you flash.
 
 ## Why
 
-Once LineageOS is installed, the next few hours are usually spent
-sideloading F-Droid, fighting with maps/location, deciding whether to
-add microG, and trying to remember which Google packages somehow ended
-up on the device. `los-bootstrap` makes that part faster and more
-honest:
+Getting onto a degoogled ROM used to mean piecing together a dozen
+forum posts: unlock the bootloader here, find the right recovery there,
+figure out why location is broken, hunt for the right GCam port, and
+remember which Google package crept back in. `los-bootstrap` covers
+the whole process end-to-end from a single CLI:
 
-- **Audit first.** See exactly what's on your device before changing it.
-- **CLI over GUI.** Designed for the desktop terminal + `adb`.
-- **Tradeoffs visible.** Recommendations come with downsides, not just
-  upsides.
+- **Full lifecycle.** Bootloader unlock → ROM flash → privacy audit →
+  hardening → app bootstrap → location diagnostics → camera tuning.
+- **Honest about tradeoffs.** Every recommendation surfaces its downside.
+  "Unlock your bootloader" also tells you about the verified-boot warning
+  and data wipe. "Enable location" also tells you who can see it.
+- **Manufacturer-aware.** Pixel/OnePlus (standard fastboot), Motorola
+  (unlock key portal), Samsung (Heimdall + Odin fallback), Xiaomi
+  (Mi Unlock Tool + mandatory waiting period) — each gets a real guide,
+  not a generic "check your XDA thread."
+- **CLI over GUI.** Every feature is reachable from the terminal.
+  No web UI, no app to install on the device first.
 - **Pluggable.** Device-specific knowledge lives in YAML, not `if`-trees.
 
 ## Install
@@ -98,10 +106,31 @@ $s = python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
 
 ## Quick start
 
+### Flashing a ROM (Phase 8)
+
+```bash
+# 1. Check what state your device is in and identify the manufacturer
+los-bootstrap flash status
+
+# 2. Get the full bootloader unlock guide for your device (with live pre-checks)
+los-bootstrap flash prepare
+
+# 3. Verify your ROM zip targets the right device before flashing
+los-bootstrap flash verify ~/Downloads/lineage-21-*.zip
+
+# 4. Preview the flash sequence without running anything
+los-bootstrap flash run ~/Downloads/lineage-21-*.zip --recovery ~/Downloads/recovery.img --dry-run
+
+# 5. Execute the flash (destructive steps require --confirm)
+los-bootstrap flash run ~/Downloads/lineage-21-*.zip --recovery ~/Downloads/recovery.img --confirm
+```
+
+### After the ROM is installed
+
 Plug in your phone, enable USB debugging, accept the RSA prompt, then:
 
 ```bash
-los-bootstrap                    # launch the interactive guided wizard (new in 0.7.0)
+los-bootstrap                    # launch the interactive guided wizard
 ```
 
 Or use individual subcommands directly:
@@ -131,9 +160,43 @@ los-bootstrap camera show panther                 # full port details + XML conf
 ```
 
 If you have more than one device connected, pass `--serial <id>`.
-The `camera` and `location compat` commands need no device connection.
+The `camera`, `location compat`, and `flash prepare` commands work without a device.
 
 ## What it currently does
+
+### ROM flashing assistant (Phase 8)
+
+```bash
+los-bootstrap flash status    # detect device state + manufacturer
+los-bootstrap flash prepare   # manufacturer-aware unlock guide
+los-bootstrap flash verify    # validate ROM zip
+los-bootstrap flash run       # execute the flash sequence
+```
+
+`flash status` detects whether your device is in normal ADB mode,
+fastboot/bootloader mode, or recovery, and identifies the manufacturer
+from `ro.product.manufacturer`.
+
+`flash prepare` shows the full bootloader unlock walkthrough for your
+specific device, plus live pre-checks (Developer Options enabled? OEM
+unlocking enabled?) when the device is accessible via ADB:
+
+| Manufacturer | Approach |
+|---|---|
+| Google Pixel, OnePlus, Fairphone | Standard `fastboot flashing unlock` |
+| Motorola | Unlock key from motorola.com, then `fastboot oem unlock` |
+| Samsung | Heimdall (open-source, cross-platform); Odin fallback guide |
+| Xiaomi / Redmi / POCO | Mi Unlock Tool walkthrough (Windows, 7–30 day wait) |
+| Unknown / generic | XDA-oriented generic fastboot guide |
+
+`flash verify` extracts `pre-device` from the ROM's OTA metadata and
+cross-checks it against the connected device codename — a wrong-device
+catch before anything destructive runs.
+
+`flash run` executes the sequence. It detects A/B vs A-only partition
+layout (`fastboot getvar slot-count`) and adjusts accordingly. Every
+destructive step is skipped without `--confirm`. `--dry-run` prints the
+full command sequence without running any of it.
 
 ### Audit (Phase 1)
 
@@ -305,7 +368,12 @@ everywhere.
 
 ## What it does NOT do
 
-- It does not flash anything.
+- It does not bypass bootloader verification or carrier locks — it calls
+  official unlock APIs only.
+- It does not fetch ROMs from the network — you supply the zip file.
+- It does not automate Samsung Odin (closed-source, Windows-only) or
+  Xiaomi's Mi Unlock Tool (proprietary, server-enforced). It guides you
+  through those manually.
 - It does not auto-distribute GCam APKs or other proprietary binaries.
 - Root is opt-in (`harden --root`) and only used to read SELinux state.
 - It does not verify APK signatures — verify downloads out-of-band

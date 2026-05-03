@@ -6,6 +6,41 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-05-03
+
+### Added
+- Phase 8: ROM flashing assistant. `los-bootstrap flash` is a new subcommand
+  group that guides users from a locked bootloader to a sideloaded LineageOS ROM.
+- `los-bootstrap flash status` — detect device state (booted, fastboot, recovery,
+  Samsung download mode) and manufacturer from ADB/fastboot output.
+- `los-bootstrap flash prepare` — manufacturer-aware guided bootloader unlock with
+  live pre-checks (Developer Options, OEM unlocking) where the device is accessible
+  via ADB. Covers Google / OnePlus / Fairphone (standard `fastboot flashing unlock`),
+  Motorola (unlock-key portal flow), Samsung (Heimdall open-source path with Odin
+  fallback instructions), and Xiaomi / Redmi / POCO (Mi Unlock Tool walkthrough with
+  mandatory waiting-period caveat). Generic fastboot guidance for unrecognised devices.
+- `los-bootstrap flash verify <rom.zip>` — validates the ROM zip, extracts
+  `pre-device` from OTA metadata, and compares it against the connected device
+  codename to catch wrong-device mistakes before flashing.
+- `los-bootstrap flash run <rom.zip> [--recovery <img>] [--confirm] [--dry-run]` —
+  executes the flash sequence. Detects A/B vs A-only partition layout via
+  `fastboot getvar slot-count`. Mutating steps are gated behind `--confirm`.
+- `src/los_bootstrap/flash/` package: `models.py` (DeviceState, Manufacturer,
+  FlashStep, FlashPlan, RomMetadata, FlashStepKind), `fastboot.py` (Fastboot
+  wrapper with injectable runner), `heimdall.py` (Heimdall wrapper, Samsung),
+  `checks.py` (manufacturer detection, state detection, ROM metadata parsing),
+  `guide.py` (full manufacturer-specific unlock guidance text),
+  `flash.py` (plan executor), `report.py` (status and plan renderers).
+- `Adb.reboot(target)` and `Adb.sideload(zip_path)` added to the ADB wrapper.
+
+### Changed
+- Project description updated: `los-bootstrap` now covers ROM flashing as well
+  as post-install bootstrap. "Does not flash ROMs" removed from project purpose.
+- `roadmap.md`: Phase 8 (ROM Flashing Assistant) added; Phase 7 (device profile
+  ecosystem) unchanged.
+- `CLAUDE.md`: "Flashing ROMs, recoveries, or partitions" removed from Non-goals;
+  current scope updated to Phase 8.
+
 ## [0.7.0] - 2026-04-30
 
 ### Added

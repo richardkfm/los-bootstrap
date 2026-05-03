@@ -2,16 +2,16 @@
    ██╗      ██████╗ ███████╗  ╷  ╔╗ ╔═╗╔═╗╔╦╗╔═╗╔╦╗╦═╗╔═╗╔═╗
    ██║     ██╔═══██╗██╔════╝  │  ╠╩╗║ ║║ ║ ║ ╚═╗ ║ ╠╦╝╠═╣╠═╝
    ██║     ██║   ██║███████╗  │  ╚═╝╚═╝╚═╝ ╩ ╚═╝ ╩ ╩╚═╩ ╩╩
-   ██║     ██║   ██║╚════██║  │   post-install · degoogled
-   ███████╗╚██████╔╝███████║  │   adb-driven · audit-first
+   ██║     ██║   ██║╚════██║  │
+   ███████╗╚██████╔╝███████║  │
    ╚══════╝ ╚═════╝ ╚══════╝  ╵
 ```
 
 # Roadmap
 
-`los-bootstrap` is a CLI tool that helps advanced users get productive on a
-freshly installed LineageOS / AOSP-derived ROM. It does not flash ROMs. It
-helps with everything that comes after.
+`los-bootstrap` is a CLI tool that helps advanced users flash and bootstrap
+a LineageOS / AOSP-derived ROM on a degoogled device — from bootloader unlock
+through post-install hardening and privacy audit.
 
 The project is delivered in small, reviewable phases. Each phase has an
 explicit goal, scope, exclusions, and exit criteria. **Future phases must
@@ -173,6 +173,44 @@ prose, and contextual "what does this mean for me?" explanations.
 
 **Exit criteria:** a first-time user can complete audit + basic harden in
 one guided session without reading the README.
+
+---
+
+## Phase 8 — ROM Flashing Assistant (current)
+
+**Goal:** guide users through flashing a ROM on supported devices, from
+bootloader unlock to first boot, with honest manufacturer-specific coverage.
+
+**Included:**
+- `fastboot/` and `heimdall/` wrappers (thin, injectable, no real device in tests)
+- `los-bootstrap flash status` — detect device state (booted / fastboot / recovery /
+  Samsung download mode) and identify manufacturer
+- `los-bootstrap flash prepare` — manufacturer-aware bootloader unlock guide with
+  live pre-checks (Developer Options, OEM unlocking flag) where device is in ADB mode:
+  - Google / OnePlus / Fairphone: standard `fastboot flashing unlock` flow
+  - Motorola: unlock-key retrieval via motorola.com, then `fastboot oem unlock <key>`
+  - Samsung: step-by-step Heimdall guide (open-source, cross-platform); Odin
+    fallback instructions printed when Heimdall is not installed
+  - Xiaomi / Redmi / POCO: Mi Unlock Tool walkthrough (Windows, mandatory waiting
+    period), with note that standard fastboot applies after the unlock is done
+  - Generic / unknown: XDA-oriented generic fastboot guide
+- `los-bootstrap flash verify <rom.zip>` — validate ROM file integrity and check
+  `pre-device` metadata against connected device codename
+- `los-bootstrap flash run <rom.zip> [--recovery <img>] --confirm` — execute the
+  flash sequence; detects A/B vs A-only partition layout via `fastboot getvar slot-count`
+- `flash/` package: `models.py`, `fastboot.py`, `heimdall.py`, `checks.py`,
+  `guide.py`, `flash.py`, `report.py`
+
+**Excluded:**
+- Samsung Odin automation (closed-source, Windows-only)
+- Xiaomi Mi Unlock Tool automation (proprietary, server-enforced waiting period)
+- Fetching ROMs from the network (user supplies the file)
+- Bypassing bootloader verification — we call official unlock APIs only
+
+**Exit criteria:** a Pixel or OnePlus user can go from stock + locked bootloader
+to sideloaded LineageOS using only `los-bootstrap flash *` commands. Samsung and
+Xiaomi users receive accurate, actionable guidance even though those paths
+require external tools.
 
 ---
 
