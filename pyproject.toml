@@ -34,14 +34,18 @@ dynamic = ["version"]
 dev = [
     "pytest>=7.4",
 ]
+wizard = [
+    "questionary>=2.0",
+]
 
 [project.scripts]
 los-bootstrap = "los_bootstrap.cli:main"
 
 [project.urls]
-Homepage = "https://example.invalid/los-bootstrap"
-Source = "https://example.invalid/los-bootstrap"
-Issues = "https://example.invalid/los-bootstrap/issues"
+Homepage = "https://github.com/richardkfm/los-bootstrap"
+Source = "https://github.com/richardkfm/los-bootstrap"
+Issues = "https://github.com/richardkfm/los-bootstrap/issues"
+Changelog = "https://github.com/richardkfm/los-bootstrap/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]

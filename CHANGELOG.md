@@ -6,6 +6,48 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-05-03
+
+### Added
+- Phase 9: distribution and one-line install. The project can now be
+  installed with a single shell command instead of cloning the repo
+  and creating a virtualenv by hand.
+- `scripts/install.sh` (POSIX `sh`) — detects the host OS via `uname`
+  and `/etc/os-release`, ensures `pipx` and `adb` are installed via the
+  system package manager (`apt`, `dnf`, `pacman`, `brew`), and then
+  runs `pipx install "los-bootstrap[wizard]"`. Prints every command
+  before running it, supports `--dry-run` and `--yes`, refuses to run
+  as root unless `--allow-root` is passed, and exits with a clear
+  "install platform-tools manually" message when the package manager
+  isn't recognised.
+- `scripts/install.ps1` — Windows PowerShell equivalent. Uses `winget`
+  (preferred) or `scoop` to install Python and `android-platform-tools`,
+  then runs `pipx ensurepath` and `pipx install "los-bootstrap[wizard]"`.
+- `.github/workflows/publish.yml` — builds sdist + wheel on `v*` tags,
+  publishes to PyPI via Trusted Publishing (OIDC, no long-lived tokens),
+  and attaches the install scripts plus a SHA-256 checksum file to the
+  GitHub Release.
+- `docs/RELEASING.md` — documents the one-time PyPI Trusted Publisher
+  setup the maintainer performs once, and the per-release tag-and-push
+  flow.
+- README install section rewritten: leads with the one-liner for
+  Linux/macOS and Windows; `pipx install` shown as the second tier;
+  `git clone` flow demoted to a "From source" appendix for contributors.
+- `[project.optional-dependencies] wizard = ["questionary>=2.0"]`
+  declared in `pyproject.toml`. The `los-bootstrap[wizard]` extras
+  group was previously documented in the README but missing from the
+  package metadata, so `pip install "los-bootstrap[wizard]"` failed.
+
+### Changed
+- `pyproject.toml` project URLs updated from `example.invalid`
+  placeholders to `https://github.com/richardkfm/los-bootstrap`.
+  `Changelog` URL added under `[project.urls]`.
+- `roadmap.md`: Phase 9 (distribution and one-line install) added.
+
+### Fixed
+- `pip install "los-bootstrap[wizard]"` now works (the `wizard` extras
+  group was missing from `pyproject.toml`).
+
 ## [0.8.0] - 2026-05-03
 
 ### Added

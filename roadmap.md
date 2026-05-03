@@ -232,6 +232,47 @@ only `profiles/devices/<codename>.yml` plus a test fixture.
 
 ---
 
+## Phase 9 — Distribution and one-line install (current)
+
+**Goal:** lower the install bar for novice LineageOS users from a
+four-step clone-and-venv dance to a single command, without pretending
+`adb` is something we can ship.
+
+**Included:**
+- PyPI release workflow (Trusted Publisher OIDC, no long-lived tokens)
+- `los-bootstrap` published as a wheel and sdist; `pipx install
+  "los-bootstrap[wizard]"` becomes the canonical install path for users
+  who already have Python
+- `scripts/install.sh` (POSIX `sh`) and `scripts/install.ps1`
+  (PowerShell): detect the platform, ensure `pipx` and `adb` via the
+  system package manager, then `pipx install "los-bootstrap[wizard]"`.
+  Both scripts print every command before running, support `--dry-run`,
+  and exit cleanly when the user declines or the package manager isn't
+  recognised
+- GitHub Releases workflow that attaches the install scripts and
+  publishes a SHA-256 checksum file alongside each tag
+- README install section rewritten: one-liner first, "from source" last
+- `pyproject.toml` URL fixes (replace `example.invalid` placeholders)
+  and the missing `[wizard]` extras group declaration
+- `docs/RELEASING.md` documenting the one-time PyPI Trusted Publisher
+  setup the maintainer performs before the first published release
+
+**Excluded:**
+- Bundling `adb`, `fastboot`, or `heimdall` (Google Platform Tools
+  licensing and the project's existing "no proprietary binaries" rule)
+- Self-contained PyInstaller / shiv binaries (deferred to Phase 9.1)
+- Homebrew tap, winget manifest, Flatpak, AUR (deferred to Phase 9.1)
+- Any auto-update or post-install network call beyond what `pip` /
+  `pipx` already do — no remote config fetch, no telemetry
+
+**Exit criteria:** a user on a fresh Ubuntu, macOS, or Windows machine
+who has never installed Python can run the published one-liner and end
+up with a working `los-bootstrap audit` against a connected device. The
+install script is short enough (under 200 lines) that a contributor can
+read and audit it in one sitting.
+
+---
+
 ## Versioning at a glance
 
 | Change                                  | Bump      |
