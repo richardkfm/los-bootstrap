@@ -1,0 +1,97 @@
+name: Publish
+
+# Triggered when a `v*` tag is pushed. Builds sdist + wheel, publishes to
+# PyPI via Trusted Publishing (no API token needed), and attaches the
+# install scripts plus a SHA-256 checksum file to the GitHub Release.
+#
+# One-time setup is required on pypi.org before the first run — see
+# docs/RELEASING.md.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write   # for creating the GitHub Release and uploading assets
+  id-token: write   # for PyPI Trusted Publishing (OIDC)
+
+jobs:
+  build:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build backend
+        run: python -m pip install --upgrade build
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Generate install-script checksums
+        run: |
+          cd scripts
+          sha256sum install.sh > install.sh.sha256
+          # PowerShell 'Get-FileHash' equivalent for install.ps1
+          sha256sum install.ps1 > install.ps1.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: install-scripts
+          path: |
+            scripts/install.sh
+            scripts/install.sh.sha256
+            scripts/install.ps1
+            scripts/install.ps1.sha256
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/los-bootstrap
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish via Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: install-scripts
+          path: install-scripts/
+
+      - name: Create release with assets
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*
+            install-scripts/install.sh
+            install-scripts/install.sh.sha256
+            install-scripts/install.ps1
+            install-scripts/install.ps1.sha256

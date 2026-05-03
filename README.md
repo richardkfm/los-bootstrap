@@ -8,7 +8,7 @@
 ```
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.8.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
@@ -51,58 +51,75 @@ the whole process end-to-end from a single CLI:
 
 ## Install
 
+### One-liner (recommended)
+
+**Linux / macOS:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/scripts/install.sh | sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/scripts/install.ps1 | iex
+```
+
+The install script detects your OS, installs `pipx` and `adb` via your
+system package manager (`apt` / `dnf` / `pacman` / `brew` / `winget`),
+then runs `pipx install "los-bootstrap[wizard]"`. It prints every command
+before running it, supports `--dry-run` (preview only), and exits cleanly
+if your package manager isn't recognised.
+
+**Audit-first variant** (recommended on machines you don't fully control):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/scripts/install.sh -o install.sh
+sha256sum -c install.sh.sha256   # checksum is published on the GitHub Release
+sh install.sh
+```
+
+**Caveats — surfaced honestly:**
+
+- `adb` is required and is installed via your OS package manager, not
+  bundled. On unusual distros or locked-down corporate machines the
+  script will exit with a "install platform-tools manually" message.
+- `fastboot` and `heimdall` are only needed for `flash run` and Samsung
+  devices. The install script does **not** install them by default;
+  the `flash` subcommand prints what to install when needed.
+- Piping a script into `sh` is a trust decision. The script is in this
+  repo (auditable diff), short enough to read in one sitting, and
+  ships with a SHA-256 checksum on every release.
+
+### If you already have Python and adb
+
+```bash
+pipx install "los-bootstrap[wizard]"
+```
+
+The `[wizard]` extra adds `questionary` for arrow-key menus. Without it
+the wizard falls back to numbered `input()` prompts.
+
+### From source (contributors)
+
 Requires Python 3.10+ and the `adb` binary on `$PATH`.
-
-**Getting Python, pip, and adb:**
-- **macOS:** `brew install python android-platform-tools`
-- **Ubuntu/Debian:** `sudo apt install python3 python3-pip android-tools-adb`
-- **Arch Linux:** `sudo pacman -S python python-pip android-tools`
-- **Windows:** Download from [python.org](https://www.python.org/downloads/) and
-  [Android SDK tools](https://developer.android.com/studio/command-line/adb)
-- **Other platforms:** See [Python docs](https://www.python.org/downloads/) and
-  [ADB setup guide](https://developer.android.com/studio/command-line/adb)
-
-### Clone and install
 
 ```bash
 git clone https://github.com/richardkfm/los-bootstrap
 cd los-bootstrap
 python -m venv venv
 source venv/bin/activate
-pip install -e .
+pip install -e ".[wizard,dev]"
 ```
 
-The virtual environment approach keeps your system Python clean and is
-recommended for all platforms. Activate it each time with
-`source venv/bin/activate`, or `deactivate` to exit.
+`source venv/bin/activate.fish` for fish shell. On Windows, pip installs
+the `los-bootstrap` script into a `Scripts` folder that is often not on
+`PATH` — `pipx` (used by the install scripts above) handles this for you;
+in a manual venv install you may need to add `Scripts` to `PATH` yourself.
 
-**Non-bash shells (fish, etc.)?** The venv activate script is bash/zsh-only.
-For **fish shell**, use:
-```bash
-source venv/bin/activate.fish
-```
-For other shells, temporarily switch to bash: `bash` then `source venv/bin/activate`.
-
-**Arch Linux / PEP 668 error?** Modern Python distributions (including Arch)
-protect system Python with PEP 668. The virtual environment setup above
-handles this. If you see `externally-managed-environment`, ensure you've
-created and activated the venv before running `pip install`.
-
-**Windows users:** pip installs the `los-bootstrap` script into a `Scripts`
-folder that is often not on `PATH`. If PowerShell reports the command is not
-recognised, add the folder for the current session:
-
-```powershell
-$env:PATH += ";$(python -c 'import sysconfig; print(sysconfig.get_path(\"scripts\"))')"
-```
-
-To make it permanent across all sessions, run the same query through
-`[Environment]::SetEnvironmentVariable` and restart PowerShell:
-
-```powershell
-$s = python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
-[Environment]::SetEnvironmentVariable("PATH", "$env:PATH;$s", "User")
-```
+**Arch Linux / PEP 668 error?** Modern Python distributions protect system
+Python with PEP 668. The virtual environment above handles this; the
+`pipx`-based one-liner above also handles it without a venv.
 
 ## Quick start
 
