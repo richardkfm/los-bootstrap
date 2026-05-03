@@ -10,9 +10,10 @@ LineageOS / AOSP-derived ROMs. It targets advanced users who already know
 their way around `adb` and want to bootstrap a degoogled phone quickly,
 audit privacy posture, and (eventually) apply opinionated hardening.
 
-It does **not** flash ROMs. It assumes the ROM is already installed.
+It can guide users through flashing a ROM and unlocking their bootloader,
+and helps with everything that comes after the ROM is installed.
 
-## Current scope (Phase 6, version 0.7.x)
+## Current scope (Phase 8, version 0.8.x)
 
 Audit MVP, bootstrap profiles, hardening assistant, location / maps integration,
 camera / GCam port profiles, and interactive wizard with enriched output:
@@ -68,11 +69,20 @@ camera / GCam port profiles, and interactive wizard with enriched output:
   - Five device profiles: Pixel 7, Pixel 6, Redmi Note 10, OnePlus 9,
     Fairphone 4
 
-If a change does not fit Phase 5, it goes in the roadmap, not the code.
+- Phase 8 (current):
+  - `los-bootstrap flash status` — detect device state (booted/fastboot/recovery) and manufacturer
+  - `los-bootstrap flash prepare` — manufacturer-aware guided bootloader unlock wizard
+    (full guidance for Pixel/OnePlus/Fairphone via fastboot, Motorola unlock key flow,
+    Samsung via Heimdall with Odin fallback, Xiaomi with Mi Unlock Tool walkthrough)
+  - `los-bootstrap flash verify <rom.zip>` — validate ROM file and check device codename match
+  - `los-bootstrap flash run <rom.zip> [--recovery <img>] --confirm` — execute flash sequence
+  - `flash/` package: `models.py`, `fastboot.py`, `heimdall.py`, `checks.py`,
+    `guide.py`, `flash.py`, `report.py`
+
+If a change does not fit Phase 8, it goes in the roadmap, not the code.
 
 ## Non-goals
 
-- Flashing ROMs, recoveries, or partitions
 - Bypassing bootloader locks, vendor verification, or signature checks
 - Auto-distributing GCam APKs or other proprietary binaries
 - Running unsigned remote code or fetching a "config" from the network
@@ -113,6 +123,15 @@ src/los_bootstrap/
         models.py          # CameraPort, CameraProfile, XmlConfig
         profiles.py        # static CAMERA_PROFILES (per-device data)
         report.py          # render_profile_list(), render_profile()
+    flash/                 # Phase 8 — ROM flashing assistant
+        __init__.py
+        models.py          # DeviceState, Manufacturer, FlashStep, FlashPlan, RomMetadata
+        fastboot.py        # thin wrapper around `fastboot` binary
+        heimdall.py        # thin wrapper around `heimdall` CLI (Samsung)
+        checks.py          # manufacturer detection, state detection, ROM validation
+        guide.py           # manufacturer-aware bootloader unlock guidance text
+        flash.py           # FlashPlan executor (mutating; --confirm gated)
+        report.py          # render_flash_status(), render_flash_plan()
 tests/
     test_audit.py          # pytest, mocks adb
     test_location.py       # pytest, mocks adb
@@ -131,7 +150,8 @@ Design rules:
   - *bootstrap mode* — propose/apply profile actions (Phase 2)
   - *hardening mode* — opinionated lockdown with explicit tradeoffs (P3)
   - *location mode* — read-only location stack diagnostics (P4)
-  - *camera mode* — static GCam port profiles, no ADB required (P5, current)
+  - *camera mode* — static GCam port profiles, no ADB required (P5)
+  - *flash mode* — ROM flashing assistant with manufacturer-aware guidance (P8, current)
 - **Mutation is gated.** The applier is the only place that calls
   mutating ADB methods (`install_apk`, `setting_put`), and only after
   the user passes `--confirm`. `plan` is read-only; so is everything

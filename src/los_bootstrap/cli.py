@@ -25,6 +25,13 @@ Phase 5 commands:
     camera     GCam port profiles and XML config guidance (no device needed)
                camera list-profiles  — list all known device GCam port profiles
                camera show <codename>  — show full profile for a device codename
+
+Phase 8 commands:
+    flash      ROM flashing assistant (bootloader unlock + sideload)
+               flash status   — detect device state and manufacturer
+               flash prepare  — manufacturer-aware bootloader unlock guidance
+               flash verify   — validate a ROM zip and check device codename match
+               flash run      — execute the flash sequence (requires --confirm)
 """
 
 from __future__ import annotations
@@ -42,6 +49,25 @@ from .bootstrap import recommendations
 from .device import collect as collect_device
 from .logo import banner
 from .camera import CAMERA_PROFILES, find_camera_profile, render_profile, render_profile_list
+from .flash import (
+    Fastboot,
+    FastbootNotFoundError,
+    Heimdall,
+    build_flash_plan,
+    detect_manufacturer,
+    detect_state,
+    developer_options_enabled,
+    execute_flash_plan,
+    heimdall_available,
+    is_ab_device,
+    oem_unlock_enabled,
+    parse_rom_metadata,
+    render_flash_plan,
+    render_flash_result,
+    render_flash_status,
+    render_verify_result,
+    unlock_guide,
+)
 from .harden import render_harden_report, run_harden_checks, run_interactive
 from .location import render_compat_matrix, render_location_report, run_location_doctor
 from .plan import build_plan, render_plan
@@ -192,6 +218,55 @@ def _build_parser() -> argparse.ArgumentParser:
     p_camera_show.add_argument(
         "codename",
         help="Device codename (ro.product.device), e.g. panther, oriole, sunny.",
+    )
+
+    p_flash = sub.add_parser(
+        "flash",
+        help="ROM flashing assistant: bootloader unlock guidance and sideload.",
+    )
+    p_flash_sub = p_flash.add_subparsers(dest="flash_command", required=True)
+
+    p_flash_sub.add_parser(
+        "status",
+        help="Detect device state (booted/fastboot/recovery) and manufacturer.",
+    )
+
+    p_flash_sub.add_parser(
+        "prepare",
+        help="Show manufacturer-aware bootloader unlock guide with live pre-checks.",
+    )
+
+    p_flash_verify = p_flash_sub.add_parser(
+        "verify",
+        help="Validate a ROM zip file and check device codename match.",
+    )
+    p_flash_verify.add_argument(
+        "rom",
+        help="Path to the LineageOS / AOSP ROM zip file.",
+    )
+
+    p_flash_run = p_flash_sub.add_parser(
+        "run",
+        help="Execute the flash sequence (requires --confirm).",
+    )
+    p_flash_run.add_argument(
+        "rom",
+        help="Path to the LineageOS / AOSP ROM zip file.",
+    )
+    p_flash_run.add_argument(
+        "--recovery",
+        metavar="IMG",
+        help="Path to a recovery image to flash before sideloading (A-only devices).",
+    )
+    p_flash_run.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Required to run destructive steps (bootloader unlock, flashing).",
+    )
+    p_flash_run.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print each command without executing it.",
     )
 
     return parser
@@ -360,6 +435,207 @@ def cmd_location_compat() -> int:
     return 0
 
 
+def cmd_flash_status(serial: Optional[str]) -> int:
+    adb = Adb()
+    adb_out = adb.raw("devices").stdout
+    fb = Fastboot()
+    try:
+        fb_out = fb._run([fb.binary, "devices"]).stdout
+    except Exception:
+        fb_out = ""
+
+    from .flash.models import DeviceState
+    state = detect_state(adb_out, fb_out)
+
+    codename = ""
+    manufacturer = None
+    dev_opts = None
+    oem_unlock = None
+    bl_unlocked = None
+
+    if state == DeviceState.BOOTED:
+        try:
+            target_adb = _resolve_target(serial)
+            codename = target_adb.getprop("ro.product.device")
+            raw_mfr = target_adb.getprop("ro.product.manufacturer")
+            manufacturer = detect_manufacturer(raw_mfr)
+            dev_opts = developer_options_enabled(target_adb)
+            oem_unlock = oem_unlock_enabled(target_adb)
+        except Exception:
+            pass
+    elif state == DeviceState.FASTBOOT:
+        try:
+            unlocked = fb.getvar("unlocked")
+            bl_unlocked = unlocked.lower() == "yes"
+            codename = fb.getvar("product")
+        except Exception:
+            pass
+
+    print(
+        render_flash_status(state, manufacturer, codename, bl_unlocked, dev_opts, oem_unlock),
+        end="",
+    )
+    return 0
+
+
+def cmd_flash_prepare(serial: Optional[str]) -> int:
+    from .flash.models import DeviceState, Manufacturer
+
+    adb = Adb()
+    adb_out = adb.raw("devices").stdout
+    fb = Fastboot()
+    try:
+        fb_out = fb._run([fb.binary, "devices"]).stdout
+    except Exception:
+        fb_out = ""
+
+    state = detect_state(adb_out, fb_out)
+    manufacturer = Manufacturer.GENERIC
+    codename = ""
+    dev_opts = None
+    oem_unlock = None
+
+    if state == DeviceState.BOOTED:
+        try:
+            target_adb = _resolve_target(serial)
+            codename = target_adb.getprop("ro.product.device")
+            raw_mfr = target_adb.getprop("ro.product.manufacturer")
+            manufacturer = detect_manufacturer(raw_mfr)
+            dev_opts = developer_options_enabled(target_adb)
+            oem_unlock = oem_unlock_enabled(target_adb)
+        except Exception:
+            pass
+
+    if codename or state != DeviceState.UNKNOWN:
+        print(
+            render_flash_status(state, manufacturer, codename, None, dev_opts, oem_unlock),
+            end="",
+        )
+
+    guide = unlock_guide(manufacturer)
+    print(guide)
+
+    if manufacturer == Manufacturer.SAMSUNG and not heimdall_available():
+        from .flash.guide import samsung_odin_guide as _odin
+        print("─── Heimdall not found on PATH — Odin fallback ───\n")
+        print(_odin())
+
+    return 0
+
+
+def cmd_flash_verify(rom: str, serial: Optional[str]) -> int:
+    import zipfile as _zf
+    from pathlib import Path as _Path
+
+    zip_path = _Path(rom)
+    if not zip_path.exists():
+        sys.stderr.write(f"error: ROM file not found: {zip_path}\n")
+        return 2
+
+    valid = False
+    try:
+        with _zf.ZipFile(zip_path):
+            valid = True
+    except _zf.BadZipFile:
+        pass
+
+    metadata = parse_rom_metadata(zip_path) if valid else None
+
+    codename = ""
+    if valid:
+        try:
+            target_adb = _resolve_target(serial)
+            codename = target_adb.getprop("ro.product.device")
+        except Exception:
+            pass
+
+    print(render_verify_result(zip_path, valid, metadata, codename), end="")
+    return 0 if valid else 2
+
+
+def cmd_flash_run(args: argparse.Namespace) -> int:
+    from pathlib import Path as _Path
+    from .flash.models import DeviceState, Manufacturer
+
+    rom_path = _Path(args.rom)
+    if not rom_path.exists():
+        sys.stderr.write(f"error: ROM file not found: {rom_path}\n")
+        return 2
+
+    recovery_path = _Path(args.recovery) if args.recovery else None
+    if recovery_path and not recovery_path.exists():
+        sys.stderr.write(f"error: recovery image not found: {recovery_path}\n")
+        return 2
+
+    adb = Adb()
+    adb_out = adb.raw("devices").stdout
+    fb = Fastboot()
+    try:
+        fb_out = fb._run([fb.binary, "devices"]).stdout
+    except Exception:
+        fb_out = ""
+
+    state = detect_state(adb_out, fb_out)
+    manufacturer = Manufacturer.GENERIC
+    codename = ""
+    ab = False
+
+    if state == DeviceState.BOOTED:
+        try:
+            target_adb = _resolve_target(args.serial)
+            codename = target_adb.getprop("ro.product.device")
+            raw_mfr = target_adb.getprop("ro.product.manufacturer")
+            manufacturer = detect_manufacturer(raw_mfr)
+        except Exception:
+            pass
+
+    if state in (DeviceState.FASTBOOT, DeviceState.BOOTED):
+        try:
+            slot_count = fb.getvar("slot-count")
+            ab = is_ab_device(slot_count)
+        except Exception:
+            pass
+
+    hl = Heimdall() if manufacturer == Manufacturer.SAMSUNG else None
+    hl_avail = heimdall_available() if manufacturer == Manufacturer.SAMSUNG else False
+
+    plan = build_flash_plan(
+        manufacturer=manufacturer,
+        device_codename=codename,
+        rom_path=rom_path,
+        recovery_path=recovery_path,
+        ab_device=ab,
+        heimdall_available=hl_avail,
+    )
+
+    if not args.confirm and not args.dry_run:
+        print(render_flash_plan(plan), end="")
+        sys.stderr.write(
+            "Refusing to flash without --confirm. "
+            "Re-run with `flash run <rom> --confirm` to execute, "
+            "or add --dry-run to preview.\n"
+        )
+        return 2
+
+    target_adb = adb
+    if state == DeviceState.BOOTED:
+        try:
+            target_adb = _resolve_target(args.serial)
+        except Exception:
+            pass
+
+    result = execute_flash_plan(
+        plan,
+        adb=target_adb,
+        fastboot=fb,
+        heimdall=hl,
+        confirm=args.confirm,
+        dry_run=args.dry_run,
+    )
+    print(render_flash_result(result), end="")
+    return 1 if result.had_errors() else 0
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     profile = find_profile(
         args.profile,
@@ -423,9 +699,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 return cmd_camera_list_profiles()
             if args.camera_command == "show":
                 return cmd_camera_show(args.codename)
+        if args.command == "flash":
+            if args.flash_command == "status":
+                return cmd_flash_status(args.serial)
+            if args.flash_command == "prepare":
+                return cmd_flash_prepare(args.serial)
+            if args.flash_command == "verify":
+                return cmd_flash_verify(args.rom, args.serial)
+            if args.flash_command == "run":
+                return cmd_flash_run(args)
     except AdbNotFoundError as exc:
         sys.stderr.write(f"error: {exc}\n")
         sys.stderr.write("Install Android platform-tools so `adb` is on PATH.\n")
+        return 127
+    except FastbootNotFoundError as exc:
+        sys.stderr.write(f"error: {exc}\n")
+        sys.stderr.write("Install Android platform-tools so `fastboot` is on PATH.\n")
         return 127
     except AdbCommandError as exc:
         sys.stderr.write(f"error: {exc}\n")
