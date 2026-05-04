@@ -6,6 +6,9 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Changed
+- Replaced CLI ASCII logo with a hollow outline-font style for "LOS" and a tile-box style for "BOOTSTRAP".
+
 ## [0.9.0] - 2026-05-03
 
 ### Added
