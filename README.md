@@ -12,7 +12,6 @@
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CLAUDE.md)
 
 A CLI-first toolkit for **LineageOS** and other AOSP-derived, degoogled
 Android ROMs — covering the full journey from locked bootloader to a
