@@ -1,12 +1,3 @@
-```
-   ██╗      ██████╗ ███████╗  ╷  ╔╗ ╔═╗╔═╗╔╦╗╔═╗╔╦╗╦═╗╔═╗╔═╗
-   ██║     ██╔═══██╗██╔════╝  │  ╠╩╗║ ║║ ║ ║ ╚═╗ ║ ╠╦╝╠═╣╠═╝
-   ██║     ██║   ██║███████╗  │  ╚═╝╚═╝╚═╝ ╩ ╚═╝ ╩ ╩╚═╩ ╩╩
-   ██║     ██║   ██║╚════██║  │
-   ███████╗╚██████╔╝███████║  │
-   ╚══════╝ ╚═════╝ ╚══════╝  ╵
-```
-
 # Roadmap
 
 `los-bootstrap` is a CLI tool that helps advanced users flash and bootstrap
@@ -132,7 +123,7 @@ reliably diagnoses the common failure modes. ✓ Shipped in 0.5.0.
 
 ---
 
-## Phase 5 — Camera / GCam profiles (current)
+## Phase 5 — Camera / GCam profiles ✓
 
 **Goal:** treat camera tuning as the device-specific problem it is, and
 help the user without overpromising.
@@ -150,7 +141,7 @@ contributed by humans, not generated. ✓ Shipped in 0.6.0 with five devices.
 
 ---
 
-## Phase 6 — Interactive wizard and enriched output (current)
+## Phase 6 — Interactive wizard and enriched output ✓
 
 **Goal:** lower the entry barrier by making `los-bootstrap` (no args)
 launch a guided menu that covers audit → harden → bootstrap in a single
@@ -176,7 +167,29 @@ one guided session without reading the README.
 
 ---
 
-## Phase 8 — ROM Flashing Assistant (current)
+## Phase 7 — Device profile ecosystem (deferred)
+
+**Goal:** make device-specific knowledge pluggable so the tool stays
+useful as the LineageOS device list shifts.
+
+> **Note:** this phase was deprioritised in favour of the ROM flashing
+> assistant (Phase 8), which addressed a more immediate user need.
+> Phase 7 work will resume after Phase 9.
+
+**Included:**
+- Device profile loader (codename → quirks, known issues, recommended
+  toggles)
+- Contributor workflow for adding device profiles
+- Optional remote profile index (signed, opt-in)
+
+**Excluded:** anything that runs unsigned remote code.
+
+**Exit criteria:** adding a new device is a pull request that touches
+only `profiles/devices/<codename>.yml` plus a test fixture.
+
+---
+
+## Phase 8 — ROM Flashing Assistant ✓
 
 **Goal:** guide users through flashing a ROM on supported devices, from
 bootloader unlock to first boot, with honest manufacturer-specific coverage.
@@ -210,29 +223,11 @@ bootloader unlock to first boot, with honest manufacturer-specific coverage.
 **Exit criteria:** a Pixel or OnePlus user can go from stock + locked bootloader
 to sideloaded LineageOS using only `los-bootstrap flash *` commands. Samsung and
 Xiaomi users receive accurate, actionable guidance even though those paths
-require external tools.
+require external tools. ✓ Shipped in 0.8.0.
 
 ---
 
-## Phase 7 — Device profile ecosystem
-
-**Goal:** make device-specific knowledge pluggable so the tool stays
-useful as the LineageOS device list shifts.
-
-**Included:**
-- Device profile loader (codename → quirks, known issues, recommended
-  toggles)
-- Contributor workflow for adding device profiles
-- Optional remote profile index (signed, opt-in)
-
-**Excluded:** anything that runs unsigned remote code.
-
-**Exit criteria:** adding a new device is a pull request that touches
-only `profiles/devices/<codename>.yml` plus a test fixture.
-
----
-
-## Phase 9 — Distribution and one-line install (current)
+## Phase 9 — Distribution and one-line install ✓
 
 **Goal:** lower the install bar for novice LineageOS users from a
 four-step clone-and-venv dance to a single command, without pretending
