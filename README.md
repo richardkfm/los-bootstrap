@@ -25,7 +25,11 @@ hardened, privacy-audited daily driver.
 > See [`roadmap.md`](./roadmap.md) for what comes next.
 
 
-<img width="426" height="240" alt="losbtstrp" src="https://github.com/user-attachments/assets/acef65f7-a59b-486f-a5cd-3c0abddbb7a1" />
+
+https://github.com/user-attachments/assets/b16cee78-77dc-40ca-9032-edf7fd653603
+
+
+
 
 ## Why
 
