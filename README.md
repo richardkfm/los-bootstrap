@@ -1,11 +1,32 @@
-```
-   ██╗      ██████╗ ███████╗  ╷  ╔╗ ╔═╗╔═╗╔╦╗╔═╗╔╦╗╦═╗╔═╗╔═╗
-   ██║     ██╔═══██╗██╔════╝  │  ╠╩╗║ ║║ ║ ║ ╚═╗ ║ ╠╦╝╠═╣╠═╝
-   ██║     ██║   ██║███████╗  │  ╚═╝╚═╝╚═╝ ╩ ╚═╝ ╩ ╩╚═╩ ╩╩
-   ██║     ██║   ██║╚════██║  │
-   ███████╗╚██████╔╝███████║  │
-   ╚══════╝ ╚═════╝ ╚══════╝  ╵
-```
+<div align="center">
+<pre>
+          _____           _______                   _____
+         /\    \         /::\    \                 /\    \
+        /::\____\       /::::\    \               /::\    \
+       /:::/    /      /::::::\    \             /::::\    \
+      /:::/    /      /::::::::\    \           /::::::\    \
+     /:::/    /      /:::/~~\:::\    \         /:::/\:::\    \
+    /:::/    /      /:::/    \:::\    \       /:::/__\:::\    \
+   /:::/    /      /:::/    / \:::\    \      \:::\   \:::\    \
+  /:::/    /      /:::/____/   \:::\____\   ___\:::\   \:::\    \
+ /:::/    /      |:::|    |     |:::|    | /\   \:::\   \:::\    \
+/:::/____/       |:::|____|     |:::|    |/::\   \:::\   \:::\____\
+\:::\    \        \:::\    \   /:::/    / \:::\   \:::\   \::/    /
+ \:::\    \        \:::\    \ /:::/    /   \:::\   \:::\   \/____/
+  \:::\    \        \:::\    /:::/    /     \:::\   \:::\    \
+   \:::\    \        \:::\__/:::/    /       \:::\   \:::\____\
+    \:::\    \        \::::::::/    /         \:::\  /:::/    /
+     \:::\    \        \::::::/    /           \:::\/:::/    /
+      \:::\    \        \::::/    /             \::::::/    /
+       \:::\____\        \::/____/               \::::/    /
+        \::/    /         ~~                      \::/    /
+         \/____/                                   \/____/
+
+  +-+-+-+-+-+-+-+-+-+
+  |B|O|O|T|S|T|R|A|P|
+  +-+-+-+-+-+-+-+-+-+
+</pre>
+</div>
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.9.0-blue)](CHANGELOG.md)
@@ -17,11 +38,13 @@ A CLI-first toolkit for **LineageOS** and other AOSP-derived, degoogled
 Android ROMs — covering the full journey from locked bootloader to a
 hardened, privacy-audited daily driver.
 
-> **Status:** Phase 8 — ROM flashing assistant. `los-bootstrap flash`
-> guides you through bootloader unlock and ROM sideload with
-> manufacturer-specific steps for Pixel, OnePlus, Fairphone, Motorola,
-> Samsung (Heimdall), and Xiaomi (Mi Unlock Tool). All prior subcommands
-> are unchanged. Mutating commands only run with explicit `--confirm`.
+> **Status:** Phase 9 — one-line installer. Install with a single
+> `curl … | sh` (Linux/macOS) or `irm … | iex` (Windows PowerShell)
+> command — the script detects your OS, installs `pipx` and `adb` via
+> your system package manager, and runs `pipx install los-bootstrap`.
+> All Phase 8 flash commands (`flash status`, `flash prepare`,
+> `flash verify`, `flash run`) and all prior subcommands are unchanged.
+> Mutating commands only run with explicit `--confirm`.
 > See [`roadmap.md`](./roadmap.md) for what comes next.
 
 
