@@ -1,4 +1,3 @@
-<div align="center">
 <pre>
 ██╗      ██████╗ ███████╗  ╷  ╔╗ ╔═╗╔═╗╔╦╗╔═╗╔╦╗╦═╗╔═╗╔═╗
 ██║     ██╔═══██╗██╔════╝  │  ╠╩╗║ ║║ ║ ║ ╚═╗ ║ ╠╦╝╠═╣╠═╝
@@ -7,7 +6,6 @@
 ███████╗╚██████╔╝███████║  │
 ╚══════╝ ╚═════╝ ╚══════╝  ╵
 </pre>
-</div>
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.9.0-blue)](CHANGELOG.md)
