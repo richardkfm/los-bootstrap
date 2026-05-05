@@ -211,13 +211,19 @@ bootloader unlock to first boot, with honest manufacturer-specific coverage.
   `pre-device` metadata against connected device codename
 - `los-bootstrap flash run <rom.zip> [--recovery <img>] --confirm` — execute the
   flash sequence; detects A/B vs A-only partition layout via `fastboot getvar slot-count`
+- `los-bootstrap flash download [<codename>]` — print ROM download links and,
+  with `--fetch`, pull the latest LineageOS nightly zip with SHA-256
+  verification. Sister-distro page links (LineageOS for microG, /e/OS,
+  DivestOS, CalyxOS, GrapheneOS, iodéOS) printed alongside the LOS entry.
 - `flash/` package: `models.py`, `fastboot.py`, `heimdall.py`, `checks.py`,
-  `guide.py`, `flash.py`, `report.py`
+  `guide.py`, `flash.py`, `report.py`, `distros.py`
 
 **Excluded:**
 - Samsung Odin automation (closed-source, Windows-only)
 - Xiaomi Mi Unlock Tool automation (proprietary, server-enforced waiting period)
-- Fetching ROMs from the network (user supplies the file)
+- Auto-downloading ROMs from arbitrary sources or unofficial mirrors —
+  `flash download --fetch` only pulls from `download.lineageos.org` and
+  verifies the publisher-reported SHA-256
 - Bypassing bootloader verification — we call official unlock APIs only
 
 **Exit criteria:** a Pixel or OnePlus user can go from stock + locked bootloader

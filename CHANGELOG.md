@@ -6,8 +6,31 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Added
+- `los-bootstrap flash download [<codename>]` — print ROM download links
+  for the connected device (or an explicit codename) and, with `--fetch`,
+  download the latest LineageOS nightly zip and verify its SHA-256.
+  Queries the LineageOS public JSON API
+  (`download.lineageos.org/api/v2/devices/<codename>/builds`) to pick the
+  newest build; surfaces filename, version, size, SHA-256 and direct URL.
+  `--no-network` skips the API call and prints the LOS download page URL
+  only. Falls back gracefully when the device is not officially supported.
+- Sister-distro download links printed alongside the LineageOS entry:
+  LineageOS for microG, /e/OS, DivestOS, CalyxOS, GrapheneOS, iodéOS.
+  Distros without a stable per-codename URL get their main install
+  landing page instead.
+- `flash/distros.py` module: `lookup_lineage_build`, `download_lineage_zip`
+  (with streaming + SHA-256 verification + cache hit on already-downloaded
+  files), `lineage_device_url`, `alt_distro_links`.
+- `tests/test_flash_distros.py` — full coverage with mocked HTTP openers
+  (no real network access in tests).
+
 ### Changed
 - Replaced CLI ASCII logo with a hollow outline-font style for "LOS" and a tile-box style for "BOOTSTRAP".
+- Phase 8 scope expanded to include user-driven ROM download. The previous
+  exclusion ("Fetching ROMs from the network") in `roadmap.md` is replaced
+  with a tighter scope: explicit, opt-in fetches from the publisher's own
+  API, with hash verification, only when the user runs `flash download`.
 
 ## [0.9.0] - 2026-05-03
 

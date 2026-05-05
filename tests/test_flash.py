@@ -442,3 +442,56 @@ def test_render_verify_result_bad_zip(tmp_path):
     rom.touch()
     text = render_verify_result(rom, False, None, "")
     assert "INVALID" in text
+
+
+def test_render_download_options_with_build():
+    from los_bootstrap.flash.distros import LineageBuild
+    from los_bootstrap.flash.report import render_download_options
+
+    build = LineageBuild(
+        codename="bluejay",
+        filename="lineage-21.0-bluejay.zip",
+        url="https://example.invalid/lineage-21.0-bluejay.zip",
+        size=1500 * 1024 * 1024,
+        sha256="deadbeef",
+        version="21.0",
+        datetime=200,
+        build_type="nightly",
+    )
+    text = render_download_options(
+        codename="bluejay",
+        build=build,
+        page_url="https://download.lineageos.org/devices/bluejay/builds",
+        alt_links=[("DivestOS", "https://divestos.org/index.php?page=devices")],
+    )
+    assert "bluejay" in text
+    assert "lineage-21.0-bluejay.zip" in text
+    assert "deadbeef" in text
+    assert "DivestOS" in text
+
+
+def test_render_download_options_no_build_falls_back_to_page_url():
+    from los_bootstrap.flash.report import render_download_options
+
+    text = render_download_options(
+        codename="rarephone",
+        build=None,
+        page_url="https://download.lineageos.org/devices/rarephone/builds",
+        alt_links=[("/e/OS", "https://images.ecloud.global/stable/rarephone/")],
+    )
+    assert "No official LineageOS build" in text
+    assert "rarephone" in text
+    assert "/e/OS" in text
+
+
+def test_render_download_options_api_error_surfaces_reason():
+    from los_bootstrap.flash.report import render_download_options
+
+    text = render_download_options(
+        codename="bluejay",
+        build=None,
+        page_url="https://download.lineageos.org/devices/bluejay/builds",
+        alt_links=[],
+        api_error="connection refused",
+    )
+    assert "connection refused" in text

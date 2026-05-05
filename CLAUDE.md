@@ -74,10 +74,15 @@ camera / GCam port profiles, and interactive wizard with enriched output:
   - `los-bootstrap flash prepare` — manufacturer-aware guided bootloader unlock wizard
     (full guidance for Pixel/OnePlus/Fairphone via fastboot, Motorola unlock key flow,
     Samsung via Heimdall with Odin fallback, Xiaomi with Mi Unlock Tool walkthrough)
+  - `los-bootstrap flash download [<codename>]` — print ROM download links for
+    the device and, with `--fetch`, pull the latest LineageOS zip from the
+    official LOS JSON API with SHA-256 verification. Sister-distro page links
+    (LineageOS for microG, /e/OS, DivestOS, CalyxOS, GrapheneOS, iodéOS) are
+    always printed alongside the LOS entry.
   - `los-bootstrap flash verify <rom.zip>` — validate ROM file and check device codename match
   - `los-bootstrap flash run <rom.zip> [--recovery <img>] --confirm` — execute flash sequence
   - `flash/` package: `models.py`, `fastboot.py`, `heimdall.py`, `checks.py`,
-    `guide.py`, `flash.py`, `report.py`
+    `guide.py`, `flash.py`, `report.py`, `distros.py`
 
 If a change does not fit Phase 8, it goes in the roadmap, not the code.
 
@@ -131,7 +136,8 @@ src/los_bootstrap/
         checks.py          # manufacturer detection, state detection, ROM validation
         guide.py           # manufacturer-aware bootloader unlock guidance text
         flash.py           # FlashPlan executor (mutating; --confirm gated)
-        report.py          # render_flash_status(), render_flash_plan()
+        distros.py         # LineageOS API client + sister-distro download links
+        report.py          # render_flash_status(), render_flash_plan(), render_download_options()
 tests/
     test_audit.py          # pytest, mocks adb
     test_location.py       # pytest, mocks adb
