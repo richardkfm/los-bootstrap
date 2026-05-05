@@ -30,6 +30,7 @@ Phase 8 commands:
     flash      ROM flashing assistant (bootloader unlock + sideload)
                flash status   — detect device state and manufacturer
                flash prepare  — manufacturer-aware bootloader unlock guidance
+               flash download — print download links + fetch latest LineageOS zip
                flash verify   — validate a ROM zip and check device codename match
                flash run      — execute the flash sequence (requires --confirm)
 """
@@ -50,18 +51,24 @@ from .device import collect as collect_device
 from .logo import banner
 from .camera import CAMERA_PROFILES, find_camera_profile, render_profile, render_profile_list
 from .flash import (
+    DistroFetchError,
     Fastboot,
     FastbootNotFoundError,
     Heimdall,
+    alt_distro_links,
     build_flash_plan,
     detect_manufacturer,
     detect_state,
     developer_options_enabled,
+    download_lineage_zip,
     execute_flash_plan,
     heimdall_available,
     is_ab_device,
+    lineage_device_url,
+    lookup_lineage_build,
     oem_unlock_enabled,
     parse_rom_metadata,
+    render_download_options,
     render_flash_plan,
     render_flash_result,
     render_flash_status,
@@ -234,6 +241,32 @@ def _build_parser() -> argparse.ArgumentParser:
     p_flash_sub.add_parser(
         "prepare",
         help="Show manufacturer-aware bootloader unlock guide with live pre-checks.",
+    )
+
+    p_flash_download = p_flash_sub.add_parser(
+        "download",
+        help="Print ROM download links and optionally fetch the latest LineageOS zip.",
+    )
+    p_flash_download.add_argument(
+        "codename",
+        nargs="?",
+        help="Device codename (defaults to the connected device's ro.product.device).",
+    )
+    p_flash_download.add_argument(
+        "--fetch",
+        action="store_true",
+        help="Download the latest LineageOS zip and verify its SHA-256.",
+    )
+    p_flash_download.add_argument(
+        "--output",
+        "-o",
+        default=".",
+        help="Directory to save the downloaded zip (default: current directory).",
+    )
+    p_flash_download.add_argument(
+        "--no-network",
+        action="store_true",
+        help="Do not query the LineageOS API; print download page URLs only.",
     )
 
     p_flash_verify = p_flash_sub.add_parser(
@@ -523,6 +556,84 @@ def cmd_flash_prepare(serial: Optional[str]) -> int:
     return 0
 
 
+def cmd_flash_download(args: argparse.Namespace) -> int:
+    codename = (args.codename or "").strip()
+    if not codename:
+        try:
+            target_adb = _resolve_target(args.serial)
+            codename = target_adb.getprop("ro.product.device").strip()
+        except SystemExit:
+            sys.stderr.write(
+                "error: no codename given and no device connected.\n"
+                "Pass a codename: `los-bootstrap flash download <codename>`.\n"
+            )
+            return 2
+        except Exception:
+            codename = ""
+
+    if not codename:
+        sys.stderr.write("error: could not determine device codename.\n")
+        return 2
+
+    page_url = lineage_device_url(codename)
+    alt = alt_distro_links(codename)
+
+    build = None
+    api_error: Optional[str] = None
+    if not args.no_network:
+        try:
+            build = lookup_lineage_build(codename)
+        except DistroFetchError as exc:
+            api_error = str(exc)
+
+    downloaded_path = None
+    if args.fetch:
+        if build is None:
+            sys.stderr.write(
+                "error: cannot --fetch without a LineageOS build for this codename.\n"
+            )
+            if api_error:
+                sys.stderr.write(f"  reason: {api_error}\n")
+            return 2
+        out_dir = Path(args.output)
+        try:
+            downloaded_path = download_lineage_zip(
+                build,
+                out_dir,
+                progress=_print_download_progress,
+            )
+            sys.stderr.write("\n")
+        except DistroFetchError as exc:
+            sys.stderr.write(f"error: {exc}\n")
+            return 1
+
+    print(
+        render_download_options(
+            codename=codename,
+            build=build,
+            page_url=page_url,
+            alt_links=alt,
+            api_error=api_error,
+            downloaded_path=downloaded_path,
+            network_skipped=args.no_network,
+        ),
+        end="",
+    )
+    return 0
+
+
+def _print_download_progress(read: int, total: int) -> None:
+    if total <= 0:
+        sys.stderr.write(f"\rdownloaded {read // (1024 * 1024)} MiB")
+    else:
+        pct = (read * 100) // total
+        sys.stderr.write(
+            f"\rdownloading… {read // (1024 * 1024)}/{total // (1024 * 1024)} MiB "
+            f"({pct}%)"
+        )
+    sys.stderr.flush()
+
+
 def cmd_flash_verify(rom: str, serial: Optional[str]) -> int:
     import zipfile as _zf
     from pathlib import Path as _Path
@@ -704,6 +815,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 return cmd_flash_status(args.serial)
             if args.flash_command == "prepare":
                 return cmd_flash_prepare(args.serial)
+            if args.flash_command == "download":
+                return cmd_flash_download(args)
             if args.flash_command == "verify":
                 return cmd_flash_verify(args.rom, args.serial)
             if args.flash_command == "run":

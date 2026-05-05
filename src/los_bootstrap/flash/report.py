@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
+from .distros import LineageBuild
 from .models import (
     DeviceState,
     FlashPlan,
@@ -130,6 +131,80 @@ def render_verify_result(
 
     lines.append("")
     return "\n".join(lines)
+
+
+def render_download_options(
+    codename: str,
+    build: Optional[LineageBuild],
+    page_url: str,
+    alt_links: list[tuple[str, str]],
+    api_error: Optional[str] = None,
+    downloaded_path: Optional[Path] = None,
+    network_skipped: bool = False,
+) -> str:
+    lines: list[str] = []
+    lines.append("ROM Download")
+    lines.append("════════════")
+    lines.append(f"  Codename : {codename or '(unknown)'}")
+    lines.append("")
+
+    lines.append("LineageOS")
+    lines.append("─────────")
+    if build is not None:
+        lines.append(f"  Latest    : {build.filename}")
+        if build.version:
+            lines.append(f"  Version   : LineageOS {build.version}")
+        if build.size:
+            lines.append(f"  Size      : {_format_size(build.size)}")
+        if build.sha256:
+            lines.append(f"  SHA-256   : {build.sha256}")
+        if build.url:
+            lines.append(f"  URL       : {build.url}")
+        if downloaded_path is not None:
+            lines.append(f"  Saved to  : {downloaded_path}")
+            lines.append("  → Verify  : SHA-256 matched.")
+        else:
+            lines.append(
+                "  → Re-run with --fetch to download and verify the zip."
+            )
+    elif network_skipped:
+        lines.append(f"  Page      : {page_url}")
+        lines.append("  → --no-network was set; drop it to fetch the latest build.")
+    elif api_error:
+        lines.append(f"  (LineageOS API unreachable: {api_error})")
+        lines.append(f"  Page      : {page_url}")
+    else:
+        lines.append(
+            "  No official LineageOS build found for this codename."
+        )
+        lines.append(f"  Page      : {page_url}")
+        lines.append(
+            "  → If your device is community-maintained, check the unofficial"
+        )
+        lines.append("    builds page or your device's XDA thread.")
+
+    lines.append("")
+    lines.append("Other distributions")
+    lines.append("───────────────────")
+    for name, url in alt_links:
+        lines.append(f"  {name:22s} {url}")
+    lines.append("")
+    lines.append(
+        "  ⚠  Always verify the SHA-256 of any ROM zip against the"
+    )
+    lines.append("     publisher's signed build manifest before flashing.")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _format_size(num_bytes: int) -> str:
+    units = ["B", "KiB", "MiB", "GiB", "TiB"]
+    size = float(num_bytes)
+    for unit in units:
+        if size < 1024 or unit == units[-1]:
+            return f"{size:.1f} {unit}" if unit != "B" else f"{int(size)} {unit}"
+        size /= 1024
+    return f"{num_bytes} B"
 
 
 def render_flash_result(result: FlashResult) -> str:

@@ -26,6 +26,14 @@ from .checks import (
     oem_unlock_enabled,
     parse_rom_metadata,
 )
+from .distros import (
+    DistroFetchError,
+    LineageBuild,
+    alt_distro_links,
+    download_lineage_zip,
+    lineage_device_url,
+    lookup_lineage_build,
+)
 from .fastboot import (
     Fastboot,
     FastbootCommandError,
@@ -45,6 +53,7 @@ from .models import (
 )
 from .plan import build_flash_plan
 from .report import (
+    render_download_options,
     render_flash_plan,
     render_flash_result,
     render_flash_status,
@@ -72,10 +81,17 @@ __all__ = [
     "is_ab_device",
     "oem_unlock_enabled",
     "parse_rom_metadata",
+    "DistroFetchError",
+    "LineageBuild",
+    "alt_distro_links",
+    "download_lineage_zip",
+    "lineage_device_url",
+    "lookup_lineage_build",
     "build_flash_plan",
     "execute_flash_plan",
     "unlock_guide",
     "samsung_odin_guide",
+    "render_download_options",
     "render_flash_status",
     "render_flash_plan",
     "render_verify_result",
