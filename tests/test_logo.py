@@ -11,8 +11,8 @@ def test_full_banner_contains_logo_and_version():
     assert "LOS" not in out  # ASCII spelled out in shadow font, not literal "LOS"
     assert "BOOTSTRAP" not in out  # same — drawn glyphs, not the literal word
     assert __version__ in out
-    # Sanity: the hollow-outline row for the L is present.
-    assert "/:::/____/" in out
+    # Sanity: the block-shadow row for the L is present.
+    assert "███████╗" in out
 
 
 def test_compact_banner_is_short_and_versioned():
