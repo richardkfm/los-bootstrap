@@ -1,20 +1,16 @@
-"""Enriched finding display helpers used by the wizard and --verbose flag.
+"""Enriched finding display helpers used by the interactive wizard.
 
 These functions are additive — they do not replace the existing renderers in
-report.py, harden/report.py, or location/report.py. They are called when the
-user requests more context (wizard screens, --verbose CLI flag).
+report.py, harden/report.py, or location/report.py. They are called from
+wizard screens when the user drills into a specific finding for full prose.
 """
 
 from __future__ import annotations
 
-import textwrap
 from typing import Any
 
+from .._render_utils import partition_findings, wrap
 from .prose import FindingProse, get_prose
-
-
-def _wrap(text: str, indent: str, width: int = 72) -> str:
-    return textwrap.fill(text, width=width, initial_indent=indent, subsequent_indent=indent)
 
 
 def render_finding_detail(check_id: str, title: str) -> str:
@@ -30,32 +26,32 @@ def render_finding_detail(check_id: str, title: str) -> str:
         return "\n".join(lines) + "\n"
 
     lines.append("  WHAT'S HAPPENING")
-    lines.append(_wrap(prose.what, "    "))
+    lines.append(wrap(prose.what, "    "))
     lines.append("")
 
     if prose.common_causes:
         lines.append("  COMMON CAUSES")
         for part in prose.common_causes.split("\n"):
-            lines.append(_wrap(part, "    ") if part.strip() else "")
+            lines.append(wrap(part, "    ") if part.strip() else "")
         lines.append("")
 
     lines.append("  WHY IT MATTERS")
-    lines.append(_wrap(prose.why, "    "))
+    lines.append(wrap(prose.why, "    "))
     lines.append("")
 
     lines.append("  HOW TO FIX IT")
     for part in prose.fix.split("\n"):
-        lines.append(_wrap(part, "    ") if part.strip() else "")
+        lines.append(wrap(part, "    ") if part.strip() else "")
     lines.append("")
 
     lines.append("  TRADEOFF")
-    lines.append(_wrap(prose.tradeoff, "    "))
+    lines.append(wrap(prose.tradeoff, "    "))
 
     return "\n".join(lines) + "\n"
 
 
 def render_verbose_audit(findings: Any) -> str:
-    """Verbose rendering for audit findings (used with --verbose flag)."""
+    """Verbose rendering for audit findings, used by wizard drill-down."""
     from ..audit.models import Severity
 
     _GLYPH = {
@@ -65,13 +61,15 @@ def render_verbose_audit(findings: Any) -> str:
         Severity.HIGH: "✗",
     }
 
-    _ACTIONABLE = {Severity.WARN, Severity.HIGH}
-    _PASSING = {Severity.OK}
+    actionable, passing, info = partition_findings(
+        findings,
+        lambda f: f.severity,
+        actionable={Severity.WARN, Severity.HIGH},
+        passing={Severity.OK},
+        info={Severity.INFO},
+    )
 
     lines: list[str] = []
-    actionable = [f for f in findings if f.severity in _ACTIONABLE]
-    passing = [f for f in findings if f.severity in _PASSING]
-    info = [f for f in findings if f.severity not in _ACTIONABLE | _PASSING]
 
     if actionable:
         count = len(actionable)
@@ -98,7 +96,7 @@ def render_verbose_audit(findings: Any) -> str:
 
 
 def render_verbose_harden(findings: Any) -> str:
-    """Verbose rendering for harden findings (used with --verbose flag)."""
+    """Verbose rendering for harden findings, used by wizard drill-down."""
     from ..harden.models import HardenStatus
 
     _GLYPH = {
@@ -109,13 +107,15 @@ def render_verbose_harden(findings: Any) -> str:
         HardenStatus.UNKNOWN: "?",
     }
 
-    _ACTIONABLE = {HardenStatus.WARN, HardenStatus.FAIL}
-    _PASSING = {HardenStatus.PASS}
+    actionable, passing, info = partition_findings(
+        findings,
+        lambda f: f.status,
+        actionable={HardenStatus.WARN, HardenStatus.FAIL},
+        passing={HardenStatus.PASS},
+        info={HardenStatus.INFO, HardenStatus.UNKNOWN},
+    )
 
     lines: list[str] = []
-    actionable = [f for f in findings if f.status in _ACTIONABLE]
-    passing = [f for f in findings if f.status in _PASSING]
-    info = [f for f in findings if f.status not in _ACTIONABLE | _PASSING]
 
     if actionable:
         count = len(actionable)

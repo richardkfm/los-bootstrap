@@ -17,7 +17,7 @@ from typing import Optional
 from .. import __version__
 from ..logo import banner
 from .prompt import BOLD, CYAN, GREEN, RED, RESET, YELLOW, ask_confirm, ask_select, ask_text, clear_screen
-from .render import render_finding_detail, render_verbose_audit, render_verbose_harden
+from .render import render_finding_detail
 
 
 # ── Context ───────────────────────────────────────────────────────────────────
@@ -89,15 +89,8 @@ def _screen_splash(ctx: WizardContext) -> None:
     clear_screen()
     sys.stderr.write(banner(compact=False))
     sys.stderr.flush()
-    print(f"  v{__version__}\n")
     print("  Scanning for ADB devices...")
-
-    if ctx.offline:
-        print(_device_line(ctx))
-        print(f"\n  Running in {YELLOW}offline mode{RESET}. Only Camera and Location compat are available.")
-    else:
-        print(_device_line(ctx))
-
+    print(_device_line(ctx))
     input("\n  Press Enter to continue...")
 
 
@@ -247,7 +240,12 @@ def _screen_harden_interactive(ctx: WizardContext, report) -> str:
     confirmed = ask_confirm(
         "  Apply fixes? (you will be prompted per finding)", default=False
     )
-    run_interactive(report, ctx.get_adb(), confirm=confirmed, dry_run=not confirmed)
+    if not confirmed:
+        print("\n  Aborted — no changes made.")
+        input("\n  Press Enter to go back...")
+        return "main"
+
+    run_interactive(report, ctx.get_adb(), confirm=True, dry_run=False)
     input("\n  Press Enter to go back...")
     return "main"
 
@@ -289,9 +287,10 @@ def _screen_bootstrap_plan(ctx: WizardContext, profile_name: str) -> str:
     from ..profiles import find_profile, ProfileError
     from ..plan import build_plan, render_plan
 
+    print("  Building plan (fetching APKs where declared)…", flush=True)
     try:
         profile = find_profile(profile_name)
-        plan = build_plan(ctx.get_adb(), profile, fetch=False)
+        plan = build_plan(ctx.get_adb(), profile, fetch=True)
     except ProfileError as exc:
         print(f"\n{RED}  Profile error: {exc}{RESET}")
         input("\n  Press Enter to go back...")

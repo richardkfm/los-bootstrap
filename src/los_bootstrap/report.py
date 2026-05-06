@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
-import textwrap
 from dataclasses import asdict
 from typing import Optional
 
+from ._render_utils import partition_findings, wrap
 from .audit.models import AuditReport, Severity
 from .device import DeviceFacts
 
@@ -21,10 +21,6 @@ _SEV_GLYPH = {
 _ACTIONABLE = {Severity.WARN, Severity.HIGH}
 _PASSING = {Severity.OK}
 _INFO = {Severity.INFO}
-
-
-def _wrap(text: str, indent: str, width: int = 72) -> str:
-    return textwrap.fill(text, width=width, initial_indent=indent, subsequent_indent=indent)
 
 
 def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
@@ -51,9 +47,13 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
         if not report.findings:
             lines.append("  (no findings)")
         else:
-            actionable = [f for f in report.findings if f.severity in _ACTIONABLE]
-            passing = [f for f in report.findings if f.severity in _PASSING]
-            info = [f for f in report.findings if f.severity in _INFO]
+            actionable, passing, info = partition_findings(
+                report.findings,
+                lambda f: f.severity,
+                _ACTIONABLE,
+                _PASSING,
+                _INFO,
+            )
 
             if actionable:
                 count = len(actionable)
@@ -65,10 +65,10 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
                     lines.append("")
                     lines.append(f"  {glyph}  {f.title}")
                     if f.detail:
-                        lines.append(_wrap(f.detail, "     "))
+                        lines.append(wrap(f.detail, "     "))
                     if f.recommendation:
                         lines.append("")
-                        lines.append(_wrap(f"→ How to fix: {f.recommendation}", "     "))
+                        lines.append(wrap(f"→ How to fix: {f.recommendation}", "     "))
 
             if passing:
                 lines.append("\n  Passing checks")
@@ -85,7 +85,7 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
                     lines.append("")
                     lines.append(f"  {glyph}  {f.title}")
                     if f.detail:
-                        lines.append(_wrap(f.detail, "     "))
+                        lines.append(wrap(f.detail, "     "))
 
         lines.append("")
         if report.has_concerns():

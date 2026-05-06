@@ -157,7 +157,7 @@ prose, and contextual "what does this mean for me?" explanations.
   location). PASS findings compact; FAIL/WARN findings prose-wrapped with
   `→ Fix:` and `⚠ Tradeoff:` labels
 - `wizard/prose.py` — extended contextual prose for all 15 audit/harden
-  check IDs, accessible via `--verbose` on `audit` and `harden`
+  check IDs, accessible from the wizard's per-finding drill-down screen
 - All existing subcommands unchanged (backward compat)
 
 **Excluded:** no new ADB checks, no new profiles.

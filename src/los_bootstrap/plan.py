@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-from .adb import Adb
+from .adb import Adb, AdbCommandError
 from .profiles import AppEntry, Profile, SettingEntry
 
 
@@ -136,7 +136,7 @@ def _plan_setting(adb: Adb, entry: SettingEntry) -> PlanStep:
     target = f"{entry.namespace}.{entry.key}"
     try:
         current = adb.setting_get(entry.namespace, entry.key)
-    except Exception:
+    except AdbCommandError:
         current = ""
     if current == entry.value:
         return PlanStep(
