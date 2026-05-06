@@ -374,7 +374,7 @@ los-bootstrap camera show <your-codename>
 Run `los-bootstrap` with no arguments to launch the guided wizard:
 
 - Detects your connected device and enters offline mode if none is found
-- Main menu: Audit → Harden → Bootstrap → Location → Camera
+- Main menu: Audit → Harden → Bootstrap → Location → Camera → Flash
 - **Audit screen** — runs all checks and shows findings grouped into
   *issues to address* and *passing checks*, with word-wrapped prose
 - **Drill-down** — select any finding for a full "what's happening / why
@@ -384,7 +384,11 @@ Run `los-bootstrap` with no arguments to launch the guided wizard:
 - **Bootstrap screen** — profile picker → plan review → apply with
   confirmation
 - **Location / Camera screens** — same diagnostics as the subcommands
-- **Offline mode** — no ADB device? Camera and Location compat still work
+- **Flash screen** — bootloader unlock guidance, LineageOS download
+  (with SHA-256 verification), ROM zip verify, and a destructive flash
+  run gated by a two-step confirmation
+- **Offline mode** — no ADB device? Camera, Location compat, and most
+  Flash sub-screens still work
 
 All finding renderers are also improved in standalone (non-wizard) mode:
 findings are now grouped by severity, long prose is wrapped at 72 chars,
@@ -415,7 +419,10 @@ everywhere.
 
 - It does not bypass bootloader verification or carrier locks — it calls
   official unlock APIs only.
-- It does not fetch ROMs from the network — you supply the zip file.
+- It only fetches ROMs you explicitly ask for, from publishers' own APIs.
+  `flash download --fetch` pulls the latest LineageOS zip from
+  `download.lineageos.org` and verifies the published SHA-256; everything
+  else is a printed link.
 - It does not automate Samsung Odin (closed-source, Windows-only) or
   Xiaomi's Mi Unlock Tool (proprietary, server-enforced). It guides you
   through those manually.
