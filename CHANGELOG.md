@@ -6,6 +6,8 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-05-06
+
 ### Fixed
 - Wizard splash no longer prints the version twice (the ASCII banner
   already includes the version footer).
