@@ -6,6 +6,18 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Added
+- Wizard now exposes the flash assistant under a new "Flash — bootloader
+  unlock + ROM flashing" entry on the main menu. The screen detects device
+  state (booted / fastboot / recovery) and offers four sub-flows:
+  - bootloader unlock guidance (read-only),
+  - ROM download via the LineageOS API with optional `--fetch`-equivalent
+    download + SHA-256 verification, and sister-distro page links,
+  - ROM zip verification (zip integrity + OTA codename match),
+  - destructive ROM flash with a two-step confirmation gate before the
+    flash plan is executed.
+- README badge bumped to 0.11.0.
+
 ## [0.10.0] - 2026-05-06
 
 ### Fixed
