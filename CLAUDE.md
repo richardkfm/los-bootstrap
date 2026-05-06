@@ -13,7 +13,7 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 It can guide users through flashing a ROM and unlocking their bootloader,
 and helps with everything that comes after the ROM is installed.
 
-## Current scope (Phase 9, version 0.10.x)
+## Current scope (Phase 9, version 0.11.x)
 
 Audit MVP, bootstrap profiles, hardening assistant, location / maps integration,
 camera / GCam port profiles, interactive wizard, ROM flashing assistant, and
@@ -27,6 +27,8 @@ one-line install distribution:
   - Enriched finding output: grouped severity sections, word-wrapped prose,
     `→ Fix:` and `⚠ Tradeoff:` labels (used by both wizard drill-down and
     standalone reports)
+  - Flash assistant reachable from the main menu (status, unlock guidance,
+    ROM download, ROM verify, destructive flash with two-step confirm).
 
 - Phase 1 (still in place):
   - Detect connected devices over ADB
