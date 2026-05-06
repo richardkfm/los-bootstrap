@@ -8,7 +8,7 @@
 </pre>
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.9.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.10.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
@@ -105,26 +105,49 @@ pipx install "los-bootstrap[wizard]"
 The `[wizard]` extra adds `questionary` for arrow-key menus. Without it
 the wizard falls back to numbered `input()` prompts.
 
-### From source (contributors)
+### Manual install (from source)
 
-Requires Python 3.10+ and the `adb` binary on `$PATH`.
+For users who'd rather read the code before installing anything, or for
+contributors. Requires Python 3.10+ and the `adb` binary on `$PATH`.
 
 ```bash
 git clone https://github.com/richardkfm/los-bootstrap
 cd los-bootstrap
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate                  # or: source venv/bin/activate.fish
 pip install -e ".[wizard,dev]"
+python -m pytest                          # optional sanity check
+los-bootstrap version
 ```
 
-`source venv/bin/activate.fish` for fish shell. On Windows, pip installs
-the `los-bootstrap` script into a `Scripts` folder that is often not on
-`PATH` — `pipx` (used by the install scripts above) handles this for you;
-in a manual venv install you may need to add `Scripts` to `PATH` yourself.
+On Windows, pip installs the `los-bootstrap` script into a `Scripts`
+folder that is often not on `PATH` — `pipx` (used by the install scripts
+above) handles this for you; in a manual venv install you may need to add
+`Scripts` to `PATH` yourself.
 
 **Arch Linux / PEP 668 error?** Modern Python distributions protect system
 Python with PEP 668. The virtual environment above handles this; the
 `pipx`-based one-liner above also handles it without a venv.
+
+## Upgrade
+
+To update an existing installation to the latest published release:
+
+```bash
+# One-liner / pipx users
+pipx upgrade los-bootstrap
+#   …or re-run the install script — it's idempotent and always pulls the
+#   newest version from PyPI.
+
+# Manual install (from source)
+cd los-bootstrap
+git pull
+pip install -e ".[wizard,dev]"
+```
+
+Check the installed version any time with `los-bootstrap version`. The
+project follows Semantic Versioning; see [`CHANGELOG.md`](./CHANGELOG.md)
+for what each release changed.
 
 ## Quick start
 

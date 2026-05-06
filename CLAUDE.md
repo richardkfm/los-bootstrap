@@ -13,20 +13,20 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 It can guide users through flashing a ROM and unlocking their bootloader,
 and helps with everything that comes after the ROM is installed.
 
-## Current scope (Phase 8, version 0.8.x)
+## Current scope (Phase 9, version 0.10.x)
 
 Audit MVP, bootstrap profiles, hardening assistant, location / maps integration,
-camera / GCam port profiles, and interactive wizard with enriched output:
+camera / GCam port profiles, interactive wizard, ROM flashing assistant, and
+one-line install distribution:
 
 - Phase 1–5 (still in place): see prior changelog entries
-- Phase 6 (current):
+- Phase 6 (still in place):
   - `los-bootstrap` (no args) — launches an interactive guided wizard
   - Menu-based navigation using `questionary` (with `input()` fallback)
   - `wizard/` package: `menu.py`, `prompt.py`, `prose.py`, `render.py`
   - Enriched finding output: grouped severity sections, word-wrapped prose,
-    `→ Fix:` and `⚠ Tradeoff:` labels
-  - `--verbose` flag on `audit` and `harden` for enriched prose output
-    without entering the wizard
+    `→ Fix:` and `⚠ Tradeoff:` labels (used by both wizard drill-down and
+    standalone reports)
 
 - Phase 1 (still in place):
   - Detect connected devices over ADB
@@ -69,7 +69,7 @@ camera / GCam port profiles, and interactive wizard with enriched output:
   - Five device profiles: Pixel 7, Pixel 6, Redmi Note 10, OnePlus 9,
     Fairphone 4
 
-- Phase 8 (current):
+- Phase 8 (still in place):
   - `los-bootstrap flash status` — detect device state (booted/fastboot/recovery) and manufacturer
   - `los-bootstrap flash prepare` — manufacturer-aware guided bootloader unlock wizard
     (full guidance for Pixel/OnePlus/Fairphone via fastboot, Motorola unlock key flow,
@@ -84,7 +84,19 @@ camera / GCam port profiles, and interactive wizard with enriched output:
   - `flash/` package: `models.py`, `fastboot.py`, `heimdall.py`, `checks.py`,
     `guide.py`, `flash.py`, `report.py`, `distros.py`
 
-If a change does not fit Phase 8, it goes in the roadmap, not the code.
+- Phase 9 (current):
+  - `scripts/install.sh` (POSIX) and `scripts/install.ps1` (PowerShell) —
+    one-line installers that detect the host package manager, install
+    `pipx` and `adb`, then run `pipx install "los-bootstrap[wizard]"`.
+    Both print every command before executing and support `--dry-run`.
+  - PyPI release flow with Trusted Publisher OIDC; `pipx install
+    "los-bootstrap[wizard]"` is the canonical install path for users who
+    already have Python.
+  - GitHub Releases attach the install scripts and a SHA-256 checksum
+    file alongside each tag.
+  - `docs/RELEASING.md` documents the Trusted Publisher one-time setup.
+
+If a change does not fit Phase 9, it goes in the roadmap, not the code.
 
 ## Non-goals
 
@@ -103,6 +115,7 @@ src/los_bootstrap/
     logo.py                # ASCII logo + tagline
     adb.py                 # thin, testable wrapper around `adb`
     device.py              # getprop-derived device facts
+    _render_utils.py       # shared wrap() + partition_findings() helpers
     audit/
         __init__.py        # run_audit() orchestrator
         checks.py          # individual AuditCheck implementations
@@ -117,6 +130,12 @@ src/los_bootstrap/
         privacy-default.yml
         messaging-light.yml
         max-tools.yml
+    harden/                # Phase 3 — hardening assistant
+        __init__.py
+        models.py          # HardenFinding, HardenReport, HardenStatus
+        checks.py          # individual HardenCheck implementations
+        report.py          # render_harden_report()
+        interactive.py     # run_interactive() walk-through (mutating; --confirm)
     location/              # Phase 4 — location stack diagnostics
         __init__.py
         models.py          # LocationFinding, LocationReport, LocationStatus
@@ -138,6 +157,15 @@ src/los_bootstrap/
         flash.py           # FlashPlan executor (mutating; --confirm gated)
         distros.py         # LineageOS API client + sister-distro download links
         report.py          # render_flash_status(), render_flash_plan(), render_download_options()
+    wizard/                # Phase 6 — interactive guided menu
+        __init__.py        # run_wizard() entry point
+        menu.py            # screens + routing
+        prompt.py          # questionary adapter with input() fallback
+        prose.py           # extended per-finding prose
+        render.py          # enriched finding rendering used by wizard
+scripts/                   # Phase 9 — one-line installers
+    install.sh
+    install.ps1
 tests/
     test_audit.py          # pytest, mocks adb
     test_location.py       # pytest, mocks adb

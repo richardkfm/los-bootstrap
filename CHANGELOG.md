@@ -6,6 +6,39 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Fixed
+- Wizard splash no longer prints the version twice (the ASCII banner
+  already includes the version footer).
+- Wizard's interactive harden flow now correctly aborts when the user
+  declines to apply fixes, instead of walking through findings in a
+  misleading dry-run mode.
+- Wizard's bootstrap plan now fetches APKs by default, matching the
+  CLI's `plan` / `apply` behavior (was silently `fetch=False`).
+- Removed the redundant offline-mode message in the wizard splash —
+  the device line already states whether the wizard is offline.
+- `plan.py` setting lookup now catches `AdbCommandError` specifically
+  rather than every `Exception`, so unrelated bugs surface instead of
+  silently defaulting the current value to empty.
+
+### Changed
+- README: bumped version badge to 0.10.0, renamed "From source
+  (contributors)" to "Manual install (from source)" and added a sanity
+  check, and added a new `## Upgrade` section covering pipx, the
+  one-liner installer, and source installs.
+- CLAUDE.md: "Current scope" now reads Phase 9 / 0.10.x; added a Phase 9
+  block summarising `scripts/install.sh` / `install.ps1`; added the
+  `harden/` package and `wizard/` package to the architecture overview;
+  added the new `_render_utils.py` module.
+- Removed the documented `--verbose` flag on `audit` / `harden` from
+  CLAUDE.md and roadmap.md — it was never implemented; the wizard's
+  drill-down screen is the canonical way to read enriched prose.
+- Internal: extracted shared `wrap()` and `partition_findings()` helpers
+  into `_render_utils.py` and reused them across `report.py`,
+  `location/report.py`, `harden/report.py`, and `wizard/render.py`.
+- Internal: deduplicated flash device-detection boilerplate behind a
+  new `_detect_flash_context()` helper used by `cmd_flash_status`,
+  `cmd_flash_prepare`, and `cmd_flash_run`. No CLI behavior changes.
+
 ### Added
 - `los-bootstrap flash download [<codename>]` — print ROM download links
   for the connected device (or an explicit codename) and, with `--fetch`,

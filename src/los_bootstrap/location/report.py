@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import textwrap
-
+from .._render_utils import partition_findings, wrap
 from .compat import COMPAT_MATRIX, CompatLevel
 from .models import LocationFinding, LocationReport, LocationStatus
 
@@ -35,10 +34,6 @@ _PASSING = {LocationStatus.PASS}
 _INFO = {LocationStatus.INFO, LocationStatus.UNKNOWN}
 
 
-def _wrap(text: str, indent: str, width: int = 72) -> str:
-    return textwrap.fill(text, width=width, initial_indent=indent, subsequent_indent=indent)
-
-
 def _render_finding(f: LocationFinding) -> list[str]:
     glyph = _STATUS_GLYPH[f.status]
     lines: list[str] = []
@@ -48,14 +43,14 @@ def _render_finding(f: LocationFinding) -> list[str]:
         return lines
 
     if f.why:
-        lines.append(_wrap(f.why, "     "))
+        lines.append(wrap(f.why, "     "))
 
     if f.fix_hint and f.status in _ACTIONABLE:
         lines.append("")
-        lines.append(_wrap(f"→ Fix: {f.fix_hint}", "     ", width=72))
+        lines.append(wrap(f"→ Fix: {f.fix_hint}", "     "))
 
     if f.tradeoff:
-        lines.append(_wrap(f"⚠  Tradeoff: {f.tradeoff}", "     ", width=72))
+        lines.append(wrap(f"⚠  Tradeoff: {f.tradeoff}", "     "))
 
     return lines
 
@@ -69,9 +64,13 @@ def render_location_report(report: LocationReport) -> str:
         lines.append("  (no findings)")
         return "\n".join(lines) + "\n"
 
-    actionable = [f for f in report.findings if f.status in _ACTIONABLE]
-    passing = [f for f in report.findings if f.status in _PASSING]
-    info = [f for f in report.findings if f.status in _INFO]
+    actionable, passing, info = partition_findings(
+        report.findings,
+        lambda f: f.status,
+        _ACTIONABLE,
+        _PASSING,
+        _INFO,
+    )
 
     if actionable:
         count = len(actionable)

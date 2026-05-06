@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Sequence
 
@@ -468,50 +469,24 @@ def cmd_location_compat() -> int:
     return 0
 
 
-def cmd_flash_status(serial: Optional[str]) -> int:
-    adb = Adb()
-    adb_out = adb.raw("devices").stdout
-    fb = Fastboot()
-    try:
-        fb_out = fb._run([fb.binary, "devices"]).stdout
-    except Exception:
-        fb_out = ""
+@dataclass
+class _FlashContext:
+    """Shared device-detection state used by every `flash <subcommand>` path.
 
-    from .flash.models import DeviceState
-    state = detect_state(adb_out, fb_out)
-
-    codename = ""
-    manufacturer = None
-    dev_opts = None
-    oem_unlock = None
-    bl_unlocked = None
-
-    if state == DeviceState.BOOTED:
-        try:
-            target_adb = _resolve_target(serial)
-            codename = target_adb.getprop("ro.product.device")
-            raw_mfr = target_adb.getprop("ro.product.manufacturer")
-            manufacturer = detect_manufacturer(raw_mfr)
-            dev_opts = developer_options_enabled(target_adb)
-            oem_unlock = oem_unlock_enabled(target_adb)
-        except Exception:
-            pass
-    elif state == DeviceState.FASTBOOT:
-        try:
-            unlocked = fb.getvar("unlocked")
-            bl_unlocked = unlocked.lower() == "yes"
-            codename = fb.getvar("product")
-        except Exception:
-            pass
-
-    print(
-        render_flash_status(state, manufacturer, codename, bl_unlocked, dev_opts, oem_unlock),
-        end="",
-    )
-    return 0
+    Reading manufacturer / dev_opts / oem_unlock requires the device in
+    booted ADB mode; FASTBOOT-specific reads (slot-count, unlocked,
+    product) are left to each caller because they vary per command.
+    """
+    state: "DeviceState"
+    manufacturer: "Manufacturer"
+    codename: str
+    dev_opts: Optional[bool]
+    oem_unlock: Optional[bool]
+    target_adb: Optional[Adb]
+    fb: Fastboot
 
 
-def cmd_flash_prepare(serial: Optional[str]) -> int:
+def _detect_flash_context(serial: Optional[str]) -> "_FlashContext":
     from .flash.models import DeviceState, Manufacturer
 
     adb = Adb()
@@ -525,8 +500,9 @@ def cmd_flash_prepare(serial: Optional[str]) -> int:
     state = detect_state(adb_out, fb_out)
     manufacturer = Manufacturer.GENERIC
     codename = ""
-    dev_opts = None
-    oem_unlock = None
+    dev_opts: Optional[bool] = None
+    oem_unlock: Optional[bool] = None
+    target_adb: Optional[Adb] = None
 
     if state == DeviceState.BOOTED:
         try:
@@ -539,16 +515,58 @@ def cmd_flash_prepare(serial: Optional[str]) -> int:
         except Exception:
             pass
 
-    if codename or state != DeviceState.UNKNOWN:
+    return _FlashContext(
+        state=state,
+        manufacturer=manufacturer,
+        codename=codename,
+        dev_opts=dev_opts,
+        oem_unlock=oem_unlock,
+        target_adb=target_adb,
+        fb=fb,
+    )
+
+
+def cmd_flash_status(serial: Optional[str]) -> int:
+    from .flash.models import DeviceState
+
+    ctx = _detect_flash_context(serial)
+    bl_unlocked: Optional[bool] = None
+    codename = ctx.codename
+    manufacturer = ctx.manufacturer if ctx.state == DeviceState.BOOTED else None
+
+    if ctx.state == DeviceState.FASTBOOT:
+        try:
+            unlocked = ctx.fb.getvar("unlocked")
+            bl_unlocked = unlocked.lower() == "yes"
+            codename = ctx.fb.getvar("product")
+        except Exception:
+            pass
+
+    print(
+        render_flash_status(
+            ctx.state, manufacturer, codename, bl_unlocked, ctx.dev_opts, ctx.oem_unlock
+        ),
+        end="",
+    )
+    return 0
+
+
+def cmd_flash_prepare(serial: Optional[str]) -> int:
+    from .flash.models import DeviceState, Manufacturer
+
+    ctx = _detect_flash_context(serial)
+
+    if ctx.codename or ctx.state != DeviceState.UNKNOWN:
         print(
-            render_flash_status(state, manufacturer, codename, None, dev_opts, oem_unlock),
+            render_flash_status(
+                ctx.state, ctx.manufacturer, ctx.codename, None, ctx.dev_opts, ctx.oem_unlock
+            ),
             end="",
         )
 
-    guide = unlock_guide(manufacturer)
-    print(guide)
+    print(unlock_guide(ctx.manufacturer))
 
-    if manufacturer == Manufacturer.SAMSUNG and not heimdall_available():
+    if ctx.manufacturer == Manufacturer.SAMSUNG and not heimdall_available():
         from .flash.guide import samsung_odin_guide as _odin
         print("─── Heimdall not found on PATH — Odin fallback ───\n")
         print(_odin())
@@ -635,19 +653,18 @@ def _print_download_progress(read: int, total: int) -> None:
 
 
 def cmd_flash_verify(rom: str, serial: Optional[str]) -> int:
-    import zipfile as _zf
-    from pathlib import Path as _Path
+    import zipfile
 
-    zip_path = _Path(rom)
+    zip_path = Path(rom)
     if not zip_path.exists():
         sys.stderr.write(f"error: ROM file not found: {zip_path}\n")
         return 2
 
     valid = False
     try:
-        with _zf.ZipFile(zip_path):
+        with zipfile.ZipFile(zip_path):
             valid = True
-    except _zf.BadZipFile:
+    except zipfile.BadZipFile:
         pass
 
     metadata = parse_rom_metadata(zip_path) if valid else None
@@ -665,54 +682,32 @@ def cmd_flash_verify(rom: str, serial: Optional[str]) -> int:
 
 
 def cmd_flash_run(args: argparse.Namespace) -> int:
-    from pathlib import Path as _Path
     from .flash.models import DeviceState, Manufacturer
 
-    rom_path = _Path(args.rom)
+    rom_path = Path(args.rom)
     if not rom_path.exists():
         sys.stderr.write(f"error: ROM file not found: {rom_path}\n")
         return 2
 
-    recovery_path = _Path(args.recovery) if args.recovery else None
+    recovery_path = Path(args.recovery) if args.recovery else None
     if recovery_path and not recovery_path.exists():
         sys.stderr.write(f"error: recovery image not found: {recovery_path}\n")
         return 2
 
-    adb = Adb()
-    adb_out = adb.raw("devices").stdout
-    fb = Fastboot()
-    try:
-        fb_out = fb._run([fb.binary, "devices"]).stdout
-    except Exception:
-        fb_out = ""
-
-    state = detect_state(adb_out, fb_out)
-    manufacturer = Manufacturer.GENERIC
-    codename = ""
+    ctx = _detect_flash_context(args.serial)
     ab = False
-
-    if state == DeviceState.BOOTED:
+    if ctx.state in (DeviceState.FASTBOOT, DeviceState.BOOTED):
         try:
-            target_adb = _resolve_target(args.serial)
-            codename = target_adb.getprop("ro.product.device")
-            raw_mfr = target_adb.getprop("ro.product.manufacturer")
-            manufacturer = detect_manufacturer(raw_mfr)
+            ab = is_ab_device(ctx.fb.getvar("slot-count"))
         except Exception:
             pass
 
-    if state in (DeviceState.FASTBOOT, DeviceState.BOOTED):
-        try:
-            slot_count = fb.getvar("slot-count")
-            ab = is_ab_device(slot_count)
-        except Exception:
-            pass
-
-    hl = Heimdall() if manufacturer == Manufacturer.SAMSUNG else None
-    hl_avail = heimdall_available() if manufacturer == Manufacturer.SAMSUNG else False
+    hl = Heimdall() if ctx.manufacturer == Manufacturer.SAMSUNG else None
+    hl_avail = heimdall_available() if ctx.manufacturer == Manufacturer.SAMSUNG else False
 
     plan = build_flash_plan(
-        manufacturer=manufacturer,
-        device_codename=codename,
+        manufacturer=ctx.manufacturer,
+        device_codename=ctx.codename,
         rom_path=rom_path,
         recovery_path=recovery_path,
         ab_device=ab,
@@ -728,17 +723,12 @@ def cmd_flash_run(args: argparse.Namespace) -> int:
         )
         return 2
 
-    target_adb = adb
-    if state == DeviceState.BOOTED:
-        try:
-            target_adb = _resolve_target(args.serial)
-        except Exception:
-            pass
+    target_adb = ctx.target_adb if ctx.target_adb is not None else Adb()
 
     result = execute_flash_plan(
         plan,
         adb=target_adb,
-        fastboot=fb,
+        fastboot=ctx.fb,
         heimdall=hl,
         confirm=args.confirm,
         dry_run=args.dry_run,
