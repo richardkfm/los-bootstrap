@@ -492,6 +492,7 @@ def _screen_flash_prepare(ctx: WizardContext, fctx) -> str:
 
 
 def _screen_flash_download(ctx: WizardContext, fctx) -> str:
+    import sys
     from ..flash import (
         DistroFetchError,
         alt_distro_links,
@@ -515,11 +516,7 @@ def _screen_flash_download(ctx: WizardContext, fctx) -> str:
         input("\n  Press Enter to go back...")
         return "flash"
 
-    fetch = ask_confirm(
-        "  Download the latest LineageOS zip now? (verifies SHA-256)", default=False
-    )
-
-    print("\n  Querying LineageOS API…", flush=True)
+    print("\n  Querying LineageOS API for the latest build…", flush=True)
     page_url = lineage_device_url(codename)
     alt = alt_distro_links(codename)
     build = None
@@ -530,17 +527,42 @@ def _screen_flash_download(ctx: WizardContext, fctx) -> str:
         api_error = str(exc)
 
     downloaded_path = None
-    if fetch:
-        if build is None:
-            print(f"\n{RED}  Cannot download: no LineageOS build for this codename.{RESET}")
-            if api_error:
-                print(f"  reason: {api_error}")
-        else:
-            out_dir = Path.cwd()
+    if build is not None:
+        size_mib = build.size // (1024 * 1024) if build.size else 0
+        print(f"\n  Latest build : {build.filename}")
+        if build.version:
+            print(f"  Version      : LineageOS {build.version}")
+        if build.size:
+            print(f"  Size         : {size_mib} MiB")
+        if build.sha256:
+            print(f"  SHA-256      : {build.sha256}")
+        print()
+
+        if ask_confirm(
+            f"  Download {size_mib} MiB to {Path.cwd()} now? (verifies SHA-256)",
+            default=False,
+        ):
+            print(f"\n  Downloading {build.filename} — this may take several minutes…")
+
+            def _progress(read: int, total: int) -> None:
+                if total <= 0:
+                    sys.stderr.write(f"\r  downloaded {read // (1024 * 1024)} MiB")
+                else:
+                    pct = (read * 100) // total
+                    sys.stderr.write(
+                        f"\r  {read // (1024 * 1024)}/{total // (1024 * 1024)} MiB "
+                        f"({pct}%)"
+                    )
+                sys.stderr.flush()
+
             try:
-                downloaded_path = download_lineage_zip(build, out_dir)
+                downloaded_path = download_lineage_zip(
+                    build, Path.cwd(), progress=_progress
+                )
+                sys.stderr.write("\n")
             except DistroFetchError as exc:
-                print(f"\n{RED}  Download failed: {exc}{RESET}")
+                sys.stderr.write("\n")
+                print(f"{RED}  Download failed: {exc}{RESET}")
 
     print()
     print(render_download_options(
