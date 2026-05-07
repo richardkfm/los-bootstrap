@@ -6,6 +6,8 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-05-06
+
 ### Added
 - Wizard now exposes the flash assistant under a new "Flash — bootloader
   unlock + ROM flashing" entry on the main menu. The screen detects device
