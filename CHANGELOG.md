@@ -18,6 +18,19 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
     flash plan is executed.
 - README badge bumped to 0.11.0.
 
+### Changed
+- README: added an ASCII function tree of the wizard's screens at the
+  top of the wizard section so the full menu hierarchy (Audit, Harden,
+  Bootstrap, Location, Camera, Flash and their sub-flows) is visible at
+  a glance. Added a "Flash screen" bullet in the wizard description and
+  updated the offline-mode bullet to mention that most Flash sub-screens
+  also work without ADB. Removed the now-redundant "Main menu: …" bullet.
+- README: replaced the stale "It does not fetch ROMs from the network"
+  claim under "What it does NOT do" with an accurate description of
+  `flash download --fetch` (LineageOS API only, SHA-256 verified).
+- roadmap.md: added a Phase 8 follow-on note recording that the flash
+  assistant is now reachable from the wizard (shipped in 0.11.0).
+
 ## [0.10.0] - 2026-05-06
 
 ### Fixed

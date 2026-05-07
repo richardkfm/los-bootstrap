@@ -373,8 +373,35 @@ los-bootstrap camera show <your-codename>
 
 Run `los-bootstrap` with no arguments to launch the guided wizard:
 
+```
+los-bootstrap                            (no args → wizard)
+├── Audit                — privacy & degoogle status      [read-only]
+│   └── Drill-down on a specific finding (full prose)
+├── Harden               — security checks            [can apply changes]
+│   ├── Read-only report
+│   ├── Interactive walk-through (per-finding confirm)
+│   └── Include root-only checks (SELinux)
+├── Bootstrap            — install apps + apply settings [can apply changes]
+│   ├── Pick a bundled profile (minimal | privacy-default | messaging-light | max-tools | camera)
+│   ├── Or load a custom profile path
+│   └── Plan → Apply (confirm gate)
+├── Location
+│   ├── Doctor — diagnose the location stack          [ADB required]
+│   └── App compatibility matrix                      [no ADB needed]
+├── Camera                                            [no ADB needed]
+│   ├── List all known device GCam port profiles
+│   └── Look up a specific device by codename
+├── Flash                — bootloader unlock + ROM flashing [advanced]
+│   ├── Bootloader unlock guidance for this device   [read-only]
+│   ├── Download a ROM (LineageOS API + sister distros, optional fetch)
+│   ├── Verify a ROM zip (zip integrity + OTA codename match)
+│   └── Flash a ROM                          [destructive — two-step confirm]
+└── Exit
+```
+
+Highlights:
+
 - Detects your connected device and enters offline mode if none is found
-- Main menu: Audit → Harden → Bootstrap → Location → Camera
 - **Audit screen** — runs all checks and shows findings grouped into
   *issues to address* and *passing checks*, with word-wrapped prose
 - **Drill-down** — select any finding for a full "what's happening / why
@@ -384,7 +411,11 @@ Run `los-bootstrap` with no arguments to launch the guided wizard:
 - **Bootstrap screen** — profile picker → plan review → apply with
   confirmation
 - **Location / Camera screens** — same diagnostics as the subcommands
-- **Offline mode** — no ADB device? Camera and Location compat still work
+- **Flash screen** — bootloader unlock guidance, LineageOS download
+  (with SHA-256 verification), ROM zip verify, and a destructive flash
+  run gated by a two-step confirmation
+- **Offline mode** — no ADB device? Camera, Location compat, and most
+  Flash sub-screens still work
 
 All finding renderers are also improved in standalone (non-wizard) mode:
 findings are now grouped by severity, long prose is wrapped at 72 chars,
@@ -415,7 +446,10 @@ everywhere.
 
 - It does not bypass bootloader verification or carrier locks — it calls
   official unlock APIs only.
-- It does not fetch ROMs from the network — you supply the zip file.
+- It only fetches ROMs you explicitly ask for, from publishers' own APIs.
+  `flash download --fetch` pulls the latest LineageOS zip from
+  `download.lineageos.org` and verifies the published SHA-256; everything
+  else is a printed link.
 - It does not automate Samsung Odin (closed-source, Windows-only) or
   Xiaomi's Mi Unlock Tool (proprietary, server-enforced). It guides you
   through those manually.

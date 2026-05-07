@@ -217,6 +217,9 @@ bootloader unlock to first boot, with honest manufacturer-specific coverage.
   DivestOS, CalyxOS, GrapheneOS, iodéOS) printed alongside the LOS entry.
 - `flash/` package: `models.py`, `fastboot.py`, `heimdall.py`, `checks.py`,
   `guide.py`, `flash.py`, `report.py`, `distros.py`
+- Flash assistant reachable from the interactive wizard's main menu
+  (status detection, unlock guidance, ROM download, ROM verify, and
+  destructive flash run gated by a two-step confirm). Shipped in 0.11.0.
 
 **Excluded:**
 - Samsung Odin automation (closed-source, Windows-only)
