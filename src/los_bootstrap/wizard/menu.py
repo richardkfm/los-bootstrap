@@ -506,6 +506,11 @@ def _screen_flash_download(ctx: WizardContext, fctx) -> str:
     _header("Download a ROM")
 
     default_codename = fctx.codename or ""
+    if not default_codename and not ctx.offline:
+        try:
+            default_codename = ctx.get_facts().codename or ""
+        except Exception:
+            pass
     prompt = "  Device codename"
     if default_codename:
         prompt += f" [{default_codename}]"
