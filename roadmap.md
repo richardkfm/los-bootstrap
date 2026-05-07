@@ -167,16 +167,37 @@ one guided session without reading the README.
 
 ---
 
-## Phase 7 — Device profile ecosystem (deferred)
+## Phase 7 — Device profile ecosystem (permanently deferred)
 
 **Goal:** make device-specific knowledge pluggable so the tool stays
 useful as the LineageOS device list shifts.
 
-> **Note:** this phase was deprioritised in favour of the ROM flashing
-> assistant (Phase 8), which addressed a more immediate user need.
-> Phase 7 work will resume after Phase 9.
+> **Deferred — no planned resumption date.**
+>
+> This phase was originally deprioritised in favour of the ROM flashing
+> assistant (Phase 8). After Phases 8–10 shipped, the remaining value
+> was re-evaluated and the phase was formally deferred for the following
+> reasons:
+>
+> - **Recommended toggles** are now fully covered by Phase 3 (harden),
+>   which already surfaces every major toggle with `why`, `tradeoff`,
+>   and a live `fix_command`.
+> - **Per-device flash guidance** is covered at the manufacturer level
+>   by Phase 8 (`flash/guide.py`), which is where most of the
+>   device-specific variance actually lives.
+> - **Per-device camera data** is covered by Phase 5 (`camera/profiles.py`,
+>   7 devices with port details and XML config guidance).
+> - **Form-factor quirks** are handled by Phase 10 (`DeviceFacts.form_factor`).
+> - The remaining unique value — codename-level bug tracking (e.g.
+>   "Pixel 6 Bluetooth dropout on LOS 20, fixed in LOS 21") — carries a
+>   high ongoing maintenance burden with limited active contributors.
+>   Stale quirk data is worse than no quirk data.
+> - The optional remote profile index would require GPG key management,
+>   a hosting decision, and ongoing signing infrastructure — significant
+>   complexity for a project at this stage, and in tension with the
+>   "no unsigned remote code" principle.
 
-**Included:**
+**Included (original scope, not built):**
 - Device profile loader (codename → quirks, known issues, recommended
   toggles)
 - Contributor workflow for adding device profiles
@@ -184,8 +205,8 @@ useful as the LineageOS device list shifts.
 
 **Excluded:** anything that runs unsigned remote code.
 
-**Exit criteria:** adding a new device is a pull request that touches
-only `profiles/devices/<codename>.yml` plus a test fixture.
+**Exit criteria (original):** adding a new device is a pull request that
+touches only `profiles/devices/<codename>.yml` plus a test fixture.
 
 ---
 
