@@ -373,8 +373,35 @@ los-bootstrap camera show <your-codename>
 
 Run `los-bootstrap` with no arguments to launch the guided wizard:
 
+```
+los-bootstrap                            (no args → wizard)
+├── Audit                — privacy & degoogle status      [read-only]
+│   └── Drill-down on a specific finding (full prose)
+├── Harden               — security checks            [can apply changes]
+│   ├── Read-only report
+│   ├── Interactive walk-through (per-finding confirm)
+│   └── Include root-only checks (SELinux)
+├── Bootstrap            — install apps + apply settings [can apply changes]
+│   ├── Pick a bundled profile (minimal | privacy-default | messaging-light | max-tools | camera)
+│   ├── Or load a custom profile path
+│   └── Plan → Apply (confirm gate)
+├── Location
+│   ├── Doctor — diagnose the location stack          [ADB required]
+│   └── App compatibility matrix                      [no ADB needed]
+├── Camera                                            [no ADB needed]
+│   ├── List all known device GCam port profiles
+│   └── Look up a specific device by codename
+├── Flash                — bootloader unlock + ROM flashing [advanced]
+│   ├── Bootloader unlock guidance for this device   [read-only]
+│   ├── Download a ROM (LineageOS API + sister distros, optional fetch)
+│   ├── Verify a ROM zip (zip integrity + OTA codename match)
+│   └── Flash a ROM                          [destructive — two-step confirm]
+└── Exit
+```
+
+Highlights:
+
 - Detects your connected device and enters offline mode if none is found
-- Main menu: Audit → Harden → Bootstrap → Location → Camera → Flash
 - **Audit screen** — runs all checks and shows findings grouped into
   *issues to address* and *passing checks*, with word-wrapped prose
 - **Drill-down** — select any finding for a full "what's happening / why
