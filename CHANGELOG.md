@@ -6,6 +6,23 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-05-07
+
+### Added
+- Phase 10: Android tablet support.
+- `DeviceFacts.form_factor` — new field derived from `ro.build.characteristics`.
+  Set to `"tablet"` when the property contains `"tablet"`, `"phone"` otherwise.
+  Surfaced in `los-bootstrap info` output.
+- GCam port profiles for two LineageOS-supported tablets:
+  - Xiaomi Pad 5 (nabu) — Snapdragon 860, LMC 8.4 R17, verified working on LineageOS 21.
+  - OnePlus Pad (jupiter) — Dimensity 9000, LMC 8.4 R17, verified working on LineageOS 21.
+
+### Changed
+- All user-visible "About phone" references replaced with form-factor-neutral
+  language ("About phone / About tablet" or "About device") in wizard prose,
+  flash unlock guides, and camera report hints. Tablets are now first-class citizens.
+- Test helpers updated to include the new `form_factor` field.
+
 ## [0.11.0] - 2026-05-06
 
 ### Added

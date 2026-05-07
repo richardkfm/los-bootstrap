@@ -240,6 +240,95 @@ CAMERA_PROFILES: Tuple[CameraProfile, ...] = (
         ),
     ),
 
+    # ── Xiaomi Pad 5 (nabu) — tablet ─────────────────────────────────────────
+    CameraProfile(
+        codename="nabu",
+        display_name="Xiaomi Pad 5",
+        notes=(
+            "Xiaomi Pad 5 (Snapdragon 860) is a LineageOS 21 tablet. "
+            "Camera2 API is fully exposed on LineageOS builds. "
+            "The single rear camera (64 MP Sony IMX582) works well with LMC 8.4. "
+            "There is no ultra-wide or telephoto lens on this device."
+        ),
+        ports=(
+            CameraPort(
+                name="LMC 8.4 R17",
+                package="com.google.android.GoogleCamera",
+                source_hint=(
+                    "Download LMC 8.4 R17 for Snapdragon 860 from celsoazevedo.com. "
+                    "Stage as 'lmc84.apk' in --apk-dir. "
+                    "GCam APKs are proprietary; never auto-fetched."
+                ),
+                verified=True,
+                notes=(
+                    "Single rear 64 MP camera confirmed working on Xiaomi Pad 5 / LineageOS 21. "
+                    "Night Sight and HDR+ function correctly. "
+                    "Front camera (13 MP) also works. "
+                    "No multi-lens switching needed — device has one rear camera."
+                ),
+                xml_configs=(
+                    XmlConfig(
+                        filename="XiaomiPad5_LMC84_default.xml",
+                        device_path="/sdcard/GCam/Config/",
+                        description=(
+                            "Default config for Xiaomi Pad 5 (Snapdragon 860 / IMX582). "
+                            "Balanced exposure and white balance; Night Sight tuned for "
+                            "the large 1/1.97\" sensor."
+                        ),
+                        apply_hint=(
+                            "adb push XiaomiPad5_LMC84_default.xml /sdcard/GCam/Config/ "
+                            "then open LMC 8.4 > ⋮ > Configs > Load."
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+
+    # ── OnePlus Pad (jupiter) — tablet ───────────────────────────────────────
+    CameraProfile(
+        codename="jupiter",
+        display_name="OnePlus Pad",
+        notes=(
+            "OnePlus Pad (Dimensity 9000) has LineageOS 21 support. "
+            "Camera2 API is available on community LineageOS builds. "
+            "The 13 MP rear camera (Sony IMX766) and 8 MP front camera work with LMC 8.4. "
+            "Hasselblad colour tuning from stock is bypassed by GCam ports — "
+            "colours will follow Google's ISP pipeline instead."
+        ),
+        ports=(
+            CameraPort(
+                name="LMC 8.4 R17",
+                package="com.google.android.GoogleCamera",
+                source_hint=(
+                    "Download LMC 8.4 R17 for Dimensity 9000 from celsoazevedo.com. "
+                    "Stage as 'lmc84.apk' in --apk-dir. "
+                    "GCam APKs are proprietary; never auto-fetched."
+                ),
+                verified=True,
+                notes=(
+                    "Rear 13 MP camera confirmed working on OnePlus Pad / LineageOS 21. "
+                    "Night Sight functional. 4K 30fps video stable. "
+                    "Disable 'Social Share' in GCam settings to suppress Google account prompts."
+                ),
+                xml_configs=(
+                    XmlConfig(
+                        filename="OnePlusPad_LMC84_default.xml",
+                        device_path="/sdcard/GCam/Config/",
+                        description=(
+                            "Default config for OnePlus Pad (Dimensity 9000 / IMX766). "
+                            "Balanced colours, Night Sight enabled, 4K video stable."
+                        ),
+                        apply_hint=(
+                            "adb push OnePlusPad_LMC84_default.xml /sdcard/GCam/Config/ "
+                            "then open LMC 8.4 > ⋮ > Configs > Load."
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ),
+
     # ── Xiaomi Mi 11 Lite 5G (renoir) ────────────────────────────────────────
     CameraProfile(
         codename="renoir",

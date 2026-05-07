@@ -26,6 +26,7 @@ class DeviceFacts:
     is_lineage: bool
     lineage_version: Optional[str]
     adb_tcp_port: Optional[str]  # service.adb.tcp.port (or None / "")
+    form_factor: str  # "tablet" or "phone" — derived from ro.build.characteristics
 
 
 def collect(adb: Adb) -> DeviceFacts:
@@ -33,6 +34,8 @@ def collect(adb: Adb) -> DeviceFacts:
     g = adb.getprop
     lineage_version = g("ro.lineage.version") or None
     adb_tcp_port = g("service.adb.tcp.port") or None
+    characteristics = g("ro.build.characteristics") or ""
+    form_factor = "tablet" if "tablet" in characteristics.lower() else "phone"
     return DeviceFacts(
         serial=adb.serial or "",
         manufacturer=g("ro.product.manufacturer"),
@@ -46,4 +49,5 @@ def collect(adb: Adb) -> DeviceFacts:
         is_lineage=bool(lineage_version),
         lineage_version=lineage_version,
         adb_tcp_port=adb_tcp_port,
+        form_factor=form_factor,
     )

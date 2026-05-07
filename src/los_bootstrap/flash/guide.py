@@ -20,7 +20,7 @@ This device uses a standard fastboot-based unlock. The process is
 straightforward but ERASES ALL DATA on the device — back up first.
 
   Step 1  Enable Developer Options
-          Settings → About phone → tap "Build number" 7 times
+          Settings → About phone (or About tablet) → tap "Build number" 7 times
           You should see "You are now a developer!"
 
   Step 2  Enable OEM unlocking
@@ -59,7 +59,7 @@ you can run `fastboot oem unlock`. The key is free but requires a
 Motorola/Google account and takes a few minutes to obtain.
 
   Step 1  Enable Developer Options
-          Settings → About phone → tap "Build number" 7 times
+          Settings → About phone (or About tablet) → tap "Build number" 7 times
 
   Step 2  Enable OEM unlocking
           Settings → System → Developer options → OEM unlocking → ON
@@ -109,7 +109,7 @@ replacement for Samsung's proprietary Odin tool. Install it first:
   • Windows:       github.com/Benjamin-Dobell/Heimdall/releases
 
   Step 1  Enable Developer Options
-          Settings → About phone → tap "Build number" 7 times
+          Settings → About phone (or About tablet) → tap "Build number" 7 times
 
   Step 2  Enable OEM unlocking  ⚠  CRITICAL
           Settings → Developer options → OEM unlocking → ON
@@ -209,7 +209,7 @@ tool is also Windows-only. Plan accordingly.
           The account must stay linked until the waiting period elapses.
 
   Step 2  Enable Developer Options
-          Settings → About phone → MIUI version → tap 7 times
+          Settings → About phone (or About tablet) → MIUI version → tap 7 times
 
   Step 3  Link Mi account to the bootloader unlock request
           Settings → Additional settings → Developer options →
@@ -263,7 +263,7 @@ This device's manufacturer was not specifically recognised. Standard
 fastboot commands may work — check XDA Developers for your exact model.
 
   Step 1  Enable Developer Options
-          Settings → About phone → tap "Build number" 7 times
+          Settings → About phone (or About tablet) → tap "Build number" 7 times
 
   Step 2  Enable OEM unlocking
           Settings → System → Developer options → OEM unlocking → ON
