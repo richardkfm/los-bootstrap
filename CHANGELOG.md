@@ -6,6 +6,13 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Fixed
+- Wizard's ROM download screen now queries the LineageOS API first,
+  shows the build's filename/version/size/SHA-256, and only then asks
+  for confirmation before downloading. The download itself prints live
+  `MiB / total MiB (%)` progress so a multi-GiB transfer no longer looks
+  like the wizard has hung on "Querying LineageOS API…".
+
 ## [0.11.0] - 2026-05-06
 
 ### Added
