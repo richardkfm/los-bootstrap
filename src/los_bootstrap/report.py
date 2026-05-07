@@ -31,6 +31,7 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
     lines.append(f"  Manufacturer    : {facts.manufacturer}")
     lines.append(f"  Model           : {facts.model}")
     lines.append(f"  Codename        : {facts.codename}")
+    lines.append(f"  Form factor     : {facts.form_factor}")
     lines.append(f"  Android         : {facts.android_release} (SDK {facts.sdk})")
     lines.append(f"  Security patch  : {facts.security_patch}")
     lines.append(f"  Build ID        : {facts.build_id}")

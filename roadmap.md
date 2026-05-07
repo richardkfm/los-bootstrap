@@ -277,6 +277,43 @@ read and audit it in one sitting.
 
 ---
 
+## Phase 10 — Android Tablet Support
+
+**Goal:** make los-bootstrap correctly detect and serve Android tablets running
+LineageOS — the same ROM, the same privacy goals, but a different form factor
+that requires adapted language, device-type-aware guidance, and dedicated GCam
+port profiles.
+
+**Included:**
+- `DeviceFacts.form_factor` — new field reading `ro.build.characteristics`;
+  set to `"tablet"` when the value contains `"tablet"`, `"phone"` otherwise.
+  Surfaced in `los-bootstrap info` output so users can see what the tool detected.
+- Tablet-aware prose throughout the tool: "About phone" references replaced
+  with form-factor-neutral equivalents ("About phone / About tablet" or
+  "About device") in wizard prose, flash unlock guides, and camera report hints.
+- GCam port profiles for two real LineageOS tablets:
+  - **Xiaomi Pad 5 (nabu)** — Snapdragon 860, LineageOS 21
+  - **OnePlus Pad (jupiter)** — Dimensity 9000, LineageOS 21
+- Updated test helpers to include the new `form_factor` field.
+
+**Excluded:**
+- Tablet-specific hardening checks (form factor does not change the security
+  surface; existing checks apply equally).
+- Tablet-specific bootstrap profiles (app recommendations are the same;
+  a tablet user benefits from the same `privacy-default` or `max-tools` profile).
+- Auto-detecting split-screen or large-screen app recommendations — that is
+  Phase 11 territory.
+- Any changes to the flash wizard for tablet-specific unlock flows beyond
+  the already-present manufacturer guides (Pixel tablets use standard
+  fastboot; Samsung/Xiaomi tablet guidance is covered by existing guides).
+
+**Exit criteria:** `los-bootstrap info` correctly labels a connected tablet as
+`form_factor: tablet`. All "About phone" occurrences visible to the user are
+replaced with neutral language. Two tablet GCam profiles are present and
+`camera list-profiles` shows them. All tests pass.
+
+---
+
 ## Versioning at a glance
 
 | Change                                  | Bump      |

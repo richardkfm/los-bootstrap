@@ -39,6 +39,7 @@ def _facts(**overrides) -> DeviceFacts:
         is_lineage=True,
         lineage_version="21.0",
         adb_tcp_port=None,
+        form_factor="phone",
     )
     base.update(overrides)
     return DeviceFacts(**base)

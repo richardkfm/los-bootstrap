@@ -23,7 +23,7 @@ def render_profile_list() -> str:
     lines.append("Device not listed?")
     lines.append("  GCam ports are matched by SoC, not device name. Steps to find one:")
     lines.append("  1. Find your SoC: `adb shell getprop ro.board.platform`")
-    lines.append("     or Settings > About phone > Processor.")
+    lines.append("     or Settings > About phone / About tablet > Processor.")
     lines.append("  2. Visit celsoazevedo.com and filter by your SoC family")
     lines.append("     (e.g. Snapdragon 780G, Dimensity 900).")
     lines.append("  3. Check your device's XDA thread — the OP usually lists which")
