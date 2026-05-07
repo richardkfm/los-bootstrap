@@ -6,6 +6,13 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Fixed
+- Wizard's ROM download screen now falls back to `ctx.get_facts().codename`
+  when the flash-context detection didn't pick up a codename (e.g. device
+  in fastboot mode at wizard start, or transient `getprop` failure). The
+  prompt then offers the device's actual codename as the default instead
+  of forcing the user to type it manually.
+
 ## [0.12.1] - 2026-05-07
 
 ### Fixed
