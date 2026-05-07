@@ -13,11 +13,11 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 It can guide users through flashing a ROM and unlocking their bootloader,
 and helps with everything that comes after the ROM is installed.
 
-## Current scope (Phase 9, version 0.11.x)
+## Current scope (Phase 10, version 0.12.x)
 
 Audit MVP, bootstrap profiles, hardening assistant, location / maps integration,
-camera / GCam port profiles, interactive wizard, ROM flashing assistant, and
-one-line install distribution:
+camera / GCam port profiles, interactive wizard, ROM flashing assistant,
+one-line install distribution, and Android tablet support:
 
 - Phase 1–5 (still in place): see prior changelog entries
 - Phase 6 (still in place):
@@ -86,7 +86,7 @@ one-line install distribution:
   - `flash/` package: `models.py`, `fastboot.py`, `heimdall.py`, `checks.py`,
     `guide.py`, `flash.py`, `report.py`, `distros.py`
 
-- Phase 9 (current):
+- Phase 9 (still in place):
   - `scripts/install.sh` (POSIX) and `scripts/install.ps1` (PowerShell) —
     one-line installers that detect the host package manager, install
     `pipx` and `adb`, then run `pipx install "los-bootstrap[wizard]"`.
@@ -98,7 +98,16 @@ one-line install distribution:
     file alongside each tag.
   - `docs/RELEASING.md` documents the Trusted Publisher one-time setup.
 
-If a change does not fit Phase 9, it goes in the roadmap, not the code.
+- Phase 10 (current):
+  - `DeviceFacts.form_factor` — new field reading `ro.build.characteristics`;
+    `"tablet"` when it contains `"tablet"`, `"phone"` otherwise. Surfaced
+    in `los-bootstrap info` output.
+  - All user-visible "About phone" text replaced with form-factor-neutral
+    language across wizard prose, flash unlock guides, and camera hints.
+  - GCam port profiles for two LineageOS tablets: Xiaomi Pad 5 (nabu) and
+    OnePlus Pad (jupiter).
+
+If a change does not fit Phase 10, it goes in the roadmap, not the code.
 
 ## Non-goals
 

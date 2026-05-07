@@ -8,7 +8,7 @@
 </pre>
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.11.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.12.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
@@ -17,14 +17,13 @@ A CLI-first toolkit for **LineageOS** and other AOSP-derived, degoogled
 Android ROMs — covering the full journey from locked bootloader to a
 hardened, privacy-audited daily driver.
 
-> **Status:** Phase 9 — one-line installer. Install with a single
-> `curl … | sh` (Linux/macOS) or `irm … | iex` (Windows PowerShell)
-> command — the script detects your OS, installs `pipx` and `adb` via
-> your system package manager, and runs `pipx install los-bootstrap`.
-> All Phase 8 flash commands (`flash status`, `flash prepare`,
-> `flash verify`, `flash run`) and all prior subcommands are unchanged.
-> Mutating commands only run with explicit `--confirm`.
-> See [`roadmap.md`](./roadmap.md) for what comes next.
+> **Status:** Phase 10 — Android tablet support. `los-bootstrap info` now
+> detects phone vs tablet via `ro.build.characteristics`. GCam port
+> profiles added for Xiaomi Pad 5 (`nabu`) and OnePlus Pad (`jupiter`).
+> All user-visible "About phone" language is now form-factor-neutral.
+> Install with a single `curl … | sh` (Linux/macOS) or `irm … | iex`
+> (Windows PowerShell) command. Mutating commands only run with explicit
+> `--confirm`. See [`roadmap.md`](./roadmap.md) for what comes next.
 
 
 
@@ -247,7 +246,8 @@ full command sequence without running any of it.
 
 - Detects connected devices via `adb devices`.
 - Reads ROM identity from `getprop` (`ro.build.*`, `ro.product.*`,
-  `ro.lineage.*` when present).
+  `ro.lineage.*` when present). Detects form factor (phone vs tablet)
+  from `ro.build.characteristics` and surfaces it in `los-bootstrap info`.
 - Runs a privacy audit:
   - Google Mobile Services (`com.google.android.gms`) presence
   - Google Services Framework (`com.google.android.gsf`) presence
@@ -349,6 +349,8 @@ Currently profiled devices:
 | `lemonade` | OnePlus 9 | BSG 9.3.020 |
 | `FP4` | Fairphone 4 | LMC 8.4 R17 |
 | `renoir` | Xiaomi Mi 11 Lite 5G | LMC 8.4 R17 |
+| `nabu` | Xiaomi Pad 5 *(tablet)* | LMC 8.4 R17 |
+| `jupiter` | OnePlus Pad *(tablet)* | LMC 8.4 R17 |
 
 **Device not listed?** GCam ports are matched by SoC, not device name.
 Run `adb shell getprop ro.board.platform` to find your chip, then look

@@ -221,7 +221,8 @@ _HARDEN_PROSE: list[FindingProse] = [
         tradeoff=(
             "Disabling Developer options hides the USB debugging toggle. "
             "You can re-enable the whole menu at any time by tapping Build "
-            "number seven times in Settings › About phone."
+            "number seven times in Settings › About phone (or About tablet "
+            "on tablets)."
         ),
     ),
     FindingProse(

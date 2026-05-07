@@ -12,6 +12,22 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   for confirmation before downloading. The download itself prints live
   `MiB / total MiB (%)` progress so a multi-GiB transfer no longer looks
   like the wizard has hung on "Querying LineageOS API…".
+## [0.12.0] - 2026-05-07
+
+### Added
+- Phase 10: Android tablet support.
+- `DeviceFacts.form_factor` — new field derived from `ro.build.characteristics`.
+  Set to `"tablet"` when the property contains `"tablet"`, `"phone"` otherwise.
+  Surfaced in `los-bootstrap info` output.
+- GCam port profiles for two LineageOS-supported tablets:
+  - Xiaomi Pad 5 (nabu) — Snapdragon 860, LMC 8.4 R17, verified working on LineageOS 21.
+  - OnePlus Pad (jupiter) — Dimensity 9000, LMC 8.4 R17, verified working on LineageOS 21.
+
+### Changed
+- All user-visible "About phone" references replaced with form-factor-neutral
+  language ("About phone / About tablet" or "About device") in wizard prose,
+  flash unlock guides, and camera report hints. Tablets are now first-class citizens.
+- Test helpers updated to include the new `form_factor` field.
 
 ## [0.11.0] - 2026-05-06
 
@@ -382,7 +398,10 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 - All Phase 1 commands are strictly read-only. No state-changing ADB
   commands are issued.
 
-[Unreleased]: https://github.com/richardkfm/los-bootstrap/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/richardkfm/los-bootstrap/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/richardkfm/los-bootstrap/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/richardkfm/los-bootstrap/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/richardkfm/los-bootstrap/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/richardkfm/los-bootstrap/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/richardkfm/los-bootstrap/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/richardkfm/los-bootstrap/compare/v0.6.1...v0.7.0
