@@ -25,6 +25,29 @@ hardened, privacy-audited daily driver.
 > (Windows PowerShell) command. Mutating commands only run with explicit
 > `--confirm`. See [`roadmap.md`](./roadmap.md) for what comes next.
 
+## Table of Contents
+
+- [Why](#why)
+- [Install](#install)
+  - [One-liner (recommended)](#one-liner-recommended)
+  - [If you already have Python and adb](#if-you-already-have-python-and-adb)
+  - [Manual install (from source)](#manual-install-from-source)
+- [Upgrade](#upgrade)
+- [Quick start](#quick-start)
+  - [Flashing a ROM (Phase 8)](#flashing-a-rom-phase-8)
+  - [After the ROM is installed](#after-the-rom-is-installed)
+- [What it currently does](#what-it-currently-does)
+  - [ROM flashing assistant (Phase 8)](#rom-flashing-assistant-phase-8)
+  - [Audit (Phase 1)](#audit-phase-1)
+  - [Bootstrap profiles (Phase 2)](#bootstrap-profiles-phase-2)
+  - [Hardening assistant (Phase 3)](#hardening-assistant-phase-3)
+  - [Location stack (Phase 4)](#location-stack-phase-4)
+  - [Camera / GCam port profiles (Phase 5)](#camera--gcam-port-profiles-phase-5)
+  - [Interactive wizard and enriched output (Phase 6)](#interactive-wizard-and-enriched-output-phase-6)
+- [What it does NOT do](#what-it-does-not-do)
+- [Project layout](#project-layout)
+- [License](#license)
+
 
 
 https://github.com/user-attachments/assets/b16cee78-77dc-40ca-9032-edf7fd653603
