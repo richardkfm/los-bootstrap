@@ -141,6 +141,7 @@ def render_download_options(
     api_error: Optional[str] = None,
     downloaded_path: Optional[Path] = None,
     network_skipped: bool = False,
+    show_fetch_hint: bool = True,
 ) -> str:
     lines: list[str] = []
     lines.append("ROM Download")
@@ -163,7 +164,7 @@ def render_download_options(
         if downloaded_path is not None:
             lines.append(f"  Saved to  : {downloaded_path}")
             lines.append("  → Verify  : SHA-256 matched.")
-        else:
+        elif show_fetch_hint:
             lines.append(
                 "  → Re-run with --fetch to download and verify the zip."
             )

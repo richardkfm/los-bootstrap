@@ -184,3 +184,12 @@ def test_boolean_setting_value_becomes_zero_or_one(tmp_path):
     profile = load_profile(p)
     assert profile.settings[0].value == "1"
     assert profile.settings[1].value == "0"
+
+
+def test_yaml_extension_profiles_are_found(tmp_path):
+    from los_bootstrap.profiles import find_profile, list_profiles
+
+    p = tmp_path / "custom.yaml"
+    p.write_text("name: custom\ndescription: d\n", encoding="utf-8")
+    assert [pr.name for pr in list_profiles(tmp_path)] == ["custom"]
+    assert find_profile("custom", extra_dirs=[tmp_path]).name == "custom"

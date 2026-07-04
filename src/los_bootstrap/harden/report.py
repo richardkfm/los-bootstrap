@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .._render_utils import partition_findings, wrap
+from .._render_utils import color_enabled, paint, paint_glyph, partition_findings, wrap
 from .models import HardenFinding, HardenReport, HardenStatus
 
 
@@ -29,7 +29,7 @@ _INFO = {HardenStatus.INFO, HardenStatus.UNKNOWN}
 
 
 def _render_finding(f: HardenFinding) -> list[str]:
-    glyph = _STATUS_GLYPH[f.status]
+    glyph = paint_glyph(_STATUS_GLYPH[f.status])
     lines: list[str] = []
     lines.append(f"  {glyph}  {f.title}")
 
@@ -51,7 +51,7 @@ def _render_finding(f: HardenFinding) -> list[str]:
 
 def render_harden_report(report: HardenReport) -> str:
     lines: list[str] = []
-    lines.append("Hardening checks")
+    lines.append(paint("Hardening checks", "bold"))
     lines.append("────────────────")
 
     if not report.findings:
@@ -94,9 +94,9 @@ def render_harden_report(report: HardenReport) -> str:
     warns = len(report.by_status(HardenStatus.WARN))
     if report.has_failures():
         total = fails + warns
-        noun = "issue" if total == 1 else "issues"
-        lines.append(f"  {total} {noun} need attention.")
+        noun = "issue needs" if total == 1 else "issues need"
+        lines.append(paint(f"  {total} {noun} attention.", "yellow"))
     else:
-        lines.append("  All checks passed.")
+        lines.append(paint("  All checks passed.", "green"))
 
     return "\n".join(lines) + "\n"

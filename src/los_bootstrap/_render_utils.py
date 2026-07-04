@@ -8,11 +8,59 @@ out the parts that were duplicated verbatim across `report.py`,
 
 from __future__ import annotations
 
+import os
+import sys
 import textwrap
-from typing import Callable, Hashable, Iterable, TypeVar
+from typing import Callable, Hashable, Iterable, Optional, TextIO, TypeVar
 
 T = TypeVar("T")
 S = TypeVar("S", bound=Hashable)
+
+_ANSI = {
+    "green": "\033[32m",
+    "yellow": "\033[33m",
+    "red": "\033[31m",
+    "cyan": "\033[36m",
+    "dim": "\033[2m",
+    "bold": "\033[1m",
+}
+_RESET = "\033[0m"
+
+# Which color a report glyph gets when color is enabled.
+GLYPH_COLORS = {
+    "✓": "green",
+    "!": "yellow",
+    "✗": "red",
+    "·": "dim",
+    "?": "dim",
+}
+
+
+def color_enabled(stream: Optional[TextIO] = None) -> bool:
+    """True when ANSI color should be emitted (TTY, honoring NO_COLOR/FORCE_COLOR)."""
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    if stream is None:
+        stream = sys.stdout
+    return hasattr(stream, "isatty") and stream.isatty()
+
+
+def paint(text: str, color: str, enabled: Optional[bool] = None) -> str:
+    """Wrap `text` in an ANSI color when enabled; plain text otherwise."""
+    if enabled is None:
+        enabled = color_enabled()
+    code = _ANSI.get(color)
+    if not enabled or code is None:
+        return text
+    return f"{code}{text}{_RESET}"
+
+
+def paint_glyph(glyph: str, enabled: Optional[bool] = None) -> str:
+    """Color a status glyph (✓ ! ✗ · ?) by its conventional severity color."""
+    color = GLYPH_COLORS.get(glyph)
+    return paint(glyph, color, enabled) if color else glyph
 
 
 def wrap(text: str, indent: str, width: int = 72) -> str:
