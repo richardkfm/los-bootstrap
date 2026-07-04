@@ -575,6 +575,10 @@ def cmd_flash_prepare(serial: Optional[str]) -> int:
 
 
 def cmd_flash_download(args: argparse.Namespace) -> int:
+    if args.fetch and args.no_network:
+        sys.stderr.write("error: --fetch and --no-network are mutually exclusive.\n")
+        return 2
+
     codename = (args.codename or "").strip()
     if not codename:
         try:
@@ -678,7 +682,10 @@ def cmd_flash_verify(rom: str, serial: Optional[str]) -> int:
             pass
 
     print(render_verify_result(zip_path, valid, metadata, codename), end="")
-    return 0 if valid else 2
+    mismatch = bool(
+        metadata and codename and metadata.pre_device.lower() != codename.lower()
+    )
+    return 2 if (not valid or mismatch) else 0
 
 
 def cmd_flash_run(args: argparse.Namespace) -> int:
@@ -695,10 +702,33 @@ def cmd_flash_run(args: argparse.Namespace) -> int:
         return 2
 
     ctx = _detect_flash_context(args.serial)
+
+    metadata = parse_rom_metadata(rom_path)
+    if (
+        metadata
+        and ctx.codename
+        and metadata.pre_device.lower() != ctx.codename.lower()
+    ):
+        sys.stderr.write(
+            f"error: ROM targets {metadata.pre_device!r} but the connected "
+            f"device is {ctx.codename!r}.\n"
+            "Flashing a ROM built for a different device can brick it. "
+            "Run `los-bootstrap flash verify <rom.zip>` for details.\n"
+        )
+        return 2
+
+    # `fastboot getvar` blocks until a fastboot device appears, so only ask
+    # fastboot when the device is actually in fastboot mode; when booted,
+    # read the slot suffix over ADB instead.
     ab = False
-    if ctx.state in (DeviceState.FASTBOOT, DeviceState.BOOTED):
+    if ctx.state == DeviceState.FASTBOOT:
         try:
             ab = is_ab_device(ctx.fb.getvar("slot-count"))
+        except Exception:
+            pass
+    elif ctx.state == DeviceState.BOOTED and ctx.target_adb is not None:
+        try:
+            ab = bool(ctx.target_adb.getprop("ro.boot.slot_suffix"))
         except Exception:
             pass
 

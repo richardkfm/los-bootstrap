@@ -658,10 +658,32 @@ def _screen_flash_run(ctx: WizardContext, fctx) -> str:
                 input("\n  Press Enter to go back...")
                 return "flash"
 
+    from ..flash import parse_rom_metadata
+    metadata = parse_rom_metadata(rom_path)
+    if (
+        metadata
+        and fctx.codename
+        and metadata.pre_device.lower() != fctx.codename.lower()
+    ):
+        print(f"\n{RED}  ⚠  This ROM targets {metadata.pre_device!r} but the connected "
+              f"device is {fctx.codename!r}.{RESET}")
+        print(f"{RED}  Flashing a ROM built for a different device can brick it.{RESET}")
+        if not ask_confirm("  Flash anyway?", default=False):
+            print("\n  Aborted — no changes made.")
+            input("\n  Press Enter to go back...")
+            return "flash"
+
+    # fastboot getvar blocks until a fastboot device appears; only query it
+    # in fastboot mode, and use ADB's slot suffix when booted.
     ab = False
-    if fctx.state in (DeviceState.FASTBOOT, DeviceState.BOOTED):
+    if fctx.state == DeviceState.FASTBOOT:
         try:
             ab = is_ab_device(fctx.fb.getvar("slot-count"))
+        except Exception:
+            pass
+    elif fctx.state == DeviceState.BOOTED and fctx.target_adb is not None:
+        try:
+            ab = bool(fctx.target_adb.getprop("ro.boot.slot_suffix"))
         except Exception:
             pass
 

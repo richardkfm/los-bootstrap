@@ -64,7 +64,7 @@ def _base_answers() -> dict[str, str]:
         "getprop ro.crypto.type": "file\n",
         "settings get secure install_non_market_apps": "0\n",
         "getprop ro.boot.verifiedbootstate": "green\n",
-        "settings get secure lockdown_mode_allowed": "1\n",
+        "settings get secure lockdown_in_power_menu": "1\n",
     }
 
 
@@ -163,11 +163,11 @@ def test_verified_boot_red_is_fail():
 
 def test_lockdown_not_in_power_menu_is_warn():
     answers = _base_answers()
-    answers["settings get secure lockdown_mode_allowed"] = "0\n"
+    answers["settings get secure lockdown_in_power_menu"] = "0\n"
     adb = Adb(serial="S1", runner=_runner(answers))
     (finding,) = list(check_lockdown_power_menu(adb, _facts()))
     assert finding.status == HardenStatus.WARN
-    assert finding.fix_command == "settings put secure lockdown_mode_allowed 1"
+    assert finding.fix_command == "settings put secure lockdown_in_power_menu 1"
 
 
 # ── Root check tests ──────────────────────────────────────────────────────────

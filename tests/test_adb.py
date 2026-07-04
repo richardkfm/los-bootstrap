@@ -53,3 +53,14 @@ def test_getprop_strips():
     )
     adb = Adb(runner=runner)
     assert adb.getprop("ro.product.device") == "lynx"
+
+
+def test_parse_devices_skips_daemon_noise():
+    out = (
+        "* daemon not running; starting now at tcp:5037\n"
+        "* daemon started successfully\n"
+        "List of devices attached\n"
+        "ABC123\tdevice\n"
+    )
+    devs = parse_devices(out)
+    assert [d.serial for d in devs] == ["ABC123"]

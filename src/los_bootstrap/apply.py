@@ -139,9 +139,19 @@ def apply_plan(
                 continue
             apk_path = _extract_apk_path(step.command)
             out.write(f"{prefix} run    : {step.command}\n")
-            if dry_run or apk_path is None:
+            if dry_run:
                 result.results.append(
                     StepResult(step=step, status="ok", detail="dry-run")
+                )
+                continue
+            if apk_path is None:
+                out.write("        error  : could not parse install command\n")
+                result.results.append(
+                    StepResult(
+                        step=step,
+                        status="error",
+                        detail=f"unparseable command: {step.command}",
+                    )
                 )
                 continue
             try:
@@ -161,9 +171,19 @@ def apply_plan(
                 continue
             parsed = _extract_setting(step.command)
             out.write(f"{prefix} run    : {step.command}\n")
-            if dry_run or parsed is None:
+            if dry_run:
                 result.results.append(
                     StepResult(step=step, status="ok", detail="dry-run")
+                )
+                continue
+            if parsed is None:
+                out.write("        error  : could not parse settings command\n")
+                result.results.append(
+                    StepResult(
+                        step=step,
+                        status="error",
+                        detail=f"unparseable command: {step.command}",
+                    )
                 )
                 continue
             namespace, key, value = parsed

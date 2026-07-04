@@ -152,7 +152,9 @@ def parse_devices(stdout: str) -> list[AdbDevice]:
     devices: list[AdbDevice] = []
     for line in stdout.splitlines():
         line = line.strip()
-        if not line or line.startswith("List of devices"):
+        # `*` lines are adb daemon chatter ("* daemon not running; ..."),
+        # not devices.
+        if not line or line.startswith("List of devices") or line.startswith("*"):
             continue
         parts = line.split()
         if len(parts) >= 2:

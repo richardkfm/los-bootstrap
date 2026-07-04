@@ -210,3 +210,56 @@ def test_apply_records_fetch_error_as_error(tmp_path):
     assert record == []
     assert result.results[0].status == "error"
     assert "404" in result.results[0].detail
+
+
+def test_unparseable_setting_command_is_error(tmp_path):
+    import io
+    from los_bootstrap.adb import Adb, AdbResult
+    from los_bootstrap.apply import apply_plan
+    from los_bootstrap.plan import Plan, PlanStep, StepKind
+
+    plan = Plan(
+        profile_name="p",
+        description="",
+        steps=(
+            PlanStep(
+                kind=StepKind.SET_SETTING,
+                summary="set global.foo = ''",
+                target="global.foo",
+                command="adb shell settings put global foo ",
+            ),
+        ),
+    )
+    calls: list[list[str]] = []
+
+    def runner(argv):
+        calls.append(list(argv))
+        return AdbResult(0, "", "")
+
+    result = apply_plan(Adb(runner=runner), plan, out=io.StringIO())
+    assert result.had_errors()
+    assert result.results[0].status == "error"
+    assert not calls  # nothing must have been executed
+
+
+def test_unparseable_install_command_is_error(tmp_path):
+    import io
+    from los_bootstrap.adb import Adb, AdbResult
+    from los_bootstrap.apply import apply_plan
+    from los_bootstrap.plan import Plan, PlanStep, StepKind
+
+    plan = Plan(
+        profile_name="p",
+        description="",
+        steps=(
+            PlanStep(
+                kind=StepKind.INSTALL_APK,
+                summary="sideload org.example",
+                target="org.example",
+                command="adb push something /tmp",  # not an install command
+            ),
+        ),
+    )
+    result = apply_plan(Adb(runner=lambda argv: AdbResult(0, "", "")), plan, out=io.StringIO())
+    assert result.had_errors()
+    assert result.results[0].status == "error"

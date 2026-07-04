@@ -47,6 +47,18 @@ def build_flash_plan(
     )
 
 
+def _sideload_mode_step() -> FlashStep:
+    return FlashStep(
+        kind=FlashStepKind.MANUAL,
+        description="Enable sideload mode in recovery",
+        guidance=(
+            "  Wait for the device to finish booting into recovery, then\n"
+            "  choose: Apply update \u2192 Apply from ADB.\n"
+            "  The device will then wait for `adb sideload`."
+        ),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Standard A-only fastboot path (Pixel A-only, OnePlus, Fairphone, Motorola,
 # Xiaomi after unlock, generic)
@@ -71,6 +83,7 @@ def _aonly_fastboot_steps(
             description=f"Flash recovery partition ({recovery_path.name})",
             command=f"fastboot flash recovery {recovery_path}",
             args=("recovery", str(recovery_path)),
+            is_destructive=True,
         ))
 
     steps.append(FlashStep(
@@ -80,11 +93,14 @@ def _aonly_fastboot_steps(
         args=("recovery",),
     ))
 
+    steps.append(_sideload_mode_step())
+
     steps.append(FlashStep(
         kind=FlashStepKind.ADB_SIDELOAD,
         description=f"Sideload ROM ({rom_path.name})",
         command=f"adb sideload {rom_path}",
         args=(str(rom_path),),
+        is_destructive=True,
     ))
 
     return steps
@@ -109,6 +125,7 @@ def _ab_fastboot_steps(rom_path: Path) -> list[FlashStep]:
         description=f"Flash ROM via fastboot update ({rom_path.name})",
         command=f"fastboot update {rom_path}",
         args=(str(rom_path),),
+        is_destructive=True,
     ))
 
     return steps
@@ -130,11 +147,13 @@ def _samsung_steps(
                 description="Flash recovery using Odin (Heimdall not installed)",
                 guidance=samsung_odin_guide(),
             ),
+            _sideload_mode_step(),
             FlashStep(
                 kind=FlashStepKind.ADB_SIDELOAD,
                 description=f"Sideload ROM ({rom_path.name})",
                 command=f"adb sideload {rom_path}",
                 args=(str(rom_path),),
+                is_destructive=True,
             ),
         ]
 
@@ -158,6 +177,7 @@ def _samsung_steps(
             description=f"Flash recovery partition ({recovery_path.name})",
             command=f"heimdall flash --RECOVERY {recovery_path}",
             args=("RECOVERY", str(recovery_path)),
+            is_destructive=True,
         ))
 
     steps.append(FlashStep(
@@ -173,11 +193,14 @@ def _samsung_steps(
         ),
     ))
 
+    steps.append(_sideload_mode_step())
+
     steps.append(FlashStep(
         kind=FlashStepKind.ADB_SIDELOAD,
         description=f"Sideload ROM ({rom_path.name})",
         command=f"adb sideload {rom_path}",
         args=(str(rom_path),),
+        is_destructive=True,
     ))
 
     return steps

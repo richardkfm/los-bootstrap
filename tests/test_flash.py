@@ -495,3 +495,138 @@ def test_render_download_options_api_error_surfaces_reason():
         api_error="connection refused",
     )
     assert "connection refused" in text
+
+
+def test_fastboot_reboot_failure_raises():
+    from los_bootstrap.flash.fastboot import FastbootCommandError
+    runner = make_fastboot_runner({
+        ("fastboot", "reboot", "recovery"):
+            FastbootResult(1, "", "fastboot: usage: unknown reboot target recovery"),
+    })
+    fb = Fastboot(runner=runner)
+    with pytest.raises(FastbootCommandError):
+        fb.reboot("recovery")
+
+
+def test_fastboot_oem_unlock_failure_raises():
+    from los_bootstrap.flash.fastboot import FastbootCommandError
+    runner = make_fastboot_runner({
+        ("fastboot", "flashing", "unlock"):
+            FastbootResult(1, "", "FAILED (remote: 'oem unlock is not allowed')"),
+    })
+    fb = Fastboot(runner=runner)
+    with pytest.raises(FastbootCommandError):
+        fb.oem_unlock()
+
+
+def test_flash_steps_marked_destructive(tmp_path):
+    rom = tmp_path / "lineage.zip"
+    rom.touch()
+    recovery = tmp_path / "recovery.img"
+    recovery.touch()
+
+    plan = build_flash_plan(
+        manufacturer=Manufacturer.GOOGLE,
+        device_codename="panther",
+        rom_path=rom,
+        recovery_path=recovery,
+        ab_device=False,
+    )
+    destructive_kinds = {
+        s.kind for s in plan.steps if s.is_destructive
+    }
+    assert FlashStepKind.FASTBOOT_FLASH in destructive_kinds
+    assert FlashStepKind.ADB_SIDELOAD in destructive_kinds
+
+
+def test_ab_update_step_marked_destructive(tmp_path):
+    rom = tmp_path / "lineage.zip"
+    rom.touch()
+    plan = build_flash_plan(
+        manufacturer=Manufacturer.GOOGLE,
+        device_codename="panther",
+        rom_path=rom,
+        ab_device=True,
+    )
+    update = [s for s in plan.steps if s.kind == FlashStepKind.FASTBOOT_UPDATE]
+    assert update and all(s.is_destructive for s in update)
+
+
+def test_sideload_preceded_by_manual_sideload_mode_step(tmp_path):
+    rom = tmp_path / "lineage.zip"
+    rom.touch()
+    plan = build_flash_plan(
+        manufacturer=Manufacturer.GOOGLE,
+        device_codename="panther",
+        rom_path=rom,
+        ab_device=False,
+    )
+    kinds = [s.kind for s in plan.steps]
+    idx = kinds.index(FlashStepKind.ADB_SIDELOAD)
+    assert kinds[idx - 1] == FlashStepKind.MANUAL
+    assert "sideload" in plan.steps[idx - 1].description.lower()
+
+
+def test_execute_flash_plan_pauses_on_manual_steps(tmp_path, capsys):
+    from los_bootstrap.adb import Adb, AdbResult
+    from los_bootstrap.flash.flash import execute_flash_plan
+
+    rom = tmp_path / "lineage.zip"
+    rom.touch()
+    plan = build_flash_plan(
+        manufacturer=Manufacturer.GOOGLE,
+        device_codename="panther",
+        rom_path=rom,
+        ab_device=False,
+    )
+
+    pauses: list[str] = []
+    adb = Adb(runner=lambda argv: AdbResult(0, "", ""))
+    fb = Fastboot(runner=make_fastboot_runner({}))
+    result = execute_flash_plan(
+        plan,
+        adb=adb,
+        fastboot=fb,
+        confirm=True,
+        dry_run=False,
+        pause=lambda msg: pauses.append(msg),
+    )
+    manual_count = sum(1 for s in plan.steps if s.kind == FlashStepKind.MANUAL)
+    assert len(pauses) == manual_count
+    assert not result.had_errors()
+
+
+def test_execute_flash_plan_skips_destructive_without_confirm(tmp_path):
+    from los_bootstrap.adb import Adb, AdbResult
+    from los_bootstrap.flash.flash import execute_flash_plan
+
+    rom = tmp_path / "lineage.zip"
+    rom.touch()
+    plan = build_flash_plan(
+        manufacturer=Manufacturer.GOOGLE,
+        device_codename="panther",
+        rom_path=rom,
+        ab_device=True,
+    )
+
+    executed: list[list[str]] = []
+
+    def recording_runner(argv):
+        executed.append(list(argv))
+        return FastbootResult(0, "", "")
+
+    adb_calls: list[list[str]] = []
+
+    def adb_runner(argv):
+        adb_calls.append(list(argv))
+        return AdbResult(0, "", "")
+
+    adb = Adb(runner=adb_runner)
+    fb = Fastboot(runner=recording_runner)
+    result = execute_flash_plan(
+        plan, adb=adb, fastboot=fb, confirm=False, dry_run=False,
+        pause=lambda msg: None,
+    )
+    # `fastboot update` is destructive and must not run without confirm
+    assert not any(argv[1] == "update" for argv in executed)
+    assert result.steps_skipped >= 1

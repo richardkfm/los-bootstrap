@@ -7,7 +7,7 @@ destructive step requires confirm=True to run.
 from __future__ import annotations
 
 import sys
-from typing import Optional
+from typing import Callable, Optional
 
 from .fastboot import Fastboot, FastbootCommandError
 from .heimdall import Heimdall, HeimdallCommandError, HeimdallNotFoundError
@@ -22,13 +22,18 @@ def execute_flash_plan(
     heimdall: Optional[Heimdall] = None,
     confirm: bool = False,
     dry_run: bool = False,
+    pause: Optional[Callable[[str], object]] = None,
 ) -> FlashResult:
     """Run every step in *plan*, honouring confirm/dry_run flags.
 
     Steps with is_destructive=True are skipped unless confirm=True.
-    Steps with kind=MANUAL are always printed and counted as skipped.
+    Steps with kind=MANUAL print their guidance and then block on `pause`
+    (default: input) until the user has completed the action — the next
+    step usually depends on it. Inject `pause` in tests.
     """
     result = FlashResult()
+    if pause is None:
+        pause = input
 
     for step in plan.steps:
         _print_step_header(step, dry_run)
@@ -36,16 +41,23 @@ def execute_flash_plan(
         if step.kind == FlashStepKind.MANUAL:
             if step.guidance:
                 sys.stdout.write(step.guidance + "\n")
-            result.steps_skipped += 1
-            continue
-
-        if step.is_destructive and not confirm:
-            print("  → skipped (pass --confirm to run destructive steps)")
+            if not dry_run:
+                try:
+                    pause("  Press Enter once done (Ctrl-C to abort)... ")
+                except (EOFError, KeyboardInterrupt):
+                    result.errors.append(f"aborted at manual step: {step.description}")
+                    sys.stderr.write("\n  Aborted.\n")
+                    return result
             result.steps_skipped += 1
             continue
 
         if dry_run:
             result.steps_ok += 1
+            continue
+
+        if step.is_destructive and not confirm:
+            print("  → skipped (pass --confirm to run destructive steps)")
+            result.steps_skipped += 1
             continue
 
         try:
