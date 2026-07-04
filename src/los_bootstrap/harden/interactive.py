@@ -51,6 +51,12 @@ def _apply_fix(adb: Adb, f: HardenFinding, dry_run: bool, confirm: bool) -> None
     try:
         adb.shell(f.fix_command)
         print("    Applied.")
+        if f.check_id == "dev.adb":
+            print(
+                "    Note: USB debugging is now off — this ADB session just "
+                "ended.\n    Re-enable it in Developer options if you need "
+                "adb again."
+            )
     except AdbCommandError as exc:
         print(f"    Error applying fix: {exc}", file=sys.stderr)
 
@@ -70,6 +76,9 @@ def run_interactive(
         f for f in report.findings
         if f.status in (HardenStatus.WARN, HardenStatus.FAIL)
     ]
+    # Applying the ADB fix severs our own connection, so offer it last —
+    # everything after it would fail.
+    actionable.sort(key=lambda f: f.check_id == "dev.adb")
     informational = [
         f for f in report.findings
         if f.status not in (HardenStatus.WARN, HardenStatus.FAIL)

@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 import sys
 import tempfile
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, TextIO
@@ -114,6 +115,14 @@ def apply_plan(
                 except FetchError as exc:
                     out.write(f"        error  : {exc}\n")
                     result.results.append(StepResult(step=step, status="error", detail=str(exc)))
+                    continue
+                # APKs are zip containers; a truncated download or an HTML
+                # error page must not reach `adb install` or poison the cache.
+                if not zipfile.is_zipfile(apk_path):
+                    apk_path.unlink(missing_ok=True)
+                    msg = f"downloaded file is not a valid APK: {step.download_url}"
+                    out.write(f"        error  : {msg}\n")
+                    result.results.append(StepResult(step=step, status="error", detail=msg))
                     continue
                 out.write(f"        run    : adb install -r {apk_path}\n")
                 try:

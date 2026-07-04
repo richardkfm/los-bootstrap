@@ -578,6 +578,7 @@ def _screen_flash_download(ctx: WizardContext, fctx) -> str:
         api_error=api_error,
         downloaded_path=downloaded_path,
         network_skipped=False,
+        show_fetch_hint=False,
     ))
     input("\n  Press Enter to go back...")
     return "flash"
@@ -749,7 +750,9 @@ def run_wizard(serial: Optional[str] = None) -> int:
         elif len(ready) == 1:
             ctx.serial = ready[0].serial
         else:
-            _screen_splash(ctx)
+            clear_screen()
+            sys.stderr.write(banner(compact=False))
+            sys.stderr.flush()
             serials = [d.serial for d in ready]
             chosen = ask_select("Multiple devices connected. Choose one:", serials)
             if chosen is None:

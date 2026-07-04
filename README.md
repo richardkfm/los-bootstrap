@@ -464,6 +464,20 @@ everywhere.
 
 These and future plans are tracked in [`roadmap.md`](./roadmap.md).
 
+## Exit codes
+
+Useful for scripting `los-bootstrap` in CI or shell pipelines:
+
+| Code | Meaning |
+|------|---------|
+| 0    | Success — and for checks (`audit`, `report`, `harden`, `location doctor`, `flash verify`): nothing needs attention |
+| 1    | Runtime failure (adb/fastboot/network error) |
+| 2    | Usage error: bad flags, missing file, unknown profile |
+| 3    | Checks ran fine but found issues that need attention |
+
+Report output is colorized when stdout is a terminal; set `NO_COLOR=1`
+to disable or `FORCE_COLOR=1` to force it (e.g. when piping to `less -R`).
+
 ## Project layout
 
 See [`CLAUDE.md`](./CLAUDE.md) for the architecture, coding workflow,

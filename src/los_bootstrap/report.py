@@ -6,7 +6,7 @@ import json
 from dataclasses import asdict
 from typing import Optional
 
-from ._render_utils import partition_findings, wrap
+from ._render_utils import color_enabled, paint, paint_glyph, partition_findings, wrap
 from .audit.models import AuditReport, Severity
 from .device import DeviceFacts
 
@@ -24,8 +24,9 @@ _INFO = {Severity.INFO}
 
 
 def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
+    en = color_enabled()
     lines: list[str] = []
-    lines.append("Device")
+    lines.append(paint("Device", "bold", en))
     lines.append("──────")
     lines.append(f"  Serial          : {facts.serial or '(default)'}")
     lines.append(f"  Manufacturer    : {facts.manufacturer}")
@@ -42,7 +43,7 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
 
     if report is not None:
         lines.append("")
-        lines.append("Audit findings")
+        lines.append(paint("Audit findings", "bold", en))
         lines.append("──────────────")
 
         if not report.findings:
@@ -62,7 +63,7 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
                 lines.append(f"\n  {count} {noun} to address")
                 lines.append("  " + "─" * 22)
                 for f in actionable:
-                    glyph = _SEV_GLYPH[f.severity]
+                    glyph = paint_glyph(_SEV_GLYPH[f.severity], en)
                     lines.append("")
                     lines.append(f"  {glyph}  {f.title}")
                     if f.detail:
@@ -75,14 +76,14 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
                 lines.append("\n  Passing checks")
                 lines.append("  " + "─" * 14)
                 for f in passing:
-                    glyph = _SEV_GLYPH[f.severity]
+                    glyph = paint_glyph(_SEV_GLYPH[f.severity], en)
                     lines.append(f"  {glyph}  {f.title}")
 
             if info:
                 lines.append("\n  For your information")
                 lines.append("  " + "─" * 20)
                 for f in info:
-                    glyph = _SEV_GLYPH[f.severity]
+                    glyph = paint_glyph(_SEV_GLYPH[f.severity], en)
                     lines.append("")
                     lines.append(f"  {glyph}  {f.title}")
                     if f.detail:
@@ -93,10 +94,10 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
             warn = len(report.by_severity(Severity.WARN))
             high = len(report.by_severity(Severity.HIGH))
             total = warn + high
-            noun = "issue" if total == 1 else "issues"
-            lines.append(f"  {total} {noun} need attention.")
+            noun = "issue needs" if total == 1 else "issues need"
+            lines.append(paint(f"  {total} {noun} attention.", "yellow", en))
         else:
-            lines.append("  No concerns flagged.")
+            lines.append(paint("  No concerns flagged.", "green", en))
 
     return "\n".join(lines) + "\n"
 

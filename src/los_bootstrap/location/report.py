@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .._render_utils import partition_findings, wrap
+from .._render_utils import color_enabled, paint, paint_glyph, partition_findings, wrap
 from .compat import COMPAT_MATRIX, CompatLevel
 from .models import LocationFinding, LocationReport, LocationStatus
 
@@ -35,7 +35,7 @@ _INFO = {LocationStatus.INFO, LocationStatus.UNKNOWN}
 
 
 def _render_finding(f: LocationFinding) -> list[str]:
-    glyph = _STATUS_GLYPH[f.status]
+    glyph = paint_glyph(_STATUS_GLYPH[f.status])
     lines: list[str] = []
     lines.append(f"  {glyph}  {f.title}")
 
@@ -57,7 +57,7 @@ def _render_finding(f: LocationFinding) -> list[str]:
 
 def render_location_report(report: LocationReport) -> str:
     lines: list[str] = []
-    lines.append("Location stack doctor")
+    lines.append(paint("Location stack doctor", "bold"))
     lines.append("─────────────────────")
 
     if not report.findings:
@@ -100,10 +100,10 @@ def render_location_report(report: LocationReport) -> str:
     warns = len(report.by_status(LocationStatus.WARN))
     if report.has_failures():
         total = fails + warns
-        noun = "issue" if total == 1 else "issues"
-        lines.append(f"  {total} {noun} need attention.")
+        noun = "issue needs" if total == 1 else "issues need"
+        lines.append(paint(f"  {total} {noun} attention.", "yellow"))
     else:
-        lines.append("  Location stack looks healthy.")
+        lines.append(paint("  Location stack looks healthy.", "green"))
 
     return "\n".join(lines) + "\n"
 

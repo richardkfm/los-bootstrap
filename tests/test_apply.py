@@ -154,7 +154,10 @@ def test_apply_reports_install_failures():
 
 
 def test_apply_downloads_and_installs_apk(tmp_path):
+    import zipfile as _zipfile
     downloaded = tmp_path / "org.fdroid.fdroid_1010059.apk"
+    with _zipfile.ZipFile(downloaded, "w") as zf:
+        zf.writestr("AndroidManifest.xml", "stub")
     step = PlanStep(
         kind=StepKind.INSTALL_APK,
         summary="download + install org.fdroid.fdroid",
@@ -263,3 +266,38 @@ def test_unparseable_install_command_is_error(tmp_path):
     result = apply_plan(Adb(runner=lambda argv: AdbResult(0, "", "")), plan, out=io.StringIO())
     assert result.had_errors()
     assert result.results[0].status == "error"
+
+
+def test_invalid_downloaded_apk_is_error_and_removed(tmp_path, monkeypatch):
+    import io
+    from los_bootstrap import apply as apply_mod
+    from los_bootstrap.adb import Adb, AdbResult
+    from los_bootstrap.apply import apply_plan
+    from los_bootstrap.plan import Plan, PlanStep, StepKind
+
+    bogus = tmp_path / "app.apk"
+    bogus.write_text("<html>error page</html>", encoding="utf-8")
+    monkeypatch.setattr(apply_mod.fetch, "download_apk", lambda url, d: bogus)
+
+    plan = Plan(
+        profile_name="p",
+        description="",
+        steps=(
+            PlanStep(
+                kind=StepKind.INSTALL_APK,
+                summary="download + install org.example",
+                target="org.example",
+                download_url="https://example.invalid/app.apk",
+            ),
+        ),
+    )
+    installs: list[list[str]] = []
+
+    def runner(argv):
+        installs.append(list(argv))
+        return AdbResult(0, "", "")
+
+    result = apply_plan(Adb(runner=runner), plan, out=io.StringIO(), apk_dir=tmp_path)
+    assert result.had_errors()
+    assert not bogus.exists()      # bad file must not poison the cache
+    assert not installs            # adb install must never run

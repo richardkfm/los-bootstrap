@@ -87,42 +87,89 @@ from .profiles import (
 from .report import render_json, render_text
 
 
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="los-bootstrap",
-        description="CLI-first post-install assistant for LineageOS / degoogled ROMs.",
-    )
+# Exit codes. 2 is also what argparse uses for usage errors.
+EXIT_OK = 0
+EXIT_ERROR = 1      # runtime failure (adb/fastboot/network)
+EXIT_USAGE = 2      # bad invocation, missing file, unknown profile
+EXIT_FINDINGS = 3   # checks ran fine but issues need attention
+
+_EPILOG = """\
+examples:
+  los-bootstrap                                  launch the interactive wizard
+  los-bootstrap report --json                    device info + audit as JSON
+  los-bootstrap plan --profile privacy-default   preview a bootstrap profile
+  los-bootstrap harden --interactive --confirm   walk through hardening fixes
+  los-bootstrap flash download panther --fetch   fetch the latest LineageOS zip
+
+exit codes:
+  0 success   1 runtime error   2 usage/profile error   3 checks found issues
+"""
+
+
+def _add_common_options(parser: argparse.ArgumentParser, *, suppress: bool = False) -> None:
+    """Add the global options to a parser.
+
+    On subparsers, defaults are SUPPRESS so `los-bootstrap audit -s X`
+    works without a late default clobbering a value parsed by the main
+    parser (`los-bootstrap -s X audit`).
+    """
+    kw_str = {"default": argparse.SUPPRESS} if suppress else {}
+    kw_flag = {"default": argparse.SUPPRESS} if suppress else {}
     parser.add_argument(
         "--serial",
         "-s",
         help="ADB serial of the target device (when more than one is connected).",
+        **kw_str,
     )
     parser.add_argument(
         "--no-banner",
         action="store_true",
         help="Suppress the ASCII logo on startup.",
+        **kw_flag,
     )
     parser.add_argument(
         "--compact-banner",
         action="store_true",
         help="Use the single-line banner instead of the full logo.",
+        **kw_flag,
+    )
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="los-bootstrap",
+        description="CLI-first post-install assistant for LineageOS / degoogled ROMs.",
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    _add_common_options(parser)
+    parser.add_argument(
+        "--version",
+        "-V",
+        action="version",
+        version=f"los-bootstrap {__version__}",
     )
 
     sub = parser.add_subparsers(dest="command", required=False)
 
-    sub.add_parser("version", help="Print version and exit.")
-    sub.add_parser("devices", help="List ADB-connected devices.")
-    sub.add_parser("info", help="Print device, ROM, and build information.")
-    sub.add_parser("audit", help="Run the read-only privacy/degoogle audit.")
+    leaves: list[argparse.ArgumentParser] = []
+
+    leaves.append(sub.add_parser("version", help="Print version and exit."))
+    leaves.append(sub.add_parser("devices", help="List ADB-connected devices."))
+    leaves.append(sub.add_parser("info", help="Print device, ROM, and build information."))
+    leaves.append(sub.add_parser("audit", help="Run the read-only privacy/degoogle audit."))
 
     p_report = sub.add_parser("report", help="Print device info + audit findings.")
     p_report.add_argument("--json", action="store_true", help="Emit JSON.")
+    leaves.append(p_report)
 
-    sub.add_parser("recommend", help="Print non-binding bootstrap recommendations.")
+    leaves.append(
+        sub.add_parser("recommend", help="Print non-binding bootstrap recommendations.")
+    )
 
     p_profiles = sub.add_parser("profiles", help="Manage bootstrap profiles.")
     p_profiles_sub = p_profiles.add_subparsers(dest="profiles_command", required=True)
-    p_profiles_sub.add_parser("list", help="List bundled profiles.")
+    leaves.append(p_profiles_sub.add_parser("list", help="List bundled profiles."))
 
     p_plan = sub.add_parser("plan", help="Dry-run a profile against the device.")
     p_plan.add_argument("--profile", required=True, help="Profile name or path.")
@@ -141,6 +188,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip automatic APK downloads; sideload and F-Droid entries will be marked manual.",
     )
+    leaves.append(p_plan)
 
     p_apply = sub.add_parser("apply", help="Execute a profile against the device.")
     p_apply.add_argument("--profile", required=True, help="Profile name or path.")
@@ -169,6 +217,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print each command without running it.",
     )
+    leaves.append(p_apply)
 
     p_harden = sub.add_parser(
         "harden",
@@ -195,30 +244,31 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print fix commands without executing them (interactive mode only).",
     )
+    leaves.append(p_harden)
 
     p_location = sub.add_parser(
         "location",
         help="Location stack diagnostics and app compatibility guidance.",
     )
     p_location_sub = p_location.add_subparsers(dest="location_command", required=True)
-    p_location_sub.add_parser(
+    leaves.append(p_location_sub.add_parser(
         "doctor",
         help="Diagnose the location stack on the connected device.",
-    )
-    p_location_sub.add_parser(
+    ))
+    leaves.append(p_location_sub.add_parser(
         "compat",
         help="Show the app location compatibility matrix (no device needed).",
-    )
+    ))
 
     p_camera = sub.add_parser(
         "camera",
         help="GCam port profiles and XML config path guidance (no device needed).",
     )
     p_camera_sub = p_camera.add_subparsers(dest="camera_command", required=True)
-    p_camera_sub.add_parser(
+    leaves.append(p_camera_sub.add_parser(
         "list-profiles",
         help="List all known device GCam port profiles.",
-    )
+    ))
     p_camera_show = p_camera_sub.add_parser(
         "show",
         help="Show full GCam port profile for a device codename.",
@@ -227,6 +277,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "codename",
         help="Device codename (ro.product.device), e.g. panther, oriole, sunny.",
     )
+    leaves.append(p_camera_show)
 
     p_flash = sub.add_parser(
         "flash",
@@ -234,15 +285,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_flash_sub = p_flash.add_subparsers(dest="flash_command", required=True)
 
-    p_flash_sub.add_parser(
+    leaves.append(p_flash_sub.add_parser(
         "status",
         help="Detect device state (booted/fastboot/recovery) and manufacturer.",
-    )
+    ))
 
-    p_flash_sub.add_parser(
+    leaves.append(p_flash_sub.add_parser(
         "prepare",
         help="Show manufacturer-aware bootloader unlock guide with live pre-checks.",
-    )
+    ))
 
     p_flash_download = p_flash_sub.add_parser(
         "download",
@@ -269,6 +320,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not query the LineageOS API; print download page URLs only.",
     )
+    leaves.append(p_flash_download)
 
     p_flash_verify = p_flash_sub.add_parser(
         "verify",
@@ -278,6 +330,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "rom",
         help="Path to the LineageOS / AOSP ROM zip file.",
     )
+    leaves.append(p_flash_verify)
 
     p_flash_run = p_flash_sub.add_parser(
         "run",
@@ -302,6 +355,10 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print each command without executing it.",
     )
+    leaves.append(p_flash_run)
+
+    for leaf in leaves:
+        _add_common_options(leaf, suppress=True)
 
     return parser
 
@@ -317,6 +374,18 @@ def _print_banner(args: argparse.Namespace) -> None:
 def _require_one_device(devices: Sequence[AdbDevice], explicit_serial: Optional[str]) -> str:
     ready = [d for d in devices if d.ready]
     if explicit_serial:
+        by_serial = {d.serial: d for d in devices}
+        dev = by_serial.get(explicit_serial)
+        if dev is None:
+            known = ", ".join(sorted(by_serial)) or "(none)"
+            raise SystemExit(
+                f"No device with serial {explicit_serial!r}. Connected: {known}."
+            )
+        if not dev.ready:
+            raise SystemExit(
+                f"Device {explicit_serial!r} is {dev.state!r}; "
+                "authorize USB debugging on the device and retry."
+            )
         return explicit_serial
     if not ready:
         raise SystemExit("No ready ADB devices. Plug in a phone and authorize USB debugging.")
@@ -364,7 +433,7 @@ def cmd_audit(serial: Optional[str]) -> int:
     facts = collect_device(adb)
     report = run_audit(adb, facts)
     print(render_text(facts, report), end="")
-    return 0 if not report.has_concerns() else 2
+    return EXIT_OK if not report.has_concerns() else EXIT_FINDINGS
 
 
 def cmd_report(serial: Optional[str], as_json: bool) -> int:
@@ -375,7 +444,7 @@ def cmd_report(serial: Optional[str], as_json: bool) -> int:
         print(render_json(facts, report), end="")
     else:
         print(render_text(facts, report), end="")
-    return 0 if not report.has_concerns() else 2
+    return EXIT_OK if not report.has_concerns() else EXIT_FINDINGS
 
 
 def cmd_recommend(serial: Optional[str]) -> int:
@@ -427,7 +496,7 @@ def cmd_harden(args: argparse.Namespace) -> int:
         return 0
 
     print(render_harden_report(report), end="")
-    return 2 if report.has_failures() else 0
+    return EXIT_FINDINGS if report.has_failures() else EXIT_OK
 
 
 def cmd_camera_list_profiles() -> int:
@@ -461,7 +530,7 @@ def cmd_location_doctor(args: argparse.Namespace) -> int:
     facts = collect_device(adb)
     report = run_location_doctor(adb, facts)
     print(render_location_report(report), end="")
-    return 2 if report.has_failures() else 0
+    return EXIT_FINDINGS if report.has_failures() else EXIT_OK
 
 
 def cmd_location_compat() -> int:
@@ -493,11 +562,17 @@ def _detect_flash_context(serial: Optional[str]) -> "_FlashContext":
     adb_out = adb.raw("devices").stdout
     fb = Fastboot()
     try:
-        fb_out = fb._run([fb.binary, "devices"]).stdout
+        fb_out = fb.raw("devices").stdout
     except Exception:
         fb_out = ""
 
     state = detect_state(adb_out, fb_out)
+    if state == DeviceState.UNKNOWN and heimdall_available():
+        try:
+            if Heimdall().detect():
+                state = DeviceState.DOWNLOAD
+        except Exception:
+            pass
     manufacturer = Manufacturer.GENERIC
     codename = ""
     dev_opts: Optional[bool] = None
@@ -685,7 +760,7 @@ def cmd_flash_verify(rom: str, serial: Optional[str]) -> int:
     mismatch = bool(
         metadata and codename and metadata.pre_device.lower() != codename.lower()
     )
-    return 2 if (not valid or mismatch) else 0
+    return EXIT_FINDINGS if (not valid or mismatch) else EXIT_OK
 
 
 def cmd_flash_run(args: argparse.Namespace) -> int:

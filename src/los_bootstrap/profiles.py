@@ -151,7 +151,8 @@ def load_profile(path: Path) -> Profile:
 def list_profiles(directory: Path) -> list[Profile]:
     if not directory.is_dir():
         return []
-    return [load_profile(p) for p in sorted(directory.glob("*.yml"))]
+    paths = sorted([*directory.glob("*.yml"), *directory.glob("*.yaml")])
+    return [load_profile(p) for p in paths]
 
 
 def bundled_profiles_dir() -> Path:
@@ -183,7 +184,9 @@ def find_profile(
     candidates: list[Path] = []
     for d in extra_dirs:
         candidates.append(Path(d) / f"{name_or_path}.yml")
+        candidates.append(Path(d) / f"{name_or_path}.yaml")
     candidates.append(bundled_profiles_dir() / f"{name_or_path}.yml")
+    candidates.append(bundled_profiles_dir() / f"{name_or_path}.yaml")
     for cand in candidates:
         if cand.is_file():
             return load_profile(cand)

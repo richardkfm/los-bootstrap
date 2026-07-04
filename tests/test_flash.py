@@ -630,3 +630,22 @@ def test_execute_flash_plan_skips_destructive_without_confirm(tmp_path):
     # `fastboot update` is destructive and must not run without confirm
     assert not any(argv[1] == "update" for argv in executed)
     assert result.steps_skipped >= 1
+
+
+def test_render_download_options_can_hide_fetch_hint():
+    from los_bootstrap.flash.distros import LineageBuild
+    from los_bootstrap.flash.report import render_download_options
+
+    build = LineageBuild(
+        codename="bluejay", filename="l.zip", url="https://example.invalid/l.zip",
+        size=1, sha256="", version="21.0", datetime=1, build_type="nightly",
+    )
+    shown = render_download_options(
+        codename="bluejay", build=build, page_url="p", alt_links=[],
+    )
+    hidden = render_download_options(
+        codename="bluejay", build=build, page_url="p", alt_links=[],
+        show_fetch_hint=False,
+    )
+    assert "--fetch" in shown
+    assert "--fetch" not in hidden

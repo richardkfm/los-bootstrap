@@ -6,7 +6,41 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Added
+- Global options (`--serial/-s`, `--no-banner`, `--compact-banner`) are now
+  accepted after the subcommand too: `los-bootstrap flash status -s XYZ`
+  works, not just `los-bootstrap -s XYZ flash status`.
+- `--version`/`-V` flag on the main parser (alongside the existing
+  `version` subcommand), plus usage examples and an exit-code legend in
+  `--help`.
+- Report output (audit, harden, location doctor) is colorized when stdout
+  is a TTY: green/yellow/red status glyphs and summary lines. Honors
+  `NO_COLOR` and `FORCE_COLOR`; JSON output is never colorized.
+- `flash status` now detects Samsung Download Mode via `heimdall detect`
+  when no ADB or fastboot device is visible and Heimdall is installed.
+- Profile files with a `.yaml` extension are now found alongside `.yml`.
+
+### Changed
+- Distinct exit code for findings: commands that run checks (`audit`,
+  `report`, `harden`, `location doctor`, `flash verify`) now exit **3**
+  when issues need attention, instead of overloading **2**, which argparse
+  already uses for usage errors. Documented in README and `--help`.
+- `--serial` with a serial that is not connected (or not authorized) now
+  fails immediately with a clear message listing the connected devices,
+  instead of failing later with a raw adb error.
+- The interactive harden walk-through offers the USB-debugging fix last and
+  prints a notice when it is applied, since that fix severs the tool's own
+  ADB connection.
+
 ### Fixed
+- Downloaded APKs are validated as zip containers before `adb install`;
+  a truncated download or HTML error page is deleted instead of being
+  installed or poisoning the download cache.
+- The wizard no longer shows a spurious "Device error" splash before the
+  device picker when multiple devices are connected (and no longer shows
+  the splash twice).
+- The wizard's ROM download screen no longer prints the CLI-only
+  "Re-run with --fetch" hint.
 - microG detection in `location doctor` now looks at the real package id.
   microG GmsCore installs as `com.google.android.gms` (not the non-existent
   `org.microg.gms.core` the checks previously queried), so microG was never
