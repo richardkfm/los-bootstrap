@@ -163,3 +163,24 @@ def test_find_profile_searches_extra_dirs(tmp_path):
 def test_find_profile_missing_raises():
     with pytest.raises(ProfileError, match="not found"):
         find_profile("does-not-exist-anywhere")
+
+
+def test_boolean_setting_value_becomes_zero_or_one(tmp_path):
+    from los_bootstrap.profiles import load_profile
+
+    p = tmp_path / "b.yml"
+    p.write_text(
+        "name: b\n"
+        "description: d\n"
+        "settings:\n"
+        "  - namespace: global\n"
+        "    key: some_flag\n"
+        "    value: true\n"
+        "  - namespace: global\n"
+        "    key: other_flag\n"
+        "    value: false\n",
+        encoding="utf-8",
+    )
+    profile = load_profile(p)
+    assert profile.settings[0].value == "1"
+    assert profile.settings[1].value == "0"

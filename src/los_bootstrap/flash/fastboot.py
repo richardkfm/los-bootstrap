@@ -92,11 +92,23 @@ class Fastboot:
     def reboot(self, target: Optional[str] = None) -> FastbootResult:
         """Reboot device, optionally to 'recovery' or 'bootloader'. Mutating."""
         args: tuple[str, ...] = ("reboot", target) if target else ("reboot",)
-        return self.raw(*args)
+        result = self.raw(*args)
+        if result.returncode != 0:
+            raise FastbootCommandError(
+                f"fastboot {' '.join(args)} failed: "
+                f"{(result.stderr or result.stdout).strip()}"
+            )
+        return result
 
     def oem_unlock(self) -> FastbootResult:
         """Run `fastboot flashing unlock`. Destructive — wipes all data."""
-        return self.raw("flashing", "unlock")
+        result = self.raw("flashing", "unlock")
+        if result.returncode != 0:
+            raise FastbootCommandError(
+                f"fastboot flashing unlock failed: "
+                f"{(result.stderr or result.stdout).strip()}"
+            )
+        return result
 
     def update(self, zip_path: str) -> FastbootResult:
         """Run `fastboot update <zip>` for A/B devices. Mutating."""

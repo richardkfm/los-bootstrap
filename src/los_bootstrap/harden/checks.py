@@ -263,14 +263,14 @@ def check_verified_boot(adb: Adb, _facts: DeviceFacts) -> Iterable[HardenFinding
 def check_lockdown_power_menu(adb: Adb, _facts: DeviceFacts) -> Iterable[HardenFinding]:
     # "Lockdown mode" adds an option to the power menu that immediately
     # disables biometric unlock and Smart Lock until the next PIN/password entry.
-    # The setting is lineage-specific but also present in AOSP 9+.
-    raw = adb.shell("settings get secure lockdown_mode_allowed").strip()
+    # AOSP 9+ stores it as Settings.Secure.LOCKDOWN_IN_POWER_MENU.
+    raw = adb.shell("settings get secure lockdown_in_power_menu").strip()
     allowed = raw == "1"
     yield HardenFinding(
         check_id="sec.lockdown_menu",
         title="Lockdown in power menu " + ("enabled" if allowed else "not enabled"),
         status=HardenStatus.PASS if allowed else HardenStatus.WARN,
-        detail=f"settings secure lockdown_mode_allowed = {raw!r}",
+        detail=f"settings secure lockdown_in_power_menu = {raw!r}",
         why=(
             "The Lockdown option in the power menu lets you instantly disable "
             "fingerprint, face unlock, and Smart Lock — useful if you expect "
@@ -283,9 +283,9 @@ def check_lockdown_power_menu(adb: Adb, _facts: DeviceFacts) -> Iterable[HardenF
         fix_hint=(
             "Settings > Display (or Security, depending on ROM) > "
             "Show lockdown option. Or apply via ADB: "
-            "adb shell settings put secure lockdown_mode_allowed 1"
+            "adb shell settings put secure lockdown_in_power_menu 1"
         ),
-        fix_command="settings put secure lockdown_mode_allowed 1",
+        fix_command="settings put secure lockdown_in_power_menu 1",
     )
 
 

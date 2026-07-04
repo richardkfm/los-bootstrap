@@ -7,6 +7,44 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 ## [Unreleased]
 
 ### Fixed
+- microG detection in `location doctor` now looks at the real package id.
+  microG GmsCore installs as `com.google.android.gms` (not the non-existent
+  `org.microg.gms.core` the checks previously queried), so microG was never
+  detected and every microG device got a false "Real Google Play Services
+  detected" warning. The doctor now classifies the installed GMS package by
+  its versionName (microG has always shipped 0.x) and reports microG,
+  real GMS, or "could not classify" honestly.
+- `flash run` no longer hangs forever when the device is booted:
+  `fastboot getvar slot-count` blocks until a fastboot device appears, so the
+  A/B check now only queries fastboot in fastboot mode and reads
+  `ro.boot.slot_suffix` over ADB when booted. Same fix in the wizard.
+- `flash run` (CLI) now refuses to flash a ROM whose OTA metadata targets a
+  different device codename than the connected device; the wizard warns and
+  requires an explicit extra confirmation. `flash verify` now exits non-zero
+  on a codename mismatch, not only on a corrupt zip.
+- Destructive flash steps (`fastboot flash`, `fastboot update`,
+  `adb sideload`, `heimdall flash`) are now marked `is_destructive`, so the
+  executor's `--confirm` gate actually protects them and the plan preview
+  shows the "DESTRUCTIVE" tag.
+- The flash executor now pauses on MANUAL steps until the user confirms the
+  action is done, instead of immediately running the next command (e.g.
+  running `heimdall flash` before the device was in Download Mode). Flash
+  plans also gained an explicit "Apply update → Apply from ADB" step before
+  every sideload.
+- `fastboot reboot` / `fastboot flashing unlock` failures now raise instead
+  of being silently counted as successful steps.
+- The applier no longer reports a step as "ok" when it could not parse the
+  step's command; it records an error and executes nothing.
+- Hardening check for the power-menu lockdown option now uses the real AOSP
+  settings key `lockdown_in_power_menu` (was the non-existent
+  `lockdown_mode_allowed`, which made the check always warn and the fix a
+  no-op).
+- Boolean profile setting values are stored as `1`/`0` instead of the
+  literal strings `True`/`False`, matching what `settings put` expects.
+- `adb devices` daemon-startup chatter (`* daemon not running; ...`) is no
+  longer parsed as a device.
+- `flash download` rejects the contradictory `--fetch --no-network`
+  combination up front instead of failing with a misleading error.
 - Wizard's ROM download screen now falls back to `ctx.get_facts().codename`
   when the flash-context detection didn't pick up a codename (e.g. device
   in fastboot mode at wizard start, or transient `getprop` failure). The

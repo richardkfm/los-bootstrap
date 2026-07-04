@@ -104,7 +104,10 @@ def _coerce_setting(raw: Any, where: str) -> SettingEntry:
     if not key:
         raise ProfileError(f"{where}: settings 'key' must be non-empty")
     value = raw["value"]
-    if not isinstance(value, (str, int, float, bool)):
+    if isinstance(value, bool):
+        # `settings put` expects 0/1; str(True) would store the literal "True".
+        value = "1" if value else "0"
+    elif not isinstance(value, (str, int, float)):
         raise ProfileError(
             f"{where}: settings value must be a scalar (got {type(value).__name__})"
         )

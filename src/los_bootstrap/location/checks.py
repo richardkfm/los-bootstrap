@@ -17,6 +17,34 @@ from .models import LocationFinding, LocationReport, LocationStatus
 
 LocationCheckFn = Callable[[Adb, DeviceFacts], Iterable[LocationFinding]]
 
+# microG GmsCore installs under the real Play Services package id — that is
+# the whole point of microG — so presence alone cannot distinguish the two.
+GMS_PACKAGE = "com.google.android.gms"
+
+
+def _gms_variant(adb: Adb) -> str:
+    """Classify the installed com.google.android.gms package.
+
+    Returns one of: "none", "microg", "gms", "unknown".
+
+    microG versionNames have always been 0.x, while real Play Services has
+    shipped double-digit versions for over a decade, so the versionName
+    prefix is a reliable discriminator.
+    """
+    if not adb.package_installed(GMS_PACKAGE):
+        return "none"
+    try:
+        dump = adb.shell(f"dumpsys package {GMS_PACKAGE}")
+    except AdbCommandError:
+        return "unknown"
+    for line in dump.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("versionName="):
+            version = stripped.split("=", 1)[1].strip()
+            return "microg" if version.startswith("0.") else "gms"
+    return "unknown"
+
+
 # Known UnifiedNlp / microG network-location backend packages.
 # Each tuple is (package_name, human_readable_description).
 _KNOWN_BACKENDS: tuple[tuple[str, str], ...] = (
@@ -79,14 +107,39 @@ def check_location_enabled(adb: Adb, _facts: DeviceFacts) -> Iterable[LocationFi
 
 def check_microg_core(adb: Adb, _facts: DeviceFacts) -> Iterable[LocationFinding]:
     """Check whether microG GmsCore is installed."""
-    installed = adb.package_installed("org.microg.gms.core")
+    variant = _gms_variant(adb)
+    if variant == "unknown":
+        yield LocationFinding(
+            check_id="loc.microg_core",
+            title="microG GmsCore: could not classify the installed GMS package",
+            status=LocationStatus.UNKNOWN,
+            detail=(
+                f"{GMS_PACKAGE} is installed but its versionName could not be "
+                "read; unable to tell microG from real Play Services."
+            ),
+            why=(
+                "microG installs under the real Play Services package id, so "
+                "the versionName is needed to distinguish the two."
+            ),
+            tradeoff="N/A",
+            fix_hint=(
+                f"Inspect manually: adb shell dumpsys package {GMS_PACKAGE} "
+                "| grep versionName — microG reports 0.x versions."
+            ),
+        )
+        return
+    installed = variant == "microg"
+    if variant == "gms":
+        detail = f"{GMS_PACKAGE} is installed but is real Play Services, not microG."
+    else:
+        detail = (
+            f"{GMS_PACKAGE} → {'microG versionName (0.x) detected' if installed else 'not found'}"
+        )
     yield LocationFinding(
         check_id="loc.microg_core",
         title="microG GmsCore " + ("installed" if installed else "not installed"),
         status=LocationStatus.PASS if installed else LocationStatus.INFO,
-        detail=(
-            f"pm list packages org.microg.gms.core → {'found' if installed else 'not found'}"
-        ),
+        detail=detail,
         why=(
             "microG is a free-software reimplementation of Google Play Services. "
             "It exposes the FusedLocationProvider API that many apps call instead "
@@ -109,12 +162,12 @@ def check_microg_core(adb: Adb, _facts: DeviceFacts) -> Iterable[LocationFinding
 
 def check_signature_spoofing(adb: Adb, _facts: DeviceFacts) -> Iterable[LocationFinding]:
     """Check whether microG has the FAKE_PACKAGE_SIGNATURE permission granted."""
-    if not adb.package_installed("org.microg.gms.core"):
+    if _gms_variant(adb) != "microg":
         yield LocationFinding(
             check_id="loc.sig_spoof",
             title="Signature spoofing: microG not installed — check skipped",
             status=LocationStatus.INFO,
-            detail="org.microg.gms.core not found; spoofing check requires microG.",
+            detail="No microG GmsCore found; spoofing check requires microG.",
             why=(
                 "Signature spoofing lets microG masquerade as Google Play Services. "
                 "Without it, apps that verify the GMS package signature will reject "
@@ -130,16 +183,16 @@ def check_signature_spoofing(adb: Adb, _facts: DeviceFacts) -> Iterable[Location
         return
 
     try:
-        dump = adb.shell("pm dump org.microg.gms.core")
+        dump = adb.shell(f"pm dump {GMS_PACKAGE}")
     except AdbCommandError:
         yield LocationFinding(
             check_id="loc.sig_spoof",
             title="Signature spoofing: could not inspect microG permissions",
             status=LocationStatus.UNKNOWN,
-            detail="pm dump org.microg.gms.core failed.",
+            detail=f"pm dump {GMS_PACKAGE} failed.",
             why="FAKE_PACKAGE_SIGNATURE is needed for microG to fully replace GMS.",
             tradeoff="N/A",
-            fix_hint="Run `adb shell pm dump org.microg.gms.core` manually to inspect.",
+            fix_hint=f"Run `adb shell pm dump {GMS_PACKAGE}` manually to inspect.",
         )
         return
 
@@ -223,13 +276,44 @@ def check_nlp_backends(adb: Adb, _facts: DeviceFacts) -> Iterable[LocationFindin
 
 def check_real_gms_conflict(adb: Adb, _facts: DeviceFacts) -> Iterable[LocationFinding]:
     """Check whether real Google Play Services is installed — it conflicts with microG."""
-    gms_present = adb.package_installed("com.google.android.gms")
-    if gms_present:
+    variant = _gms_variant(adb)
+    if variant == "microg":
+        yield LocationFinding(
+            check_id="loc.gms_conflict",
+            title="Real Google Play Services not detected (microG occupies the package)",
+            status=LocationStatus.PASS,
+            detail=f"{GMS_PACKAGE} is present but its versionName identifies it as microG.",
+            why=(
+                "microG deliberately installs under the Play Services package id; "
+                "this is not a conflict but the intended degoogled configuration."
+            ),
+            tradeoff="None.",
+            fix_hint="",
+        )
+        return
+    if variant == "unknown":
+        yield LocationFinding(
+            check_id="loc.gms_conflict",
+            title="A GMS-compatible core is installed but could not be classified",
+            status=LocationStatus.UNKNOWN,
+            detail=f"{GMS_PACKAGE} is installed; versionName could not be read.",
+            why=(
+                "microG and real Google Play Services share the same package id. "
+                "Without the versionName, this tool cannot tell which is installed."
+            ),
+            tradeoff="N/A",
+            fix_hint=(
+                f"Inspect manually: adb shell dumpsys package {GMS_PACKAGE} "
+                "| grep versionName — microG reports 0.x versions."
+            ),
+        )
+        return
+    if variant == "gms":
         yield LocationFinding(
             check_id="loc.gms_conflict",
             title="Real Google Play Services detected — may conflict with microG",
             status=LocationStatus.WARN,
-            detail="pm list packages com.google.android.gms → found",
+            detail=f"pm list packages {GMS_PACKAGE} → found (non-microG versionName)",
             why=(
                 "microG and real Google Play Services cannot coexist as location providers. "
                 "If both are present, location requests may be silently routed to GMS, "

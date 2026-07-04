@@ -80,15 +80,15 @@ def _base_shell() -> dict[str, str]:
     """Shell answers for a well-configured location stack."""
     return {
         "settings get secure location_enabled": "1\n",
-        "pm dump org.microg.gms.core": "FAKE_PACKAGE_SIGNATURE granted\n",
+        "dumpsys package com.google.android.gms": "    versionName=0.3.6.244735\n",
+        "pm dump com.google.android.gms": "FAKE_PACKAGE_SIGNATURE granted\n",
     }
 
 
 def _base_pm() -> dict[str, bool]:
     """PM answers for a device with microG + DejaVu, no real GMS."""
     return {
-        "org.microg.gms.core": True,
-        "com.google.android.gms": False,
+        "com.google.android.gms": True,
         "org.microg.nlp.backend.ichnaea": False,
         "org.fitchfamily.android.dejavu": True,
         "org.microg.nlp.backend.apple": False,
@@ -137,16 +137,26 @@ def test_location_disabled_fallback_empty_providers():
 # ── check_microg_core ─────────────────────────────────────────────────────────
 
 def test_microg_installed_pass():
-    pm = {"org.microg.gms.core": True}
-    adb = Adb(serial="S1", runner=_runner({}, pm))
+    pm = {"com.google.android.gms": True}
+    shell = {"dumpsys package com.google.android.gms": "    versionName=0.3.6.244735\n"}
+    adb = Adb(serial="S1", runner=_runner(shell, pm))
     (f,) = list(check_microg_core(adb, _facts()))
     assert f.status == LocationStatus.PASS
     assert "installed" in f.title
 
 
 def test_microg_not_installed_info():
-    pm = {"org.microg.gms.core": False}
+    pm = {"com.google.android.gms": False}
     adb = Adb(serial="S1", runner=_runner({}, pm))
+    (f,) = list(check_microg_core(adb, _facts()))
+    assert f.status == LocationStatus.INFO
+    assert "not installed" in f.title
+
+
+def test_real_gms_is_not_reported_as_microg():
+    pm = {"com.google.android.gms": True}
+    shell = {"dumpsys package com.google.android.gms": "    versionName=24.26.32\n"}
+    adb = Adb(serial="S1", runner=_runner(shell, pm))
     (f,) = list(check_microg_core(adb, _facts()))
     assert f.status == LocationStatus.INFO
     assert "not installed" in f.title
@@ -155,8 +165,11 @@ def test_microg_not_installed_info():
 # ── check_signature_spoofing ──────────────────────────────────────────────────
 
 def test_sig_spoof_granted_pass():
-    pm = {"org.microg.gms.core": True}
-    shell = {"pm dump org.microg.gms.core": "FAKE_PACKAGE_SIGNATURE granted=true\n"}
+    pm = {"com.google.android.gms": True}
+    shell = {
+        "dumpsys package com.google.android.gms": "    versionName=0.3.6.244735\n",
+        "pm dump com.google.android.gms": "FAKE_PACKAGE_SIGNATURE granted=true\n",
+    }
     adb = Adb(serial="S1", runner=_runner(shell, pm))
     (f,) = list(check_signature_spoofing(adb, _facts()))
     assert f.status == LocationStatus.PASS
@@ -164,8 +177,11 @@ def test_sig_spoof_granted_pass():
 
 
 def test_sig_spoof_not_granted_warn():
-    pm = {"org.microg.gms.core": True}
-    shell = {"pm dump org.microg.gms.core": "some other permissions\n"}
+    pm = {"com.google.android.gms": True}
+    shell = {
+        "dumpsys package com.google.android.gms": "    versionName=0.3.6.244735\n",
+        "pm dump com.google.android.gms": "some other permissions\n",
+    }
     adb = Adb(serial="S1", runner=_runner(shell, pm))
     (f,) = list(check_signature_spoofing(adb, _facts()))
     assert f.status == LocationStatus.WARN
@@ -173,7 +189,7 @@ def test_sig_spoof_not_granted_warn():
 
 
 def test_sig_spoof_microg_absent_info():
-    pm = {"org.microg.gms.core": False}
+    pm = {"com.google.android.gms": False}
     adb = Adb(serial="S1", runner=_runner({}, pm))
     (f,) = list(check_signature_spoofing(adb, _facts()))
     assert f.status == LocationStatus.INFO
@@ -236,10 +252,19 @@ def test_gms_absent_pass():
 
 def test_gms_present_warn():
     pm = {"com.google.android.gms": True}
-    adb = Adb(serial="S1", runner=_runner({}, pm))
+    shell = {"dumpsys package com.google.android.gms": "    versionName=24.26.32\n"}
+    adb = Adb(serial="S1", runner=_runner(shell, pm))
     (f,) = list(check_real_gms_conflict(adb, _facts()))
     assert f.status == LocationStatus.WARN
     assert "conflict" in f.title.lower()
+
+
+def test_microg_does_not_trigger_gms_conflict():
+    pm = {"com.google.android.gms": True}
+    shell = {"dumpsys package com.google.android.gms": "    versionName=0.3.6.244735\n"}
+    adb = Adb(serial="S1", runner=_runner(shell, pm))
+    (f,) = list(check_real_gms_conflict(adb, _facts()))
+    assert f.status == LocationStatus.PASS
 
 
 # ── Orchestrator ──────────────────────────────────────────────────────────────
@@ -286,6 +311,7 @@ def test_render_location_report_failures():
     shell["settings get secure location_enabled"] = "0\n"
     pm = dict(_base_pm())
     pm["com.google.android.gms"] = True
+    shell["dumpsys package com.google.android.gms"] = "    versionName=24.26.32\n"
     adb = Adb(serial="S1", runner=_runner(shell, pm))
     report = run_location_doctor(adb, _facts())
     text = render_location_report(report)
