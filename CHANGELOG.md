@@ -6,6 +6,8 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-06
+
 ### Added
 - Global options (`--serial/-s`, `--no-banner`, `--compact-banner`) are now
   accepted after the subcommand too: `los-bootstrap flash status -s XYZ`
