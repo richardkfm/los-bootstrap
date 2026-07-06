@@ -6,6 +6,11 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Changed
+- Relicensed from GPL-3.0 to PolyForm Noncommercial 1.0.0. The project is
+  now source-available and strictly noncommercial-use-only rather than
+  OSI-approved open source; README/CLAUDE.md wording updated accordingly.
+
 ## [0.13.0] - 2026-07-06
 
 ### Added

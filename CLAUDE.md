@@ -5,7 +5,7 @@ Read this top-to-bottom before making changes.
 
 ## Project purpose
 
-`los-bootstrap` is a CLI-first, open-source post-install assistant for
+`los-bootstrap` is a CLI-first, source-available post-install assistant for
 LineageOS / AOSP-derived ROMs. It targets advanced users who already know
 their way around `adb` and want to bootstrap a degoogled phone quickly,
 audit privacy posture, and (eventually) apply opinionated hardening.

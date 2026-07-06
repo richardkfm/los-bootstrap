@@ -8,8 +8,8 @@
 </pre>
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.13.0-blue)](CHANGELOG.md)
-[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.14.0-blue)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 
@@ -485,4 +485,5 @@ versioning policy, and roadmap discipline rules.
 
 ## License
 
-GPL-3.0. See `LICENSE`.
+PolyForm Noncommercial 1.0.0 — source-available, noncommercial use only.
+See `LICENSE`. Copyright (C) 2026 Richard Kaufmann.

@@ -9,12 +9,12 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 keywords = ["android", "lineageos", "adb", "privacy", "degoogled", "cli"]
-authors = [{ name = "los-bootstrap contributors" }]
+authors = [{ name = "Richard Kaufmann" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "License :: Other/Proprietary License",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
