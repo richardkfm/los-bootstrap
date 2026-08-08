@@ -298,7 +298,7 @@ read and audit it in one sitting.
 
 ---
 
-## Phase 10 — Android Tablet Support
+## Phase 10 — Android Tablet Support ✓
 
 **Goal:** make los-bootstrap correctly detect and serve Android tablets running
 LineageOS — the same ROM, the same privacy goals, but a different form factor
@@ -331,7 +331,30 @@ port profiles.
 **Exit criteria:** `los-bootstrap info` correctly labels a connected tablet as
 `form_factor: tablet`. All "About phone" occurrences visible to the user are
 replaced with neutral language. Two tablet GCam profiles are present and
-`camera list-profiles` shows them. All tests pass.
+`camera list-profiles` shows them. All tests pass. ✓ Shipped in 0.12.0.
+
+---
+
+## Post-Phase-10 maintenance (0.13.0)
+
+0.13.0 did not open a new phase; it was a cross-cutting polish and
+bug-fix release on top of the Phase 1–10 scope: CLI ergonomics
+(`--version`, global flags after the subcommand), colorized report
+output, a distinct exit code for findings, and a batch of correctness
+fixes (microG detection, flash-safety gating, `.yaml` profile discovery).
+See `CHANGELOG.md` for the full list.
+
+---
+
+## What's next
+
+**No Phase 11 is currently scoped.** Phases 1–10 are complete and 0.13.0
+closed out known polish and correctness issues on top of them. Per the
+roadmap discipline in `CLAUDE.md`, a new phase must be proposed and added
+here — with goal, scope, exclusions, and exit criteria — *before* any
+code for it is written. Candidate ideas raised in issues or discussion
+but not yet promoted to a scoped phase belong in a "candidates" note
+here or in a GitHub issue, not in the codebase.
 
 ---
 

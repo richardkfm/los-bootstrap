@@ -17,13 +17,17 @@ A CLI-first toolkit for **LineageOS** and other AOSP-derived, degoogled
 Android ROMs — covering the full journey from locked bootloader to a
 hardened, privacy-audited daily driver.
 
-> **Status:** Phase 10 — Android tablet support. `los-bootstrap info` now
-> detects phone vs tablet via `ro.build.characteristics`. GCam port
-> profiles added for Xiaomi Pad 5 (`nabu`) and OnePlus Pad (`jupiter`).
-> All user-visible "About phone" language is now form-factor-neutral.
-> Install with a single `curl … | sh` (Linux/macOS) or `irm … | iex`
-> (Windows PowerShell) command. Mutating commands only run with explicit
-> `--confirm`. See [`roadmap.md`](./roadmap.md) for what comes next.
+> **Status:** v0.13.0. Phase 10 (Android tablet support) is complete —
+> `los-bootstrap info` detects phone vs tablet via
+> `ro.build.characteristics`, with GCam port profiles for the Xiaomi Pad 5
+> (`nabu`) and OnePlus Pad (`jupiter`) and form-factor-neutral prose
+> throughout. 0.13.0 added colorized report output, a distinct exit code
+> for findings that need attention, `--version`/`-V`, Samsung Download
+> Mode detection, and fixed a false-positive microG detection bug plus
+> several flash-safety gaps. Install with a single `curl … | sh`
+> (Linux/macOS) or `irm … | iex` (Windows PowerShell) command. Mutating
+> commands only run with explicit `--confirm`. No new phase is scoped yet
+> — see [`roadmap.md`](./roadmap.md) for what's next.
 
 [Why](#why) · [Install](#install) · [Upgrade](#upgrade) · [Quick start](#quick-start) · [What it currently does](#what-it-currently-does) · [What it does NOT do](#what-it-does-not-do) · [Project layout](#project-layout) · [License](#license)
 
