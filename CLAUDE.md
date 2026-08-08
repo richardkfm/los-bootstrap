@@ -13,11 +13,14 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 It can guide users through flashing a ROM and unlocking their bootloader,
 and helps with everything that comes after the ROM is installed.
 
-## Current scope (Phase 10, version 0.12.x)
+## Current scope (Phase 10 complete, version 0.13.x)
 
 Audit MVP, bootstrap profiles, hardening assistant, location / maps integration,
 camera / GCam port profiles, interactive wizard, ROM flashing assistant,
-one-line install distribution, and Android tablet support:
+one-line install distribution, and Android tablet support. Phases 1–10 have
+all shipped; 0.13.0 layered cross-cutting CLI polish and bug fixes on top of
+that scope rather than opening a new phase. **No Phase 11 is scoped yet** —
+see `roadmap.md` for how to propose one.
 
 - Phase 1–5 (still in place): see prior changelog entries
 - Phase 6 (still in place):
@@ -106,8 +109,26 @@ one-line install distribution, and Android tablet support:
     language across wizard prose, flash unlock guides, and camera hints.
   - GCam port profiles for two LineageOS tablets: Xiaomi Pad 5 (nabu) and
     OnePlus Pad (jupiter).
+  - ✓ Shipped in 0.12.0. Exit criteria met; see `roadmap.md`.
 
-If a change does not fit Phase 10, it goes in the roadmap, not the code.
+- Phase 10 follow-up polish (0.13.0, not a new phase):
+  - Global options (`--serial/-s`, `--no-banner`, `--compact-banner`) now
+    also accepted after the subcommand; `--version`/`-V` flag added.
+  - Colorized report output (audit, harden, location doctor) on a TTY,
+    honoring `NO_COLOR` / `FORCE_COLOR`.
+  - Distinct exit code (3) for commands whose checks found issues,
+    separate from exit code 2 (usage errors).
+  - `flash status` detects Samsung Download Mode via `heimdall detect`.
+  - Profile files with a `.yaml` extension are now discovered alongside
+    `.yml`.
+  - Notable fixes: microG was never actually detected in
+    `location doctor` (wrong package id) and always produced a false
+    "real GMS" warning; several flash-safety gaps (destructive steps not
+    gated, wrong-codename ROM not blocked, `flash run` hanging on a
+    booted device) were closed. Full list in `CHANGELOG.md`.
+
+If a change does not fit Phase 10 or the maintenance/polish of an
+already-shipped phase, it goes in the roadmap, not the code.
 
 ## Non-goals
 
