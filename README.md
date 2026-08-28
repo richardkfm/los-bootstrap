@@ -13,15 +13,18 @@
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 
-A CLI-first toolkit for **LineageOS** and other AOSP-derived, degoogled
-Android ROMs — covering the full journey from locked bootloader to a
+A CLI-first toolkit for degoogled Android. It goes further than helping
+you find degoogled app alternatives: `los-bootstrap` can **flash an
+alternative ROM** — LineageOS and other AOSP-derived builds — onto your
+Android phone or tablet, then walk you from a locked bootloader to a
 hardened, privacy-audited daily driver.
 
 > **Status:** v0.13.0. Phase 10 (Android tablet support) is complete —
 > `los-bootstrap info` detects phone vs tablet via
 > `ro.build.characteristics`, with GCam port profiles for the Xiaomi Pad 5
 > (`nabu`) and OnePlus Pad (`jupiter`) and form-factor-neutral prose
-> throughout. 0.13.0 added colorized report output, a distinct exit code
+> throughout; the ROM flashing assistant works on phones and tablets
+> alike. 0.13.0 added colorized report output, a distinct exit code
 > for findings that need attention, `--version`/`-V`, Samsung Download
 > Mode detection, and fixed a false-positive microG detection bug plus
 > several flash-safety gaps. Install with a single `curl … | sh`
@@ -48,6 +51,11 @@ the whole process end-to-end from a single CLI:
 
 - **Full lifecycle.** Bootloader unlock → ROM flash → privacy audit →
   hardening → app bootstrap → location diagnostics → camera tuning.
+- **It does the flashing.** `los-bootstrap flash` doesn't just list
+  steps — it runs the actual fastboot sequence against your phone or
+  tablet: manufacturer-aware unlock guidance, official-API ROM downloads
+  with SHA-256 verification, device-match checks, and two-step
+  confirmation before anything destructive.
 - **Honest about tradeoffs.** Every recommendation surfaces its downside.
   "Unlock your bootloader" also tells you about the verified-boot warning
   and data wipe. "Enable location" also tells you who can see it.
@@ -177,7 +185,8 @@ los-bootstrap flash run ~/Downloads/lineage-21-*.zip --recovery ~/Downloads/reco
 
 ### After the ROM is installed
 
-Plug in your phone, enable USB debugging, accept the RSA prompt, then:
+Plug in your phone or tablet, enable USB debugging, accept the RSA
+prompt, then:
 
 ```bash
 los-bootstrap                    # launch the interactive guided wizard
@@ -215,6 +224,9 @@ The `camera`, `location compat`, and `flash prepare` commands work without a dev
 ## What it currently does
 
 ### ROM flashing assistant (Phase 8)
+
+The complete ROM-install path for your phone or tablet — unlock,
+download, verify, and the actual fastboot flash:
 
 ```bash
 los-bootstrap flash status    # detect device state + manufacturer
