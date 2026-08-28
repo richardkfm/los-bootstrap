@@ -6,6 +6,16 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-08-28
+
+### Changed
+- README now frames the project around the full ROM-install journey:
+  `los-bootstrap` can flash an alternative ROM (LineageOS and other
+  AOSP-derived builds) onto an Android phone or tablet, not just help
+  you install degoogled apps on a ROM you already have. The intro,
+  status note, "Why" section, quick start, and flashing section now
+  say so explicitly.
+
 ## [0.13.0] - 2026-07-06
 
 ### Added
