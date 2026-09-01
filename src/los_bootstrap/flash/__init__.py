@@ -15,9 +15,14 @@ Public API used by cli.py:
         unlock_guide, samsung_odin_guide,
         render_flash_status, render_flash_plan,
         render_verify_result, render_flash_result,
+        evaluate_rom_update, run_first_boot,
+        collect_first_boot_probes, evaluate_first_boot,
+        backup_guide,
+        render_update_report, render_first_boot_report,
     )
 """
 
+from .backup import backup_guide
 from .checks import (
     detect_manufacturer,
     detect_state,
@@ -42,14 +47,26 @@ from .fastboot import (
 from .flash import execute_flash_plan
 from .guide import samsung_odin_guide, unlock_guide
 from .heimdall import Heimdall, HeimdallCommandError, HeimdallNotFoundError, heimdall_available
+from .lifecycle import (
+    collect_first_boot_probes,
+    evaluate_first_boot,
+    evaluate_rom_update,
+    run_first_boot,
+)
 from .models import (
     DeviceState,
+    FirstBootFinding,
+    FirstBootProbes,
+    FirstBootReport,
+    FirstBootStatus,
     FlashPlan,
     FlashResult,
     FlashStep,
     FlashStepKind,
     Manufacturer,
     RomMetadata,
+    RomUpdateResult,
+    RomUpdateState,
 )
 from .plan import build_flash_plan
 from .report import (
@@ -57,6 +74,8 @@ from .report import (
     render_flash_plan,
     render_flash_result,
     render_flash_status,
+    render_first_boot_report,
+    render_update_report,
     render_verify_result,
 )
 
@@ -96,4 +115,17 @@ __all__ = [
     "render_flash_plan",
     "render_verify_result",
     "render_flash_result",
+    "FirstBootFinding",
+    "FirstBootProbes",
+    "FirstBootReport",
+    "FirstBootStatus",
+    "RomUpdateResult",
+    "RomUpdateState",
+    "collect_first_boot_probes",
+    "evaluate_first_boot",
+    "evaluate_rom_update",
+    "run_first_boot",
+    "backup_guide",
+    "render_update_report",
+    "render_first_boot_report",
 ]

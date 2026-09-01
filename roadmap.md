@@ -322,8 +322,8 @@ port profiles.
   surface; existing checks apply equally).
 - Tablet-specific bootstrap profiles (app recommendations are the same;
   a tablet user benefits from the same `privacy-default` or `max-tools` profile).
-- Auto-detecting split-screen or large-screen app recommendations — that is
-  Phase 11 territory.
+- Auto-detecting split-screen or large-screen app recommendations —
+  deferred, not scoped in any current phase.
 - Any changes to the flash wizard for tablet-specific unlock flows beyond
   the already-present manufacturer guides (Pixel tablets use standard
   fastboot; Samsung/Xiaomi tablet guidance is covered by existing guides).
@@ -346,10 +346,61 @@ See `CHANGELOG.md` for the full list.
 
 ---
 
+## Phase 11 — Flash Lifecycle ✓
+
+**Goal:** extend the flash assistant beyond the flash itself — let users
+check whether their LineageOS install is up to date, verify a fresh flash
+after first boot, and get pre-flash backup guidance. All three are
+read-only; `flash run` remains the only mutating flash path.
+
+**Included:**
+- `los-bootstrap flash update` — read-only ROM freshness check. Compares
+  the device build date (`ro.build.date.utc`, exposed as the new
+  `DeviceFacts.build_date_utc`) against the latest official build for the
+  device codename on the LineageOS JSON API. Exit 3 when outdated (with a
+  days-behind count), 0 when current. `--no-network` skips the API call
+  and reports "unverifiable" instead of erroring.
+- `los-bootstrap flash check` — read-only post-flash first-boot
+  verification. Six probes: LineageOS detection (`ro.lineage.version`),
+  build fingerprint, verified boot state (yellow/red is a FAIL — most
+  often a ROM for the wrong device), A/B slot, GMS presence (WARN —
+  classify with `location doctor`), and build type. Exit 3 on any
+  WARN/FAIL finding, 0 on a clean report.
+- `los-bootstrap flash backup` — static pre-flash backup guidance (no
+  device required). Covers AOSP `adb backup` limitations, custom-recovery
+  nandroid, what bootloader unlock wipes vs what a ROM flash wipes, and
+  per-manufacturer notes (Samsung EFS, Xiaomi, Pixel). Ends with the
+  recommended post-flash verification sequence.
+- `flash/lifecycle.py` — pure `RomUpdateResult` / `FirstBootReport`
+  evaluators plus the ADB probe collector (IO at the edges, same split as
+  `audit/`).
+- `flash/backup.py` — static backup guidance text.
+- `flash update` / `flash check` renderers in `flash/report.py`.
+
+**Excluded:**
+- Actually performing the backup (`adb backup` invocation, TWRP
+  automation) — guidance only; Phase 11 keeps commands read-only.
+- Automatic re-flash or update from `flash update` — it is a report-only
+  command; updating still goes through `flash run --confirm` explicitly.
+- Interactive wizard entry points — the wizard menu is unchanged in this
+  phase.
+- OTA changelog or security-bulletin comparison — the freshness check
+  compares build dates against the latest official build, nothing more.
+
+**Exit criteria:** `flash update` reports an outdated LineageOS install with a
+days-behind count and exits 3, and exits 0 when current. `flash check` on a
+freshly flashed LineageOS device produces no FAIL findings and exits 0.
+`flash check` on a device that reports no LineageOS exits 3.
+`flash backup` prints guidance without a device connection. All tests
+pass. ✓ Shipped in 0.14.0.
+
+---
+
 ## What's next
 
-**No Phase 11 is currently scoped.** Phases 1–10 are complete and 0.13.0
-closed out known polish and correctness issues on top of them. Per the
+**No Phase 12 is currently scoped.** Phases 1–11 are complete; 0.13.0
+closed out known polish and correctness issues on top of Phases 1–10,
+and 0.14.0 adds the flash-lifecycle scope above. Per the
 roadmap discipline in `CLAUDE.md`, a new phase must be proposed and added
 here — with goal, scope, exclusions, and exit criteria — *before* any
 code for it is written. Candidate ideas raised in issues or discussion

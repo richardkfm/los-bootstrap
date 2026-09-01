@@ -8,7 +8,7 @@
 </pre>
 
 [![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.13.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.14.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
@@ -19,15 +19,15 @@ alternative ROM** — LineageOS and other AOSP-derived builds — onto your
 Android phone or tablet, then walk you from a locked bootloader to a
 hardened, privacy-audited daily driver.
 
-> **Status:** v0.13.0. Phase 10 (Android tablet support) is complete —
-> `los-bootstrap info` detects phone vs tablet via
-> `ro.build.characteristics`, with GCam port profiles for the Xiaomi Pad 5
-> (`nabu`) and OnePlus Pad (`jupiter`) and form-factor-neutral prose
-> throughout; the ROM flashing assistant works on phones and tablets
-> alike. 0.13.0 added colorized report output, a distinct exit code
-> for findings that need attention, `--version`/`-V`, Samsung Download
-> Mode detection, and fixed a false-positive microG detection bug plus
-> several flash-safety gaps. Install with a single `curl … | sh`
+> **Status:** v0.14.0. Phase 11 (flash lifecycle) is complete —
+> `flash update` checks whether your installed LineageOS build is
+> current, `flash check` verifies a fresh flash after first boot, and
+> `flash backup` walks you through pre-flash backup, so the ROM
+> flashing assistant now covers the whole journey: unlock, download,
+> verify, flash, verify the result, and keep the build current. All of
+> Phases 1–10 remain in place, including tablet detection and GCam
+> port profiles, audit, profiles, hardening, location, camera, and the
+> interactive wizard. Install with a single `curl … | sh`
 > (Linux/macOS) or `irm … | iex` (Windows PowerShell) command. Mutating
 > commands only run with explicit `--confirm`. No new phase is scoped yet
 > — see [`roadmap.md`](./roadmap.md) for what's next.
@@ -167,6 +167,9 @@ for what each release changed.
 ### Flashing a ROM (Phase 8)
 
 ```bash
+# 0. Before anything destructive, read the pre-flash backup guidance
+los-bootstrap flash backup
+
 # 1. Check what state your device is in and identify the manufacturer
 los-bootstrap flash status
 
@@ -181,6 +184,10 @@ los-bootstrap flash run ~/Downloads/lineage-21-*.zip --recovery ~/Downloads/reco
 
 # 5. Execute the flash (destructive steps require --confirm)
 los-bootstrap flash run ~/Downloads/lineage-21-*.zip --recovery ~/Downloads/recovery.img --confirm
+
+# 6. After the first boot: verify the install, then track updates
+los-bootstrap flash check
+los-bootstrap flash update
 ```
 
 ### After the ROM is installed
@@ -216,10 +223,14 @@ los-bootstrap location compat                     # app location compatibility m
 
 los-bootstrap camera list-profiles                # list known GCam port profiles
 los-bootstrap camera show panther                 # full port details + XML config path
+
+los-bootstrap flash update                        # is my installed build current?
+los-bootstrap flash check                         # post-flash first-boot verification
+los-bootstrap flash backup                        # pre-flash backup guidance (no device)
 ```
 
 If you have more than one device connected, pass `--serial <id>`.
-The `camera`, `location compat`, and `flash prepare` commands work without a device.
+The `camera`, `location compat`, `flash prepare`, `flash download <codename>`, and `flash backup` commands work without a device.
 
 ## What it currently does
 
@@ -231,8 +242,12 @@ download, verify, and the actual fastboot flash:
 ```bash
 los-bootstrap flash status    # detect device state + manufacturer
 los-bootstrap flash prepare   # manufacturer-aware unlock guide
+los-bootstrap flash download  # download links (+ --fetch to get the zip)
 los-bootstrap flash verify    # validate ROM zip
 los-bootstrap flash run       # execute the flash sequence
+los-bootstrap flash backup    # pre-flash backup guidance (no device needed)
+los-bootstrap flash check     # post-flash first-boot verification
+los-bootstrap flash update    # is my installed LineageOS build current?
 ```
 
 `flash status` detects whether your device is in normal ADB mode,
@@ -259,6 +274,23 @@ catch before anything destructive runs.
 layout (`fastboot getvar slot-count`) and adjusts accordingly. Every
 destructive step is skipped without `--confirm`. `--dry-run` prints the
 full command sequence without running any of it.
+
+The lifecycle checks (Phase 11) close the loop around the flash:
+
+`flash backup` prints honest pre-flash backup guidance — what
+`adb backup` can and can't capture, nandroid caveats, what the unlock
+and what the flash each wipe, and per-manufacturer notes (Samsung EFS,
+Xiaomi, Pixel). No device needed.
+
+`flash check` is the post-flash first-boot verification: LineageOS
+detection, build fingerprint, verified-boot state (yellow/red is a
+failure — usually a ROM for the wrong device), A/B slot, GMS presence,
+and build type. Exits 3 when anything needs attention.
+
+`flash update` compares your installed build date against the latest
+official LineageOS build for your codename and tells you how many days
+you are behind. Exits 3 when outdated; `--no-network` skips the API
+lookup and reports the ROM as unverifiable.
 
 ### Audit (Phase 1)
 
@@ -486,7 +518,7 @@ Useful for scripting `los-bootstrap` in CI or shell pipelines:
 
 | Code | Meaning |
 |------|---------|
-| 0    | Success — and for checks (`audit`, `report`, `harden`, `location doctor`, `flash verify`): nothing needs attention |
+| 0    | Success — and for checks (`audit`, `report`, `harden`, `location doctor`, `flash verify`, `flash check`, `flash update`): nothing needs attention |
 | 1    | Runtime failure (adb/fastboot/network error) |
 | 2    | Usage error: bad flags, missing file, unknown profile |
 | 3    | Checks ran fine but found issues that need attention |

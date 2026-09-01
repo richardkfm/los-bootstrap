@@ -6,6 +6,24 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+### Added
+- `los-bootstrap flash update` — read-only ROM freshness check (Phase 11):
+  compares the device's build date (`ro.build.date.utc`) against the latest
+  official build for its codename on the LineageOS JSON API. Exits 3 when
+  outdated (with a days-behind count), 0 when current. `--no-network`
+  skips the API call and reports the result as "unverifiable" instead of
+  erroring.
+- `los-bootstrap flash check` — read-only post-flash first-boot
+  verification: LineageOS detection, build fingerprint, verified-boot
+  state (yellow/red is a FAIL), A/B slot, GMS presence, and build type.
+  Exits 3 on any WARN/FAIL finding, 0 on a clean report.
+- `los-bootstrap flash backup` — static pre-flash backup guidance
+  (no device required): AOSP `adb backup` limitations, custom-recovery
+  nandroid, what bootloader unlock wipes vs. what a ROM flash wipes, and
+  per-manufacturer notes (Samsung EFS, Xiaomi, Pixel).
+- `DeviceFacts.build_date_utc` — new (best-effort) field feeding the
+  `flash update` freshness comparison.
+
 ## [0.13.1] - 2026-08-28
 
 ### Changed
