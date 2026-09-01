@@ -27,6 +27,7 @@ class DeviceFacts:
     lineage_version: Optional[str]
     adb_tcp_port: Optional[str]  # service.adb.tcp.port (or None / "")
     form_factor: str  # "tablet" or "phone" — derived from ro.build.characteristics
+    build_date_utc: Optional[int] = None  # ro.build.date.utc (epoch seconds); None when unset
 
 
 def collect(adb: Adb) -> DeviceFacts:
@@ -36,6 +37,7 @@ def collect(adb: Adb) -> DeviceFacts:
     adb_tcp_port = g("service.adb.tcp.port") or None
     characteristics = g("ro.build.characteristics") or ""
     form_factor = "tablet" if "tablet" in characteristics.lower() else "phone"
+    build_date_utc = _parse_build_date_utc(g("ro.build.date.utc"))
     return DeviceFacts(
         serial=adb.serial or "",
         manufacturer=g("ro.product.manufacturer"),
@@ -50,4 +52,16 @@ def collect(adb: Adb) -> DeviceFacts:
         lineage_version=lineage_version,
         adb_tcp_port=adb_tcp_port,
         form_factor=form_factor,
+        build_date_utc=build_date_utc,
     )
+
+
+def _parse_build_date_utc(raw: str) -> Optional[int]:
+    """Parse `ro.build.date.utc` (epoch seconds) into an int, or None."""
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None

@@ -13,14 +13,16 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 It can guide users through flashing a ROM and unlocking their bootloader,
 and helps with everything that comes after the ROM is installed.
 
-## Current scope (Phase 10 complete, version 0.13.x)
+## Current scope (Phase 11 complete, version 0.14.x)
 
-Audit MVP, bootstrap profiles, hardening assistant, location / maps integration,
-camera / GCam port profiles, interactive wizard, ROM flashing assistant,
-one-line install distribution, and Android tablet support. Phases 1–10 have
-all shipped; 0.13.0 layered cross-cutting CLI polish and bug fixes on top of
-that scope rather than opening a new phase. **No Phase 11 is scoped yet** —
-see `roadmap.md` for how to propose one.
+Audit MVP, bootstrap profiles, hardening assistant, location / maps
+integration, camera / GCam port profiles, interactive wizard, ROM
+flashing assistant (now with flash-lifecycle checks: ROM freshness, 
+post-flash first-boot verification, pre-flash backup guidance), one-line
+install distribution, and Android tablet support. Phases 1–11 have all
+shipped; 0.13.0 layered cross-cutting CLI polish and bug fixes on top of
+the Phases 1–10 scope. **No Phase 12 is scoped yet** — see `roadmap.md`
+for how to propose one.
 
 - Phase 1–5 (still in place): see prior changelog entries
 - Phase 6 (still in place):
@@ -101,7 +103,7 @@ see `roadmap.md` for how to propose one.
     file alongside each tag.
   - `docs/RELEASING.md` documents the Trusted Publisher one-time setup.
 
-- Phase 10 (current):
+- Phase 10 (still in place):
   - `DeviceFacts.form_factor` — new field reading `ro.build.characteristics`;
     `"tablet"` when it contains `"tablet"`, `"phone"` otherwise. Surfaced
     in `los-bootstrap info` output.
@@ -127,7 +129,19 @@ see `roadmap.md` for how to propose one.
     gated, wrong-codename ROM not blocked, `flash run` hanging on a
     booted device) were closed. Full list in `CHANGELOG.md`.
 
-If a change does not fit Phase 10 or the maintenance/polish of an
+- Phase 11 (current):
+  - `los-bootstrap flash update` — read-only "is my ROM current?" check
+    against the LineageOS JSON API (exit code 3 when outdated;
+    `--no-network` reports "unverifiable" instead of erroring)
+  - `los-bootstrap flash check` — read-only post-flash first-boot
+    verification (LineageOS detection, fingerprint, verified boot, A/B
+    slot, GMS presence, build type; exit code 3 on any WARN/FAIL)
+  - `los-bootstrap flash backup` — static pre-flash backup guidance
+    (no device connection required)
+  - `flash/lifecycle.py` (pure evaluators + ADB probe collector) and
+    `flash/backup.py` (static guidance); ✓ Shipped in 0.14.0.
+
+If a change does not fit Phase 11 or the maintenance/polish of an
 already-shipped phase, it goes in the roadmap, not the code.
 
 ## Non-goals
@@ -189,6 +203,8 @@ src/los_bootstrap/
         flash.py           # FlashPlan executor (mutating; --confirm gated)
         distros.py         # LineageOS API client + sister-distro download links
         report.py          # render_flash_status(), render_flash_plan(), render_download_options()
+        lifecycle.py       # Phase 11 — ROM freshness + first-boot verification
+        backup.py          # Phase 11 — static pre-flash backup guidance
     wizard/                # Phase 6 — interactive guided menu
         __init__.py        # run_wizard() entry point
         menu.py            # screens + routing

@@ -33,6 +33,11 @@ Phase 8 commands:
                flash download — print download links + fetch latest LineageOS zip
                flash verify   — validate a ROM zip and check device codename match
                flash run      — execute the flash sequence (requires --confirm)
+
+Phase 11 commands (flash lifecycle):
+    flash update   — check whether the installed LineageOS build is current (read-only)
+    flash check    — post-flash first-boot verification (read-only)
+    flash backup   — pre-flash backup guidance (no device required)
 """
 
 from __future__ import annotations
@@ -56,12 +61,15 @@ from .flash import (
     Fastboot,
     FastbootNotFoundError,
     Heimdall,
+    RomUpdateResult,
     alt_distro_links,
+    backup_guide,
     build_flash_plan,
     detect_manufacturer,
     detect_state,
     developer_options_enabled,
     download_lineage_zip,
+    evaluate_rom_update,
     execute_flash_plan,
     heimdall_available,
     is_ab_device,
@@ -73,7 +81,10 @@ from .flash import (
     render_flash_plan,
     render_flash_result,
     render_flash_status,
+    render_first_boot_report,
+    render_update_report,
     render_verify_result,
+    run_first_boot,
     unlock_guide,
 )
 from .harden import render_harden_report, run_harden_checks, run_interactive
@@ -356,6 +367,27 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Print each command without executing it.",
     )
     leaves.append(p_flash_run)
+
+    p_flash_update = p_flash_sub.add_parser(
+        "update",
+        help="Check whether the installed LineageOS build is up to date (read-only).",
+    )
+    p_flash_update.add_argument(
+        "--no-network",
+        action="store_true",
+        help="Skip the LineageOS API lookup; report the ROM as unverifiable.",
+    )
+    leaves.append(p_flash_update)
+
+    leaves.append(p_flash_sub.add_parser(
+        "check",
+        help="Post-flash first-boot verification of a freshly flashed device (read-only).",
+    ))
+
+    leaves.append(p_flash_sub.add_parser(
+        "backup",
+        help="Print pre-flash backup guidance (no device required).",
+    ))
 
     for leaf in leaves:
         _add_common_options(leaf, suppress=True)
@@ -842,6 +874,61 @@ def cmd_flash_run(args: argparse.Namespace) -> int:
     return 1 if result.had_errors() else 0
 
 
+def cmd_flash_update(args: argparse.Namespace) -> int:
+    from .flash.models import DeviceState, RomUpdateState
+
+    ctx = _detect_flash_context(args.serial)
+    if ctx.state != DeviceState.BOOTED or ctx.target_adb is None:
+        sys.stderr.write(
+            "error: `flash update` needs a booted ADB device "
+            "(none detected — is USB debugging enabled?).\n"
+        )
+        return EXIT_USAGE
+
+    facts = collect_device(ctx.target_adb)
+
+    if args.no_network:
+        latest = None
+        result = RomUpdateResult(
+            state=RomUpdateState.UNVERIFIABLE,
+            device_version=facts.lineage_version,
+            device_build_date=facts.build_date_utc,
+            note="network lookup skipped (--no-network)",
+        )
+    else:
+        try:
+            latest = lookup_lineage_build(facts.codename)
+        except DistroFetchError as exc:
+            sys.stderr.write(f"error: LineageOS API lookup failed: {exc}\n")
+            return EXIT_ERROR
+        result = evaluate_rom_update(facts, latest)
+
+    print(render_update_report(facts, result, latest), end="")
+    return EXIT_FINDINGS if result.state is RomUpdateState.OUTDATED else EXIT_OK
+
+
+def cmd_flash_check(args: argparse.Namespace) -> int:
+    from .flash.models import DeviceState
+
+    ctx = _detect_flash_context(args.serial)
+    if ctx.state != DeviceState.BOOTED or ctx.target_adb is None:
+        sys.stderr.write(
+            "error: `flash check` needs a booted ADB device "
+            "(none detected — is USB debugging enabled?).\n"
+        )
+        return EXIT_USAGE
+
+    facts = collect_device(ctx.target_adb)
+    report = run_first_boot(ctx.target_adb, facts)
+    print(render_first_boot_report(report), end="")
+    return EXIT_FINDINGS if report.has_failures() else EXIT_OK
+
+
+def cmd_flash_backup() -> int:
+    print(backup_guide(), end="")
+    return EXIT_OK
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     profile = find_profile(
         args.profile,
@@ -916,6 +1003,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 return cmd_flash_verify(args.rom, args.serial)
             if args.flash_command == "run":
                 return cmd_flash_run(args)
+            if args.flash_command == "update":
+                return cmd_flash_update(args)
+            if args.flash_command == "check":
+                return cmd_flash_check(args)
+            if args.flash_command == "backup":
+                return cmd_flash_backup()
     except AdbNotFoundError as exc:
         sys.stderr.write(f"error: {exc}\n")
         sys.stderr.write("Install Android platform-tools so `adb` is on PATH.\n")

@@ -2,17 +2,25 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from .._render_utils import paint, paint_glyph, partition_findings, wrap
+from ..device import DeviceFacts
 from .distros import LineageBuild
 from .models import (
     DeviceState,
+    FirstBootFinding,
+    FirstBootReport,
+    FirstBootStatus,
     FlashPlan,
     FlashResult,
     FlashStepKind,
     Manufacturer,
     RomMetadata,
+    RomUpdateResult,
+    RomUpdateState,
 )
 
 
@@ -220,7 +228,173 @@ def render_flash_result(result: FlashResult) -> str:
         for err in result.errors:
             lines.append(f"    • {err}")
     else:
-        lines.append("  Errors          : none")
+        lines.append(f"  Errors          : none")
 
     lines.append("")
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Phase 11 — flash lifecycle: ROM freshness + first-boot verification
+# ---------------------------------------------------------------------------
+
+
+def _format_build_date(epoch: Optional[int]) -> str:
+    """Format an epoch-seconds timestamp as a UTC date; 'unknown' if unset."""
+    if not epoch or epoch <= 0:
+        return "unknown"
+    return datetime.fromtimestamp(epoch, tz=timezone.utc).strftime("%Y-%m-%d")
+
+
+def render_update_report(
+    facts: DeviceFacts,
+    result: RomUpdateResult,
+    latest: Optional[LineageBuild],
+) -> str:
+    """Render the `flash update` ROM-freshness report."""
+    lines: list[str] = []
+    lines.append(paint("ROM Freshness Check", "bold"))
+    lines.append("═════════════════════")
+    lines.append(f"  Device    : {facts.model or '(unknown)'}")
+    lines.append(f"  Codename  : {facts.codename or '(unknown)'}")
+    if result.device_version:
+        lines.append(
+            f"  Running   : LineageOS {result.device_version} "
+            f"(built {_format_build_date(result.device_build_date)})"
+        )
+    elif not facts.is_lineage:
+        lines.append("  Running   : not a LineageOS build")
+    if latest is not None:
+        lines.append(
+            f"  Latest    : LineageOS {latest.version} "
+            f"(built {_format_build_date(latest.datetime)})"
+        )
+
+    lines.append("")
+    if result.state is RomUpdateState.UP_TO_DATE:
+        lines.append(paint("  ✓ Your ROM is up to date", "green"))
+    elif result.state is RomUpdateState.OUTDATED:
+        days = result.days_behind or 0
+        plural = "s" if days != 1 else ""
+        lines.append(paint(f"  ✗ Your ROM is {days} day{plural} behind", "red"))
+        lines.append(
+            wrap(
+                "Update with `los-bootstrap flash download "
+                f"{facts.codename or '<codename>'}`, then re-flash with "
+                "`los-bootstrap flash run <rom.zip> --confirm`.",
+                "  ",
+            )
+        )
+    elif result.state is RomUpdateState.NOT_LINEAGEOS:
+        lines.append(paint("  ! This device is not running LineageOS", "yellow"))
+        lines.append(
+            wrap(
+                "`flash update` tracks official LineageOS builds only. "
+                "Sister distros (LineageOS for microG, /e/OS, DivestOS, "
+                "etc.) publish on their own schedule — check their download "
+                "pages instead.",
+                "  ",
+            )
+        )
+    elif result.state is RomUpdateState.UNSUPPORTED:
+        lines.append(
+            paint("  ! No official LineageOS builds for this codename", "yellow")
+        )
+        lines.append(
+            wrap(
+                "The LineageOS API reports no builds for "
+                f"'{facts.codename or '(unknown)'}'. This device may run a "
+                "sister distro, or its codename is not in the official list.",
+                "  ",
+            )
+        )
+    else:  # UNVERIFIABLE
+        lines.append(paint("  ! Could not verify ROM freshness", "yellow"))
+        if result.note:
+            lines.append(wrap(result.note + ".", "  "))
+
+    lines.append("")
+    return "\n".join(lines) + "\n"
+
+
+_FB_GLYPH = {
+    FirstBootStatus.PASS: "✓",
+    FirstBootStatus.WARN: "!",
+    FirstBootStatus.FAIL: "✗",
+    FirstBootStatus.INFO: "·",
+    FirstBootStatus.UNKNOWN: "?",
+}
+
+_FB_ACTIONABLE = {FirstBootStatus.FAIL, FirstBootStatus.WARN}
+_FB_PASSING = {FirstBootStatus.PASS}
+_FB_INFO = {FirstBootStatus.INFO, FirstBootStatus.UNKNOWN}
+
+
+def _render_first_boot_finding(f: FirstBootFinding) -> list[str]:
+    lines: list[str] = [f"  {paint_glyph(_FB_GLYPH[f.status])}  {f.title}"]
+
+    if f.status not in _FB_PASSING and f.detail:
+        lines.append(wrap(f.detail, "     "))
+
+    if f.why:
+        lines.append(wrap(f.why, "     "))
+
+    if f.fix_hint and f.status in _FB_ACTIONABLE:
+        lines.append("")
+        lines.append(wrap(f"→ Fix: {f.fix_hint}", "     "))
+
+    return lines
+
+
+def render_first_boot_report(report: FirstBootReport) -> str:
+    """Render the `flash check` first-boot verification report."""
+    lines: list[str] = []
+    lines.append(paint("First-Boot Verification", "bold"))
+    lines.append("─────────────────────────")
+
+    if not report.findings:
+        lines.append("  (no findings)")
+        return "\n".join(lines) + "\n"
+
+    actionable, passing, info = partition_findings(
+        report.findings,
+        lambda f: f.status,
+        _FB_ACTIONABLE,
+        _FB_PASSING,
+        _FB_INFO,
+    )
+
+    if actionable:
+        count = len(actionable)
+        noun = "issue" if count == 1 else "issues"
+        lines.append(f"\n  {count} {noun} to address")
+        lines.append("  " + "─" * 22)
+        for f in actionable:
+            lines.append("")
+            lines.extend(_render_first_boot_finding(f))
+
+    if passing:
+        lines.append("\n  Passing checks")
+        lines.append("  " + "─" * 14)
+        for f in passing:
+            lines.append("")
+            lines.extend(_render_first_boot_finding(f))
+
+    if info:
+        lines.append("\n  For your information")
+        lines.append("  " + "─" * 20)
+        for f in info:
+            lines.append("")
+            lines.extend(_render_first_boot_finding(f))
+
+    lines.append("")
+    fails = len(report.by_status(FirstBootStatus.FAIL))
+    warns = len(report.by_status(FirstBootStatus.WARN))
+    if report.has_failures():
+        total = fails + warns
+        noun = "issue needs" if total == 1 else "issues need"
+        lines.append(paint(f"  {total} {noun} attention.", "yellow"))
+    else:
+        lines.append(paint("  Clean first boot — the install looks good.", "green"))
+
+    return "\n".join(lines) + "\n"

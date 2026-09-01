@@ -71,3 +71,68 @@ class FlashResult:
 
     def had_errors(self) -> bool:
         return bool(self.errors)
+
+
+# ---------------------------------------------------------------------------
+# Phase 11 — flash lifecycle: ROM freshness + first-boot verification
+# ---------------------------------------------------------------------------
+
+
+class RomUpdateState(enum.Enum):
+    UP_TO_DATE = "up_to_date"      # device build date >= latest official build
+    OUTDATED = "outdated"          # a newer official build exists
+    NOT_LINEAGEOS = "not_lineageos"  # device does not run LineageOS
+    UNSUPPORTED = "unsupported"    # no official LOS builds for the codename
+    UNVERIFIABLE = "unverifiable"  # could not compare (missing build date)
+
+
+@dataclass(frozen=True)
+class RomUpdateResult:
+    state: RomUpdateState
+    device_version: Optional[str] = None    # ro.lineage.version
+    device_build_date: Optional[int] = None  # epoch seconds (ro.build.date.utc)
+    latest_version: Optional[str] = None
+    latest_build_date: Optional[int] = None
+    days_behind: Optional[int] = None
+    note: Optional[str] = None
+
+
+class FirstBootStatus(enum.Enum):
+    PASS = "pass"
+    WARN = "warn"
+    FAIL = "fail"
+    INFO = "info"
+    UNKNOWN = "unknown"
+
+
+@dataclass(frozen=True)
+class FirstBootProbes:
+    """Device probes read by `run_first_boot` (all best-effort)."""
+    verified_boot: str = ""      # ro.boot.verifiedbootstate
+    build_type: str = ""         # ro.build.type
+    slot_suffix: str = ""        # ro.boot.slot_suffix (A/B)
+    gms_present: bool = False    # com.google.android.gms installed
+
+
+@dataclass(frozen=True)
+class FirstBootFinding:
+    check_id: str    # e.g. "fb.lineage"
+    title: str
+    status: FirstBootStatus
+    detail: str      # observed state
+    why: str = ""    # why this matters
+    fix_hint: str = ""
+
+
+@dataclass
+class FirstBootReport:
+    findings: tuple[FirstBootFinding, ...] = field(default_factory=tuple)
+
+    def by_status(self, status: FirstBootStatus) -> tuple[FirstBootFinding, ...]:
+        return tuple(f for f in self.findings if f.status == status)
+
+    def has_failures(self) -> bool:
+        return any(
+            f.status in (FirstBootStatus.WARN, FirstBootStatus.FAIL)
+            for f in self.findings
+        )
