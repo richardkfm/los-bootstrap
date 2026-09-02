@@ -61,7 +61,7 @@ from .flash import (
     Fastboot,
     FastbootNotFoundError,
     Heimdall,
-    RomUpdateResult,
+    LineageBuild,
     alt_distro_links,
     backup_guide,
     build_flash_plan,
@@ -75,8 +75,10 @@ from .flash import (
     is_ab_device,
     lineage_device_url,
     lookup_lineage_build,
+    lookup_lineage_builds,
     oem_unlock_enabled,
     parse_rom_metadata,
+    pick_update_candidates,
     render_download_options,
     render_flash_plan,
     render_flash_result,
@@ -886,24 +888,55 @@ def cmd_flash_update(args: argparse.Namespace) -> int:
         return EXIT_USAGE
 
     facts = collect_device(ctx.target_adb)
+    codename = (facts.codename or "").strip()
 
-    if args.no_network:
-        latest = None
-        result = RomUpdateResult(
-            state=RomUpdateState.UNVERIFIABLE,
-            device_version=facts.lineage_version,
-            device_build_date=facts.build_date_utc,
-            note="network lookup skipped (--no-network)",
+    if not args.no_network and not codename:
+        sys.stderr.write(
+            "error: could not determine device codename (ro.product.device is empty); "
+            "cannot look up official builds.\n"
         )
-    else:
-        try:
-            latest = lookup_lineage_build(facts.codename)
-        except DistroFetchError as exc:
-            sys.stderr.write(f"error: LineageOS API lookup failed: {exc}\n")
-            return EXIT_ERROR
-        result = evaluate_rom_update(facts, latest)
+        return EXIT_USAGE
 
-    print(render_update_report(facts, result, latest), end="")
+    latest: Optional[LineageBuild] = None
+    latest_overall: Optional[LineageBuild] = None
+    api_error: Optional[str] = None
+    lookup_performed = not args.no_network
+
+    if lookup_performed:
+        try:
+            builds = lookup_lineage_builds(codename)
+        except DistroFetchError as exc:
+            # Mirror `flash download`: an unreachable API degrades to a
+            # rendered report plus a page link, not a bare error.
+            api_error = str(exc)
+            lookup_performed = False
+        else:
+            latest, latest_overall = pick_update_candidates(
+                facts.lineage_version, builds
+            )
+
+    result = evaluate_rom_update(
+        facts,
+        latest,
+        latest_overall,
+        lookup_performed=lookup_performed,
+        note=(
+            "network lookup skipped (--no-network)"
+            if args.no_network
+            else ("the LineageOS API could not be reached" if api_error else None)
+        ),
+    )
+
+    print(
+        render_update_report(
+            facts,
+            result,
+            latest,
+            api_error=api_error,
+            page_url=lineage_device_url(codename) if codename else None,
+        ),
+        end="",
+    )
     return EXIT_FINDINGS if result.state is RomUpdateState.OUTDATED else EXIT_OK
 
 

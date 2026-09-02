@@ -12,37 +12,13 @@ from typing import Callable, Iterable
 
 from ..adb import Adb, AdbCommandError
 from ..device import DeviceFacts
+from ..gms import GMS_PACKAGE, classify_gms_variant
 from .models import LocationFinding, LocationReport, LocationStatus
 
 
 LocationCheckFn = Callable[[Adb, DeviceFacts], Iterable[LocationFinding]]
 
-# microG GmsCore installs under the real Play Services package id — that is
-# the whole point of microG — so presence alone cannot distinguish the two.
-GMS_PACKAGE = "com.google.android.gms"
-
-
-def _gms_variant(adb: Adb) -> str:
-    """Classify the installed com.google.android.gms package.
-
-    Returns one of: "none", "microg", "gms", "unknown".
-
-    microG versionNames have always been 0.x, while real Play Services has
-    shipped double-digit versions for over a decade, so the versionName
-    prefix is a reliable discriminator.
-    """
-    if not adb.package_installed(GMS_PACKAGE):
-        return "none"
-    try:
-        dump = adb.shell(f"dumpsys package {GMS_PACKAGE}")
-    except AdbCommandError:
-        return "unknown"
-    for line in dump.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("versionName="):
-            version = stripped.split("=", 1)[1].strip()
-            return "microg" if version.startswith("0.") else "gms"
-    return "unknown"
+_gms_variant = classify_gms_variant
 
 
 # Known UnifiedNlp / microG network-location backend packages.

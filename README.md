@@ -285,12 +285,18 @@ Xiaomi, Pixel). No device needed.
 `flash check` is the post-flash first-boot verification: LineageOS
 detection, build fingerprint, verified-boot state (yellow/red is a
 failure — usually a ROM for the wrong device), A/B slot, GMS presence,
-and build type. Exits 3 when anything needs attention.
+and build type. It distinguishes microG from real Play Services, and
+probes that could not be read are reported as unknown rather than
+silently counted as clean. Exits 3 on a genuine failure; warnings are
+printed but do not change the exit code.
 
 `flash update` compares your installed build date against the latest
-official LineageOS build for your codename and tells you how many days
-you are behind. Exits 3 when outdated; `--no-network` skips the API
-lookup and reports the ROM as unverifiable.
+official LineageOS build **on your own major version** and tells you how
+many days you are behind. A newer major version is reported separately,
+with the data-wipe caveat, because it is not a routine update. Exits 3
+when outdated. `--no-network` skips the API lookup; if the API is
+unreachable the report is still printed (with a link to the download
+page) rather than the command failing.
 
 ### Audit (Phase 1)
 
@@ -522,6 +528,10 @@ Useful for scripting `los-bootstrap` in CI or shell pipelines:
 | 1    | Runtime failure (adb/fastboot/network error) |
 | 2    | Usage error: bad flags, missing file, unknown profile |
 | 3    | Checks ran fine but found issues that need attention |
+
+For `flash check`, exit 3 means a check actually failed. Warnings (for
+example real Play Services on a build you expected to be degoogled) are
+printed in the report but do not change the exit code.
 
 Report output is colorized when stdout is a terminal; set `NO_COLOR=1`
 to disable or `FORCE_COLOR=1` to force it (e.g. when piping to `less -R`).

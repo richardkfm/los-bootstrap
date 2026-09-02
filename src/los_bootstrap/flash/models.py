@@ -95,6 +95,15 @@ class RomUpdateResult:
     latest_build_date: Optional[int] = None
     days_behind: Optional[int] = None
     note: Optional[str] = None
+    # Set when a newer LineageOS *major* version exists for this device.
+    # Tracked separately from `state` because a major upgrade is not the same
+    # errand as a nightly bump — it usually requires a full data wipe.
+    upgrade_version: Optional[str] = None
+    upgrade_build_date: Optional[int] = None
+
+    @property
+    def major_upgrade_available(self) -> bool:
+        return self.upgrade_version is not None
 
 
 class FirstBootStatus(enum.Enum):
@@ -107,11 +116,20 @@ class FirstBootStatus(enum.Enum):
 
 @dataclass(frozen=True)
 class FirstBootProbes:
-    """Device probes read by `run_first_boot` (all best-effort)."""
+    """Device probes read by `run_first_boot` (all best-effort).
+
+    `failed` names the probes that could not be read. Without it a device
+    that stopped answering is indistinguishable from a clean one, and the
+    report would claim a healthy first boot it never verified.
+    """
     verified_boot: str = ""      # ro.boot.verifiedbootstate
     build_type: str = ""         # ro.build.type
     slot_suffix: str = ""        # ro.boot.slot_suffix (A/B)
-    gms_present: bool = False    # com.google.android.gms installed
+    gms_variant: str = "none"    # "none" | "microg" | "gms" | "unknown"
+    failed: tuple[str, ...] = ()  # probe names that raised
+
+    def probe_failed(self, name: str) -> bool:
+        return name in self.failed
 
 
 @dataclass(frozen=True)
@@ -132,7 +150,14 @@ class FirstBootReport:
         return tuple(f for f in self.findings if f.status == status)
 
     def has_failures(self) -> bool:
-        return any(
-            f.status in (FirstBootStatus.WARN, FirstBootStatus.FAIL)
-            for f in self.findings
+        """True when a check actually failed (drives exit code 3)."""
+        return any(f.status is FirstBootStatus.FAIL for f in self.findings)
+
+    def has_warnings(self) -> bool:
+        return any(f.status is FirstBootStatus.WARN for f in self.findings)
+
+    def actionable_count(self) -> int:
+        return sum(
+            1 for f in self.findings
+            if f.status in (FirstBootStatus.WARN, FirstBootStatus.FAIL)
         )

@@ -228,7 +228,7 @@ def render_flash_result(result: FlashResult) -> str:
         for err in result.errors:
             lines.append(f"    • {err}")
     else:
-        lines.append(f"  Errors          : none")
+        lines.append("  Errors          : none")
 
     lines.append("")
     return "\n".join(lines)
@@ -250,6 +250,9 @@ def render_update_report(
     facts: DeviceFacts,
     result: RomUpdateResult,
     latest: Optional[LineageBuild],
+    *,
+    api_error: Optional[str] = None,
+    page_url: Optional[str] = None,
 ) -> str:
     """Render the `flash update` ROM-freshness report."""
     lines: list[str] = []
@@ -264,7 +267,7 @@ def render_update_report(
         )
     elif not facts.is_lineage:
         lines.append("  Running   : not a LineageOS build")
-    if latest is not None:
+    if latest is not None and facts.is_lineage:
         lines.append(
             f"  Latest    : LineageOS {latest.version} "
             f"(built {_format_build_date(latest.datetime)})"
@@ -276,7 +279,10 @@ def render_update_report(
     elif result.state is RomUpdateState.OUTDATED:
         days = result.days_behind or 0
         plural = "s" if days != 1 else ""
-        lines.append(paint(f"  ✗ Your ROM is {days} day{plural} behind", "red"))
+        if days == 0:
+            lines.append(paint("  ✗ A newer build is available (less than a day)", "red"))
+        else:
+            lines.append(paint(f"  ✗ Your ROM is {days} day{plural} behind", "red"))
         lines.append(
             wrap(
                 "Update with `los-bootstrap flash download "
@@ -308,10 +314,37 @@ def render_update_report(
                 "  ",
             )
         )
-    else:  # UNVERIFIABLE
+    elif result.state is RomUpdateState.UNVERIFIABLE:
         lines.append(paint("  ! Could not verify ROM freshness", "yellow"))
         if result.note:
             lines.append(wrap(result.note + ".", "  "))
+    else:
+        lines.append(paint(f"  ! Unhandled result state: {result.state.value}", "yellow"))
+
+    if api_error:
+        lines.append("")
+        lines.append(wrap(f"LineageOS API unavailable: {api_error}", "  "))
+    if page_url:
+        lines.append(wrap(f"Check manually: {page_url}", "  "))
+
+    if result.major_upgrade_available:
+        lines.append("")
+        lines.append(
+            paint(
+                f"  ↑ A newer major version exists: LineageOS {result.upgrade_version} "
+                f"(built {_format_build_date(result.upgrade_build_date)})",
+                "cyan",
+            )
+        )
+        lines.append(
+            wrap(
+                "⚠ Tradeoff: crossing a major version is not a routine "
+                "update — it usually requires a full data wipe, and the "
+                "upgrade path differs per device. Read `los-bootstrap flash "
+                "backup` first and check the LineageOS wiki for your device.",
+                "  ",
+            )
+        )
 
     lines.append("")
     return "\n".join(lines) + "\n"
@@ -339,7 +372,9 @@ def _render_first_boot_finding(f: FirstBootFinding) -> list[str]:
     if f.why:
         lines.append(wrap(f.why, "     "))
 
-    if f.fix_hint and f.status in _FB_ACTIONABLE:
+    # Hints are printed wherever they exist: a check that could not run
+    # is bucketed as info, but "re-check the cable" is still the next step.
+    if f.fix_hint:
         lines.append("")
         lines.append(wrap(f"→ Fix: {f.fix_hint}", "     "))
 
@@ -388,12 +423,19 @@ def render_first_boot_report(report: FirstBootReport) -> str:
             lines.extend(_render_first_boot_finding(f))
 
     lines.append("")
-    fails = len(report.by_status(FirstBootStatus.FAIL))
-    warns = len(report.by_status(FirstBootStatus.WARN))
-    if report.has_failures():
-        total = fails + warns
+    total = report.actionable_count()
+    unknowns = len(report.by_status(FirstBootStatus.UNKNOWN))
+    if total:
         noun = "issue needs" if total == 1 else "issues need"
-        lines.append(paint(f"  {total} {noun} attention.", "yellow"))
+        color = "red" if report.has_failures() else "yellow"
+        lines.append(paint(f"  {total} {noun} attention.", color))
+    elif unknowns:
+        lines.append(
+            paint(
+                "  No failures found, but some checks could not be completed.",
+                "yellow",
+            )
+        )
     else:
         lines.append(paint("  Clean first boot — the install looks good.", "green"))
 

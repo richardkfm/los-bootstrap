@@ -17,6 +17,7 @@ Public API used by cli.py:
         render_verify_result, render_flash_result,
         evaluate_rom_update, run_first_boot,
         collect_first_boot_probes, evaluate_first_boot,
+        pick_update_candidates, major_version,
         backup_guide,
         render_update_report, render_first_boot_report,
     )
@@ -38,6 +39,7 @@ from .distros import (
     download_lineage_zip,
     lineage_device_url,
     lookup_lineage_build,
+    lookup_lineage_builds,
 )
 from .fastboot import (
     Fastboot,
@@ -48,9 +50,12 @@ from .flash import execute_flash_plan
 from .guide import samsung_odin_guide, unlock_guide
 from .heimdall import Heimdall, HeimdallCommandError, HeimdallNotFoundError, heimdall_available
 from .lifecycle import (
+    FIRST_BOOT_CHECKS,
     collect_first_boot_probes,
     evaluate_first_boot,
     evaluate_rom_update,
+    major_version,
+    pick_update_candidates,
     run_first_boot,
 )
 from .models import (
@@ -106,6 +111,7 @@ __all__ = [
     "download_lineage_zip",
     "lineage_device_url",
     "lookup_lineage_build",
+    "lookup_lineage_builds",
     "build_flash_plan",
     "execute_flash_plan",
     "unlock_guide",
@@ -121,9 +127,12 @@ __all__ = [
     "FirstBootStatus",
     "RomUpdateResult",
     "RomUpdateState",
+    "FIRST_BOOT_CHECKS",
     "collect_first_boot_probes",
     "evaluate_first_boot",
     "evaluate_rom_update",
+    "major_version",
+    "pick_update_candidates",
     "run_first_boot",
     "backup_guide",
     "render_update_report",
