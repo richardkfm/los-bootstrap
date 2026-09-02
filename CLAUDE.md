@@ -140,6 +140,12 @@ for how to propose one.
     (no device connection required)
   - `flash/lifecycle.py` (pure evaluators + ADB probe collector) and
     `flash/backup.py` (static guidance); ✓ Shipped in 0.14.0.
+  - Freshness is compared within the device's own LineageOS major
+    version; a newer major version is reported separately because it
+    usually requires a full data wipe.
+  - `flash check` exits 3 on a FAIL only. Warnings and probes that could
+    not be read are reported without failing the command — a check that
+    could not run must never render as a clean result.
 
 If a change does not fit Phase 11 or the maintenance/polish of an
 already-shipped phase, it goes in the roadmap, not the code.
@@ -161,6 +167,7 @@ src/los_bootstrap/
     logo.py                # ASCII logo + tagline
     adb.py                 # thin, testable wrapper around `adb`
     device.py              # getprop-derived device facts
+    gms.py                 # shared com.google.android.gms classifier (microG vs real)
     _render_utils.py       # shared wrap() + partition_findings() helpers
     audit/
         __init__.py        # run_audit() orchestrator
@@ -204,6 +211,7 @@ src/los_bootstrap/
         distros.py         # LineageOS API client + sister-distro download links
         report.py          # render_flash_status(), render_flash_plan(), render_download_options()
         lifecycle.py       # Phase 11 — ROM freshness + first-boot verification
+                           #   (check_* functions + FIRST_BOOT_CHECKS, as in audit/)
         backup.py          # Phase 11 — static pre-flash backup guidance
     wizard/                # Phase 6 — interactive guided menu
         __init__.py        # run_wizard() entry point

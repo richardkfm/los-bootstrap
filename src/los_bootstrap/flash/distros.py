@@ -5,13 +5,16 @@ Provides:
 - ``lineage_device_url(codename)`` — the human-browsable LOS download page.
 - ``lookup_lineage_build(codename)`` — query the LOS public JSON API and
   return the latest build's filename, URL, size and SHA-256.
+- ``lookup_lineage_builds(codename)`` — the same query, returning every
+  usable build newest-first so callers can compare within a major version.
 - ``alt_distro_links(codename)`` — page URLs for sister distros (DivestOS,
   /e/OS, LineageOS for microG, CalyxOS, GrapheneOS, iodéOS).
 - ``download_lineage_zip(build, dest_dir)`` — stream the zip and verify the
   SHA-256 reported by the API.
 
 Network access only happens when the user explicitly invokes
-``los-bootstrap flash download``; this module is otherwise inert.
+``los-bootstrap flash download`` or ``los-bootstrap flash update`` (both of
+which accept ``--no-network``); this module is otherwise inert.
 """
 
 from __future__ import annotations
@@ -100,6 +103,22 @@ def lookup_lineage_build(
     The ``opener`` parameter is for testing; production callers should leave
     it at the default and let the function use ``urllib.request.urlopen``.
     """
+    builds = lookup_lineage_builds(codename, opener=opener, timeout=timeout)
+    return builds[0] if builds else None
+
+
+def lookup_lineage_builds(
+    codename: str,
+    *,
+    opener: Optional[HttpOpener] = None,
+    timeout: float = 15.0,
+) -> list[LineageBuild]:
+    """Return every usable LineageOS build for ``codename``, newest first.
+
+    Returns an empty list when the API responds 404 (device not supported)
+    or reports no usable builds. Raises :class:`DistroFetchError` on network
+    or parse errors.
+    """
     if not codename:
         raise DistroFetchError("codename is empty")
 
@@ -110,7 +129,7 @@ def lookup_lineage_build(
             payload = resp.read()
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
-            return None
+            return []
         raise DistroFetchError(f"LineageOS API returned HTTP {exc.code} for {codename}") from exc
     except (urllib.error.URLError, OSError) as exc:
         raise DistroFetchError(f"network error querying LineageOS API: {exc}") from exc
@@ -120,7 +139,7 @@ def lookup_lineage_build(
     except json.JSONDecodeError as exc:
         raise DistroFetchError(f"LineageOS API returned non-JSON payload: {exc}") from exc
 
-    return _pick_latest_build(codename, data)
+    return _parse_builds(codename, data)
 
 
 def _default_opener(url: str, timeout: float) -> "urllib.request.addinfourl":
@@ -128,37 +147,62 @@ def _default_opener(url: str, timeout: float) -> "urllib.request.addinfourl":
     return urllib.request.urlopen(req, timeout=timeout)
 
 
-def _pick_latest_build(codename: str, data: object) -> Optional[LineageBuild]:
-    """Pick the most recent nightly build from a LOS API v2 response.
+def _build_datetime(build: dict) -> int:
+    """Read a build's epoch timestamp, tolerating junk values."""
+    try:
+        return int(build.get("datetime") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _parse_builds(codename: str, data: object) -> list[LineageBuild]:
+    """Parse a LOS API v2 response into builds, newest first.
 
     The v2 response is a JSON array of build objects; each has a ``files``
-    list. The first file is the ROM zip itself (the others are images and
-    boot artefacts). We pick the build with the highest ``datetime``.
+    list whose ``.zip`` entry is the ROM itself (the others are images and
+    boot artefacts). A payload we cannot parse at all is an error, not an
+    unsupported device — an empty array is the API's way of saying the
+    latter.
     """
-    if not isinstance(data, list) or not data:
-        return None
+    if isinstance(data, list) and not data:
+        return []
+    if not isinstance(data, list):
+        raise DistroFetchError(
+            "LineageOS API returned an unexpected payload shape "
+            f"({type(data).__name__}, expected a list of builds)"
+        )
 
-    builds = [b for b in data if isinstance(b, dict)]
-    if not builds:
-        return None
+    dicts = [b for b in data if isinstance(b, dict)]
+    if not dicts:
+        raise DistroFetchError("LineageOS API returned no readable build entries")
 
-    builds.sort(key=lambda b: int(b.get("datetime", 0) or 0), reverse=True)
-    for build in builds:
+    out: list[LineageBuild] = []
+    for build in dicts:
         rom = _extract_rom_file(build)
         if rom is None:
             continue
         filename, file_url, size, sha256 = rom
-        return LineageBuild(
-            codename=codename,
-            filename=filename,
-            url=file_url,
-            size=int(size or 0),
-            sha256=sha256 or "",
-            version=str(build.get("version") or ""),
-            datetime=int(build.get("datetime") or 0),
-            build_type=str(build.get("build_type") or build.get("type") or ""),
+        out.append(
+            LineageBuild(
+                codename=codename,
+                filename=filename,
+                url=file_url,
+                size=int(size or 0),
+                sha256=sha256 or "",
+                version=str(build.get("version") or ""),
+                datetime=_build_datetime(build),
+                build_type=str(build.get("build_type") or build.get("type") or ""),
+            )
         )
-    return None
+
+    out.sort(key=lambda b: b.datetime, reverse=True)
+    return out
+
+
+def _pick_latest_build(codename: str, data: object) -> Optional[LineageBuild]:
+    """Return the most recent build in a LOS API v2 response, or ``None``."""
+    builds = _parse_builds(codename, data)
+    return builds[0] if builds else None
 
 
 def _extract_rom_file(build: dict) -> Optional[tuple[str, str, int, str]]:

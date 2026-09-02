@@ -407,6 +407,21 @@ code for it is written. Candidate ideas raised in issues or discussion
 but not yet promoted to a scoped phase belong in a "candidates" note
 here or in a GitHub issue, not in the codebase.
 
+### Candidates (not scoped, no code yet)
+
+**Split `cli.py` into a `commands/` package.** `cli.py` has grown past
+1000 lines because every phase appends its command functions to it. The
+parser construction, the per-command functions, and the dispatch table
+would read better as `commands/<area>.py` modules with a thin
+`cli.py` that only wires them together.
+
+This is deliberately *not* folded into any phase's maintenance: it
+touches the entry point of every shipped phase at once, so it needs its
+own change with its own review, and per the roadmap discipline in
+`CLAUDE.md` it must be promoted here — with exit criteria — before any
+code moves. It is a pure refactor: no behavior change, no version bump
+beyond patch, and the existing CLI tests must pass untouched.
+
 ---
 
 ## Versioning at a glance

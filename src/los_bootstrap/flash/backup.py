@@ -67,8 +67,10 @@ Manufacturer notes
 ------------------
   Samsung     EFS holds modem configuration (IMEI, bands) and
               fingerprint data. Some heimdall operations can wipe
-              it. If you go the `heimdall` route, take an EFS
-              backup (heimdall backup) before anything destructive.
+              it. If you go the `heimdall` route, dump EFS first:
+              `heimdall print-pit` to find the partition name, then
+              `heimdall dump --partition EFS --output efs.img`.
+              Do this before anything destructive.
   Xiaomi      Mi Unlock requires account binding plus a wait time
               before it will work; some recent models do not allow
               bootloader unlock at all — check before you plan.
@@ -89,8 +91,10 @@ Once the new ROM is booted and setup is done:
   los-bootstrap audit          privacy posture of the new system
   los-bootstrap harden         read-only lockdown report
 
-A `flash check` exit code of 3 (any WARN/FAIL finding) is worth
-reading before you start moving your data back.
+A `flash check` exit code of 3 means a check actually failed — read
+the report before you start moving your data back. Warnings and checks
+that could not be completed are printed too, without failing the
+command.
 """
 
 

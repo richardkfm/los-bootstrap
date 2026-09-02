@@ -9,20 +9,76 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 ### Added
 - `los-bootstrap flash update` — read-only ROM freshness check (Phase 11):
   compares the device's build date (`ro.build.date.utc`) against the latest
-  official build for its codename on the LineageOS JSON API. Exits 3 when
-  outdated (with a days-behind count), 0 when current. `--no-network`
-  skips the API call and reports the result as "unverifiable" instead of
-  erroring.
+  official build for its codename and major version on the LineageOS JSON
+  API. Exits 3 when outdated (with a days-behind count), 0 when current.
+  `--no-network` skips the API call and reports the result as
+  "unverifiable"; an unreachable API degrades to the same report plus the
+  download page link rather than failing.
 - `los-bootstrap flash check` — read-only post-flash first-boot
   verification: LineageOS detection, build fingerprint, verified-boot
-  state (yellow/red is a FAIL), A/B slot, GMS presence, and build type.
-  Exits 3 on any WARN/FAIL finding, 0 on a clean report.
+  state (yellow/red is a FAIL), A/B slot, GMS classification (microG vs
+  real Play Services), and build type. Exits 3 on a FAIL, 0 on a clean
+  report; warnings and unreadable probes are reported without failing the
+  command.
 - `los-bootstrap flash backup` — static pre-flash backup guidance
   (no device required): AOSP `adb backup` limitations, custom-recovery
   nandroid, what bootloader unlock wipes vs. what a ROM flash wipes, and
   per-manufacturer notes (Samsung EFS, Xiaomi, Pixel).
 - `DeviceFacts.build_date_utc` — new (best-effort) field feeding the
   `flash update` freshness comparison.
+- `los_bootstrap/gms.py` — shared classification of the
+  `com.google.android.gms` package (none / microG / real GMS / unknown),
+  extracted from `location/checks.py` so `flash check` can use the same
+  heuristic instead of duplicating it.
+- `flash update` now reports an available *major* version upgrade
+  separately from staleness, with the data-wipe tradeoff spelled out.
+- `distros.lookup_lineage_builds()` — returns every usable build for a
+  codename, newest first, so freshness can be judged per major version.
+
+### Fixed
+- `flash check` no longer fails on a healthy device. The fingerprint
+  check tested `startswith("LineageOS/")`, a shape `ro.build.fingerprint`
+  never has (it is `brand/product/device:release/...`, with
+  `lineage_<codename>` in the product segment), so every genuine
+  LineageOS install was flagged and exited 3. A fingerprint that does not
+  name LineageOS is now informational — many ROMs spoof a stock
+  fingerprint deliberately, and `ro.lineage.version` is the authoritative
+  signal.
+- `flash check` no longer reports a clean first boot for a device it
+  could not read. Probe failures were swallowed silently, so a dropped
+  connection rendered as "com.google.android.gms is not installed, as
+  expected after a degoogled flash" and exit 0. Failed probes are now
+  recorded and reported as unknown.
+- `flash check` no longer flags microG. It registers the real Play
+  Services package id by design, so presence alone flagged every
+  LineageOS-for-microG device; the check now classifies the package
+  instead of merely detecting it.
+- `flash check` exit code 3 is now reserved for genuine failures.
+  Warnings are still printed prominently but no longer fail the command.
+- `flash update` no longer reports a build up to 23 hours newer as "up to
+  date" — the day-rounding was applied before the comparison instead of
+  after it.
+- `flash update` no longer tells a device on one major version that it is
+  "N days behind" a build from the next one, which conflated a nightly
+  bump with an upgrade that usually requires a full data wipe.
+- `flash update --no-network` can now report "not a LineageOS build",
+  a verdict that never needed the API.
+- `flash update` no longer aborts with exit 1 when the LineageOS API is
+  unreachable; it renders the report with the reason and a link to the
+  download page, matching `flash download`. An empty device codename is
+  now a usage error (exit 2) with a clear message.
+- `flash update` no longer blames the device ("ro.build.date.utc is not
+  set") when it was the API that returned an unusable build date.
+- A malformed LineageOS API payload is now an error rather than being
+  reported as "no official builds for this codename", and a non-numeric
+  `datetime` no longer raises an uncaught `ValueError`.
+- `flash backup` referred Samsung users to `heimdall backup`, which does
+  not exist; it now documents `heimdall dump --partition EFS`.
+
+### Changed
+- `evaluate_first_boot` is now composed of individual `check_*` functions
+  plus a `FIRST_BOOT_CHECKS` tuple, matching `audit/checks.py` and
+  `harden/checks.py`, instead of one long if/elif chain.
 
 ## [0.13.1] - 2026-08-28
 
