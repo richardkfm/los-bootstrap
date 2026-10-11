@@ -38,6 +38,12 @@ Phase 11 commands (flash lifecycle):
     flash update   — check whether the installed LineageOS build is current (read-only)
     flash check    — post-flash first-boot verification (read-only)
     flash backup   — pre-flash backup guidance (no device required)
+
+Phase 12 commands (device integrity & app compatibility):
+    integrity  diagnose why apps block custom ROMs and show honest workarounds
+               integrity doctor  — diagnose the signals apps check (read-only)
+               integrity compat  — German app compatibility matrix (no device needed)
+               integrity guide   — alternatives-first guidance incl. spoofing warnings
 """
 
 from __future__ import annotations
@@ -91,6 +97,12 @@ from .flash import (
 )
 from .harden import render_harden_report, run_harden_checks, run_interactive
 from .location import render_compat_matrix, render_location_report, run_location_doctor
+from .integrity import (
+    render_compat_matrix as render_integrity_compat,
+    render_guide as render_integrity_guide,
+    render_integrity_report,
+    run_integrity_doctor,
+)
 from .plan import build_plan, render_plan
 from .profiles import (
     ProfileError,
@@ -271,6 +283,30 @@ def _build_parser() -> argparse.ArgumentParser:
     leaves.append(p_location_sub.add_parser(
         "compat",
         help="Show the app location compatibility matrix (no device needed).",
+    ))
+
+    p_integrity = sub.add_parser(
+        "integrity",
+        help="Diagnose why apps block custom ROMs and show honest workarounds.",
+    )
+    p_integrity_sub = p_integrity.add_subparsers(dest="integrity_command", required=True)
+    p_integrity_doctor = p_integrity_sub.add_parser(
+        "doctor",
+        help="Diagnose the signals apps check (read-only).",
+    )
+    p_integrity_doctor.add_argument(
+        "--root",
+        action="store_true",
+        help="Include root-only checks (installed root/spoofing managers).",
+    )
+    leaves.append(p_integrity_doctor)
+    leaves.append(p_integrity_sub.add_parser(
+        "compat",
+        help="Show the German app compatibility matrix (no device needed).",
+    ))
+    leaves.append(p_integrity_sub.add_parser(
+        "guide",
+        help="Show alternatives-first guidance, including spoofing warnings.",
     ))
 
     p_camera = sub.add_parser(
@@ -569,6 +605,24 @@ def cmd_location_doctor(args: argparse.Namespace) -> int:
 
 def cmd_location_compat() -> int:
     print(render_compat_matrix(), end="")
+    return 0
+
+
+def cmd_integrity_doctor(args: argparse.Namespace) -> int:
+    adb = _resolve_target(args.serial)
+    facts = collect_device(adb)
+    report = run_integrity_doctor(adb, facts, root=args.root)
+    print(render_integrity_report(report), end="")
+    return EXIT_FINDINGS if report.has_failures() else EXIT_OK
+
+
+def cmd_integrity_compat() -> int:
+    print(render_integrity_compat(), end="")
+    return 0
+
+
+def cmd_integrity_guide() -> int:
+    print(render_integrity_guide(), end="")
     return 0
 
 
@@ -1020,6 +1074,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 return cmd_location_doctor(args)
             if args.location_command == "compat":
                 return cmd_location_compat()
+        if args.command == "integrity":
+            if args.integrity_command == "doctor":
+                return cmd_integrity_doctor(args)
+            if args.integrity_command == "compat":
+                return cmd_integrity_compat()
+            if args.integrity_command == "guide":
+                return cmd_integrity_guide()
         if args.command == "camera":
             if args.camera_command == "list-profiles":
                 return cmd_camera_list_profiles()

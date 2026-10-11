@@ -7,6 +7,26 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 ## [Unreleased]
 
 ### Added
+- `los-bootstrap integrity` — new device-integrity mode (Phase 12), the
+  read-only surface first:
+  - `integrity doctor` — reports the signals apps inspect before refusing to
+    run (bootloader / verified-boot state, test-keys vs release-keys signing,
+    GMS/microG classification, Developer options & USB debugging, and with
+    `--root` any installed Magisk/KernelSU/APatch manager), each with an
+    app-impact explanation and a tradeoff. It states plainly that it cannot
+    obtain a real Play Integrity verdict itself. Exit 3 when a signal is
+    likely to trip app checks.
+  - `integrity compat` — static German app matrix (AusweisApp, TK-App/ePA,
+    ElsterSmart, Sparkasse S-pushTAN, DB Navigator, VR SecureGo plus), each
+    with a non-phone alternative, a source, and a `last_verified` date;
+    entries older than six months render as unverified rather than keeping a
+    stale status. No device required.
+  - `integrity guide` — alternatives-first guidance (web/desktop, microG, a
+    second device, a relockable ROM, root setup, then spoofing as a last
+    resort), always printing the three mandatory warnings: fragility,
+    liability shift, root attack surface.
+  - The mutating `integrity install` path is intentionally not in this
+    release.
 - `los-bootstrap flash update` — read-only ROM freshness check (Phase 11):
   compares the device's build date (`ro.build.date.utc`) against the latest
   official build for its codename and major version on the LineageOS JSON
