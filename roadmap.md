@@ -98,6 +98,8 @@ tradeoffs.
 - Optional root-aware checks behind an explicit `--root` flag
 
 **Excluded:** Magisk / KernelSU module installation. Custom kernel work.
+(Phase 12 allows module installation only in the separate `integrity`
+mode; `harden` itself still excludes it.)
 
 **Exit criteria:** every recommendation has a documented rationale and a
 documented downside. ✓ Shipped in 0.4.0.
@@ -396,16 +398,134 @@ pass. ✓ Shipped in 0.14.0.
 
 ---
 
+## Phase 12 — Device integrity & app compatibility (scoped, not started)
+
+**Goal:** keep phones usable when apps refuse to run on a custom ROM.
+German government and eID apps and banking apps are the first target.
+For each blocked app: diagnose why, offer the honest alternatives first,
+then (with explicit warnings) guide the user through Play Integrity
+spoofing and optionally install the spoofing modules.
+
+**Rationale for lifting the earlier non-goal:** an app that only trusts
+vendor-supported firmware effectively pushes users to replace hardware
+that still works. Keeping a working phone in service outranks that
+preference, so spoofing the attestation verdict on the user's *own*
+device is now in scope. Two things stay true: spoofing hides a
+modification, it does not make the phone safer, and the tool must say so
+every time.
+
+**Included:**
+- `los-bootstrap integrity doctor` — read-only. Collects the signals apps
+  commonly check and explains, for each one, which kinds of apps it
+  usually breaks, with a fix and a tradeoff:
+  - bootloader / verified-boot state (`ro.boot.flash.locked`,
+    `ro.boot.verifiedbootstate`, `ro.boot.vbmeta.device_state`)
+  - build signing (`ro.build.tags`: `test-keys` vs `release-keys`) and
+    build type
+  - GMS classification (reuses `gms.py`) and Play Store presence
+  - root indicators (`su` on `PATH`, Magisk / KernelSU manager packages)
+  - Developer options, USB debugging, ADB-over-network (reusing the
+    `harden` signals; several German banking apps refuse to start while
+    Developer options are on)
+  - with `--root`: installed Magisk / KernelSU modules, so the user can
+    see whether a spoofing module is present.
+  The tool cannot get a real Play Integrity verdict itself (that needs
+  GMS and an app registered with Play). The doctor says so and points to
+  an on-device checker app instead of guessing. Exit 3 when any signal
+  is likely to trip app checks.
+- `los-bootstrap integrity compat` — static matrix, no device required.
+  The initial set is German: AusweisApp, ElsterSmart, DB Navigator,
+  health-insurer ePA apps, and the major banking / TAN apps (Sparkasse,
+  VR Banking, DKB, ING, comdirect, Postbank, N26). Fields: integrity level
+  required, GMS dependency, root detection, Developer-options check,
+  non-phone alternative (web / desktop / card reader), and `last_verified`
+  date. Phase 7 was deferred because stale data is worse than none, so
+  every entry shows its age, and entries older than six months render as
+  "unverified" instead of keeping their old status.
+- `los-bootstrap integrity guide` — static guidance, ordered
+  alternatives-first:
+  1. Non-phone alternatives (web portal, desktop app, USB card reader)
+  2. microG for apps that need GMS APIs but do not check integrity
+  3. A separate device for the few apps that block everything
+  4. ROMs that support relocking the bootloader, so apps can verify
+     them with hardware attestation (e.g. GrapheneOS on Pixels)
+  5. Root setup: guidance only. Extract `boot` / `init_boot`, patch it in
+     the Magisk app, flash it with `fastboot`. Reuses `flash/`
+     manufacturer detection.
+  6. Spoofing: fingerprint-based Play Integrity modules, Zygisk / DenyList
+     root hiding, and ROMs that ship spoofing built in.
+- `los-bootstrap integrity install [<module.zip>] --root --confirm`. Only
+  works through Magisk or KernelSU, which the user must already have
+  installed. It installs a Magisk / KernelSU module: `adb push`, then
+  `su -c magisk --install-module` (or `ksud module install`). Sources:
+  - a local zip the user downloaded (default, no network), or
+  - `--fetch <name>`: off by default, pulls the latest release asset from
+    an upstream repo declared in a bundled `integrity_data/modules.yml`
+    (the same `github://` resolution the profile loader already uses).
+  Before anything is installed, the command shows the source repo,
+  release tag, asset name, SHA-256, and the zip's `module.prop`
+  id / version / author, and refuses a zip without `module.prop`. The
+  module is pushed and installed only after `--confirm`.
+  `integrity/install.py` is the only mutating module in the package.
+- **Mandatory warnings.** These are printed by `integrity guide`, and by
+  `integrity install` before every install, `--confirm` or not:
+  - *Fragility* — Google revokes spoofed fingerprints regularly. Spoofing
+    can stop working overnight, possibly when the app is urgently needed
+    (travel, a time-critical banking task). Keep a non-phone fallback.
+  - *Liability shift* — bank and eID terms may put fraud liability on the
+    customer if the device was modified. Spoofing hides the modification;
+    it does not remove it.
+  - *Root attack surface* — root and third-party modules run with full
+    privileges. Every module you add is code you are trusting with
+    everything on the phone.
+
+**Excluded:**
+- Attestation keyboxes. The tool does not ship or fetch keyboxes, link to
+  them, or explain how to obtain them. Keyboxes are private keys
+  extracted from other vendors' devices. Keybox-based "strong" spoofing
+  (TrickyStore-style) is named and explained in `integrity guide` so
+  users understand the landscape, nothing more.
+- Automated root: no flashing of patched boot images. Root setup is
+  guidance only; the user runs the destructive step.
+- Installing the Magisk / KernelSU manager app itself (guidance + link).
+- Fetching fingerprint or spoofing config files at runtime. If a module
+  updates its own config, that is the module's behavior, and
+  `integrity guide` discloses it.
+- Automatic module updates.
+- Compatibility entries outside Germany in the first release. Other
+  countries come later through contributions using the same schema.
+- Interactive wizard entry points (candidate for a follow-up).
+- Any change to `harden`. Hardening still excludes Magisk / KernelSU
+  modules; spoofing lives only in `integrity` mode.
+
+**Exit criteria:**
+- `integrity doctor` on a rootless LineageOS device reports the
+  bootloader state, GMS classification, and absence of root, with an
+  app-impact explanation for each signal. It exits 3 when a signal is
+  likely to trip app checks and is honest that it did not obtain a Play
+  Integrity verdict.
+- `integrity compat` prints the German entries with `last_verified` ages
+  and needs no device.
+- `integrity guide` lists the alternatives before spoofing and prints all
+  three mandatory warnings.
+- `integrity install`:
+  - refuses to run without both `--root` and `--confirm`
+  - refuses a zip without `module.prop`
+  - makes no network call without `--fetch`
+  - shows the SHA-256 and `module.prop` details before installing.
+- All tests pass with adb and network mocked. Ships as 0.15.0.
+
+---
+
 ## What's next
 
-**No Phase 12 is currently scoped.** Phases 1–11 are complete; 0.13.0
-closed out known polish and correctness issues on top of Phases 1–10,
-and 0.14.0 adds the flash-lifecycle scope above. Per the
-roadmap discipline in `CLAUDE.md`, a new phase must be proposed and added
-here — with goal, scope, exclusions, and exit criteria — *before* any
-code for it is written. Candidate ideas raised in issues or discussion
-but not yet promoted to a scoped phase belong in a "candidates" note
-here or in a GitHub issue, not in the codebase.
+**Phase 12 (above) is scoped but not started.** Per the roadmap
+discipline in `CLAUDE.md`, code for it may now be written; anything
+beyond its stated scope still needs to be proposed here first.
+
+Candidate ideas raised in issues or discussion but not yet promoted to a
+scoped phase belong in a "candidates" note here or in a GitHub issue,
+not in the codebase.
 
 ### Candidates (not scoped, no code yet)
 
