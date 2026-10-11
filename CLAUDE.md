@@ -13,7 +13,7 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 It can guide users through flashing a ROM and unlocking their bootloader,
 and helps with everything that comes after the ROM is installed.
 
-## Current scope (Phase 11 complete, version 0.14.x)
+## Current scope (Phase 12 in progress, version 0.15.x)
 
 Audit MVP, bootstrap profiles, hardening assistant, location / maps
 integration, camera / GCam port profiles, interactive wizard, ROM
@@ -148,14 +148,23 @@ and exit criteria.
     not be read are reported without failing the command — a check that
     could not run must never render as a clean result.
 
-- Phase 12 (scoped, not started — full scope in `roadmap.md`):
-  - `los-bootstrap integrity doctor | compat | guide | install` — diagnose
-    why apps (German government / eID and banking first) refuse to run
-    on a custom ROM, offer honest alternatives first, then guide and
-    optionally install Play Integrity spoofing modules
-    (`install` requires `--root --confirm`; `--fetch` is opt-in)
-  - Every spoofing path prints three mandatory warnings: fragility,
-    liability shift, root attack surface.
+- Phase 12 (in progress — full scope in `roadmap.md`):
+  - Read-only surface shipped in 0.15.0:
+    - `los-bootstrap integrity doctor` — diagnose the signals apps inspect
+      (bootloader state, build keys, GMS/microG, Developer options; `--root`
+      adds installed root managers). Cannot obtain a real Play Integrity
+      verdict and says so. Exit 3 when a signal is likely to trip app checks.
+    - `los-bootstrap integrity compat` — static German app matrix with
+      per-app alternative, source, and `last_verified` date; stale entries
+      (>6 months) render as unverified. No device required.
+    - `los-bootstrap integrity guide` — alternatives-first guidance; always
+      prints three mandatory warnings: fragility, liability shift, root
+      attack surface.
+    - `integrity/` package: `models.py`, `checks.py`, `compat.py`,
+      `guide.py`, `report.py`.
+  - Not yet built: `los-bootstrap integrity install` (Magisk/KernelSU module
+    install; `--root --confirm` gated, `--fetch` opt-in) — lands in a
+    separate change.
   - Never ship, fetch, link to, or explain how to obtain attestation
     keyboxes.
 
@@ -238,6 +247,13 @@ src/los_bootstrap/
         lifecycle.py       # Phase 11 — ROM freshness + first-boot verification
                            #   (check_* functions + FIRST_BOOT_CHECKS, as in audit/)
         backup.py          # Phase 11 — static pre-flash backup guidance
+    integrity/             # Phase 12 — device integrity & app compatibility
+        __init__.py
+        models.py          # IntegrityFinding, IntegrityReport, IntegrityStatus
+        checks.py          # read-only signal checks + run_integrity_doctor()
+        compat.py          # static German app COMPAT_MATRIX (no ADB required)
+        guide.py           # alternatives-first GUIDE_STEPS + mandatory WARNINGS
+        report.py          # render_integrity_report(), render_compat_matrix(), render_guide()
     wizard/                # Phase 6 — interactive guided menu
         __init__.py        # run_wizard() entry point
         menu.py            # screens + routing

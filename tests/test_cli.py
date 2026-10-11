@@ -20,6 +20,7 @@ def test_serial_accepted_before_and_after_subcommand():
     assert parser.parse_args(["audit", "-s", "B"]).serial == "B"
     assert parser.parse_args(["flash", "status", "--serial", "C"]).serial == "C"
     assert parser.parse_args(["location", "doctor", "-s", "D"]).serial == "D"
+    assert parser.parse_args(["integrity", "doctor", "-s", "E"]).serial == "E"
 
 
 def test_subcommand_serial_wins_over_global():

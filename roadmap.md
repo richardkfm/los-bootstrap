@@ -499,6 +499,8 @@ every time.
   modules; spoofing lives only in `integrity` mode.
 
 **Exit criteria:**
+
+Read-only surface — ✓ shipped in 0.15.0:
 - `integrity doctor` on a rootless LineageOS device reports the
   bootloader state, GMS classification, and absence of root, with an
   app-impact explanation for each signal. It exits 3 when a signal is
@@ -508,20 +510,24 @@ every time.
   and needs no device.
 - `integrity guide` lists the alternatives before spoofing and prints all
   three mandatory warnings.
+
+Mutating surface — not yet built (separate change):
 - `integrity install`:
   - refuses to run without both `--root` and `--confirm`
   - refuses a zip without `module.prop`
   - makes no network call without `--fetch`
   - shows the SHA-256 and `module.prop` details before installing.
-- All tests pass with adb and network mocked. Ships as 0.15.0.
+- All tests pass with adb and network mocked.
 
 ---
 
 ## What's next
 
-**Phase 12 (above) is scoped but not started.** Per the roadmap
-discipline in `CLAUDE.md`, code for it may now be written; anything
-beyond its stated scope still needs to be proposed here first.
+**Phase 12 (above) is in progress.** The read-only surface (`integrity
+doctor | compat | guide`) shipped in 0.15.0; the mutating `integrity
+install` path is still to be built. Per the roadmap discipline in
+`CLAUDE.md`, anything beyond Phase 12's stated scope still needs to be
+proposed here first.
 
 Candidate ideas raised in issues or discussion but not yet promoted to a
 scoped phase belong in a "candidates" note here or in a GitHub issue,

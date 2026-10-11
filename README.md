@@ -221,6 +221,10 @@ los-bootstrap harden --root                       # add SELinux check (needs su 
 los-bootstrap location doctor                     # diagnose the location stack on device
 los-bootstrap location compat                     # app location compatibility matrix
 
+los-bootstrap integrity doctor                    # why do apps block this custom ROM?
+los-bootstrap integrity compat                    # German gov/banking app compatibility
+los-bootstrap integrity guide                     # alternatives-first workaround guidance
+
 los-bootstrap camera list-profiles                # list known GCam port profiles
 los-bootstrap camera show panther                 # full port details + XML config path
 
@@ -230,7 +234,7 @@ los-bootstrap flash backup                        # pre-flash backup guidance (n
 ```
 
 If you have more than one device connected, pass `--serial <id>`.
-The `camera`, `location compat`, `flash prepare`, `flash download <codename>`, and `flash backup` commands work without a device.
+The `camera`, `location compat`, `integrity compat`, `integrity guide`, `flash prepare`, `flash download <codename>`, and `flash backup` commands work without a device.
 
 ## What it currently does
 
@@ -379,6 +383,41 @@ has a *why* and a *tradeoff*.
 (OsmAnd, Telegram, Signal, WhatsApp, Firefox, Chromium, Uber, and more)
 rated as `yes / gps-only / partial / no` on a degoogled ROM. No device
 connection required.
+
+### Device integrity & app compatibility (Phase 12)
+
+```bash
+los-bootstrap integrity doctor          # diagnose the signals apps check (read-only)
+los-bootstrap integrity doctor --root   # also list installed root/spoofing managers
+los-bootstrap integrity compat          # German gov/banking app matrix (no device)
+los-bootstrap integrity guide           # alternatives-first workaround guidance
+```
+
+Some government and banking apps refuse to run on a custom ROM. `integrity`
+helps you understand why and what your honest options are.
+
+`integrity doctor` reports the signals those apps inspect — bootloader /
+verified-boot state, whether the build is signed with public test-keys,
+GMS vs microG, and Developer options / USB debugging — each with its likely
+app impact and a tradeoff. It **cannot** obtain a real Play Integrity verdict
+itself (that needs Google Play services and an app registered with Google);
+it says so and points you at an on-device checker for the actual verdict.
+
+`integrity compat` is a static matrix of German apps (AusweisApp, the TK ePA
+app, ElsterSmart, Sparkasse S-pushTAN, DB Navigator, VR SecureGo plus) with a
+non-phone alternative and a `last_verified` date for each. Entries older than
+six months are shown as unverified on purpose — stale compatibility data is
+worse than none.
+
+`integrity guide` lists the workarounds from lowest risk to highest: a
+web/desktop route, microG, a second device, a ROM that can relock its
+bootloader (e.g. GrapheneOS), rooting, and — as a last resort — Play Integrity
+spoofing. Spoofing keeps a working phone in service instead of replacing it,
+but it is honest about the cost: it always prints three warnings —
+**fragility** (Google revokes spoofed fingerprints, so it can break
+overnight), **liability shift** (bank/eID terms may put fraud liability on
+you), and **root attack surface**. This tool never deals in attestation
+keyboxes.
 
 ### Camera / GCam port profiles (Phase 5)
 
