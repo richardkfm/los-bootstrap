@@ -8,6 +8,7 @@ from .._render_utils import paint, paint_glyph, partition_findings, wrap
 from .compat import COMPAT_MATRIX, STALE_AFTER_DAYS, AppCompatEntry, CompatLevel
 from .guide import GUIDE_STEPS, WARNINGS
 from .models import IntegrityFinding, IntegrityReport, IntegrityStatus
+from .modules import load_module_sources
 
 
 _STATUS_GLYPH = {
@@ -162,4 +163,25 @@ def render_guide() -> str:
     for title, body in WARNINGS:
         lines.append("")
         lines.append(wrap(f"⚠  {title}: {body}", "     "))
+    return "\n".join(lines) + "\n"
+
+
+def render_module_list() -> str:
+    lines = ["Known spoofing modules (for `integrity install --fetch <name>`)", "─" * 62]
+    sources = load_module_sources()
+    if not sources:
+        lines.append("  (none declared)")
+        return "\n".join(lines) + "\n"
+    for s in sources:
+        lines.append("")
+        lines.append(f"  {s.name}")
+        lines.append(wrap(f"repo: {s.repo}", "     "))
+        lines.append(wrap(s.summary, "     "))
+    lines.append("")
+    lines.append(wrap(
+        "These are fingerprint-spoofing modules fetched from their own repos at "
+        "install time — never bundled here, and never keybox-based. Read "
+        "`integrity guide` first.",
+        "  ",
+    ))
     return "\n".join(lines) + "\n"

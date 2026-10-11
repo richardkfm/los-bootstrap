@@ -7,6 +7,17 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 ## [Unreleased]
 
 ### Added
+- `los-bootstrap integrity install` — install a Magisk/KernelSU/APatch
+  spoofing module (Phase 12, mutating). Gated on both `--root` and
+  `--confirm`; without `--confirm` it previews (module id/version/author,
+  SHA-256, detected root manager) and stops. Refuses a zip with no
+  `module.prop`. Source is a local zip by default, or `--fetch <name>` to
+  pull the latest release asset from a repo declared in bundled
+  `integrity_data/modules.yml` (the only path that touches the network;
+  `--list` prints the known modules). The three mandatory warnings
+  (fragility, liability shift, root attack surface) print before every
+  install, `--confirm` or not. Attestation keyboxes are never fetched,
+  shipped, or listed.
 - `los-bootstrap integrity` — new device-integrity mode (Phase 12), the
   read-only surface first:
   - `integrity doctor` — reports the signals apps inspect before refusing to

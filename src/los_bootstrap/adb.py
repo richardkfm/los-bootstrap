@@ -127,6 +127,16 @@ class Adb:
             f"settings put {namespace} {key} {shlex.quote(value)}"
         )
 
+    def push(self, local_path: str, remote_path: str) -> str:
+        """Run `adb push <local> <remote>`. Mutating; copies a file to the device."""
+        result = self.raw("push", local_path, remote_path)
+        if result.returncode != 0:
+            raise AdbCommandError(
+                f"adb push {local_path} failed: "
+                f"{(result.stderr or result.stdout).strip()}"
+            )
+        return result.stdout
+
     def reboot(self, target: Optional[str] = None) -> None:
         """Reboot device, optionally to 'bootloader' or 'recovery'. Mutating."""
         args = ["reboot"]
