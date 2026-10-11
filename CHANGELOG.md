@@ -76,6 +76,11 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   not exist; it now documents `heimdall dump --partition EFS`.
 
 ### Changed
+- Scope: Phase 12 (device integrity & app compatibility) is now scoped in
+  `roadmap.md`. Play Integrity spoofing on the user's own device moves
+  from non-goal to in-scope (opt-in, root-gated, with mandatory
+  fragility / liability / root-attack-surface warnings); attestation
+  keyboxes stay explicitly out of scope. No code or behavior change yet.
 - `evaluate_first_boot` is now composed of individual `check_*` functions
   plus a `FIRST_BOOT_CHECKS` tuple, matching `audit/checks.py` and
   `harden/checks.py`, instead of one long if/elif chain.

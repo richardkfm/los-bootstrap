@@ -21,8 +21,9 @@ flashing assistant (now with flash-lifecycle checks: ROM freshness,
 post-flash first-boot verification, pre-flash backup guidance), one-line
 install distribution, and Android tablet support. Phases 1–11 have all
 shipped; 0.13.0 layered cross-cutting CLI polish and bug fixes on top of
-the Phases 1–10 scope. **No Phase 12 is scoped yet** — see `roadmap.md`
-for how to propose one.
+the Phases 1–10 scope. **Phase 12 (device integrity & app compatibility)
+is scoped but not started** — see `roadmap.md` for its scope, exclusions,
+and exit criteria.
 
 - Phase 1–5 (still in place): see prior changelog entries
 - Phase 6 (still in place):
@@ -147,16 +148,40 @@ for how to propose one.
     not be read are reported without failing the command — a check that
     could not run must never render as a clean result.
 
-If a change does not fit Phase 11 or the maintenance/polish of an
+- Phase 12 (scoped, not started — full scope in `roadmap.md`):
+  - `los-bootstrap integrity doctor | compat | guide | install` — diagnose
+    why apps (German government / eID and banking first) refuse to run
+    on a custom ROM, offer honest alternatives first, then guide and
+    optionally install Play Integrity spoofing modules
+    (`install` requires `--root --confirm`; `--fetch` is opt-in)
+  - Every spoofing path prints three mandatory warnings: fragility,
+    liability shift, root attack surface.
+  - Never ship, fetch, link to, or explain how to obtain attestation
+    keyboxes.
+
+If a change does not fit Phase 12 or the maintenance/polish of an
 already-shipped phase, it goes in the roadmap, not the code.
 
 ## Non-goals
 
-- Bypassing bootloader locks, vendor verification, or signature checks
+- Bypassing bootloader locks, verified boot, or ROM / image signature
+  checks
+- Distributing, fetching, linking to, or explaining how to obtain
+  attestation keyboxes or other keys extracted from vendor devices
 - Auto-distributing GCam APKs or other proprietary binaries
-- Running unsigned remote code or fetching a "config" from the network
+- Running unsigned remote code or fetching a "config" from the network.
+  Sole exception: `integrity install --fetch` (Phase 12) — opt-in,
+  `--root --confirm` gated, pulls a Magisk / KernelSU module only from an
+  upstream repo declared in bundled data, and shows its SHA-256 and
+  `module.prop` before installing
 - Pretending degoogled location is a solved problem
 - Replacing what `adb` already does well; we wrap it, not rewrite it
+
+Spoofing Play Integrity on the user's own device is **not** a non-goal
+since Phase 12: keeping working hardware in service outranks an app
+vendor's preference for vendor-supported firmware. It must stay opt-in,
+root-gated, alternatives-first, and never be described as making the
+phone safer.
 
 ## Architecture overview
 
@@ -241,7 +266,10 @@ Design rules:
   - *hardening mode* — opinionated lockdown with explicit tradeoffs (P3)
   - *location mode* — read-only location stack diagnostics (P4)
   - *camera mode* — static GCam port profiles, no ADB required (P5)
-  - *flash mode* — ROM flashing assistant with manufacturer-aware guidance (P8, current)
+  - *flash mode* — ROM flashing assistant with manufacturer-aware guidance (P8)
+  - *integrity mode* — app-compatibility diagnosis and opt-in Play
+    Integrity spoofing, always with warnings (P12, scoped). The only
+    mode that may install root modules; `harden` never does.
 - **Mutation is gated.** The applier is the only place that calls
   mutating ADB methods (`install_apk`, `setting_put`), and only after
   the user passes `--confirm`. `plan` is read-only; so is everything
