@@ -101,6 +101,8 @@ from .integrity import (
     render_compat_matrix as render_integrity_compat,
     render_guide as render_integrity_guide,
     render_integrity_report,
+    render_module_list as render_integrity_module_list,
+    run_install as run_integrity_install,
     run_integrity_doctor,
 )
 from .plan import build_plan, render_plan
@@ -308,6 +310,36 @@ def _build_parser() -> argparse.ArgumentParser:
         "guide",
         help="Show alternatives-first guidance, including spoofing warnings.",
     ))
+    p_integrity_install = p_integrity_sub.add_parser(
+        "install",
+        help="Install a Magisk/KernelSU spoofing module (requires --root --confirm).",
+    )
+    p_integrity_install.add_argument(
+        "module",
+        nargs="?",
+        help="Path to a module .zip you downloaded. Omit when using --fetch.",
+    )
+    p_integrity_install.add_argument(
+        "--fetch",
+        metavar="NAME",
+        help="Fetch a declared module by name instead of a local zip (opt-in network).",
+    )
+    p_integrity_install.add_argument(
+        "--list",
+        action="store_true",
+        help="List the declared modules that --fetch understands, then exit.",
+    )
+    p_integrity_install.add_argument(
+        "--root",
+        action="store_true",
+        help="Required: acknowledges this installs a root module on a rooted device.",
+    )
+    p_integrity_install.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Required to actually push and install; otherwise previews and stops.",
+    )
+    leaves.append(p_integrity_install)
 
     p_camera = sub.add_parser(
         "camera",
@@ -624,6 +656,25 @@ def cmd_integrity_compat() -> int:
 def cmd_integrity_guide() -> int:
     print(render_integrity_guide(), end="")
     return 0
+
+
+def cmd_integrity_install(args: argparse.Namespace) -> int:
+    if args.list:
+        print(render_integrity_module_list(), end="")
+        return EXIT_OK
+    adb = _resolve_target(args.serial)
+    outcome = run_integrity_install(
+        adb,
+        module_path=args.module,
+        fetch_name=args.fetch,
+        root=args.root,
+        confirm=args.confirm,
+    )
+    if outcome.status == "refused":
+        return EXIT_USAGE
+    if outcome.status == "error":
+        return EXIT_ERROR
+    return EXIT_OK
 
 
 @dataclass
@@ -1081,6 +1132,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 return cmd_integrity_compat()
             if args.integrity_command == "guide":
                 return cmd_integrity_guide()
+            if args.integrity_command == "install":
+                return cmd_integrity_install(args)
         if args.command == "camera":
             if args.camera_command == "list-profiles":
                 return cmd_camera_list_profiles()

@@ -224,6 +224,8 @@ los-bootstrap location compat                     # app location compatibility m
 los-bootstrap integrity doctor                    # why do apps block this custom ROM?
 los-bootstrap integrity compat                    # German gov/banking app compatibility
 los-bootstrap integrity guide                     # alternatives-first workaround guidance
+los-bootstrap integrity install --list            # known spoofing modules for --fetch
+los-bootstrap integrity install mod.zip --root --confirm  # install a spoofing module
 
 los-bootstrap camera list-profiles                # list known GCam port profiles
 los-bootstrap camera show panther                 # full port details + XML config path
@@ -391,6 +393,9 @@ los-bootstrap integrity doctor          # diagnose the signals apps check (read-
 los-bootstrap integrity doctor --root   # also list installed root/spoofing managers
 los-bootstrap integrity compat          # German gov/banking app matrix (no device)
 los-bootstrap integrity guide           # alternatives-first workaround guidance
+los-bootstrap integrity install --list  # known spoofing modules
+los-bootstrap integrity install <mod.zip> --root --confirm   # install a module
+los-bootstrap integrity install --fetch <name> --root --confirm  # fetch + install
 ```
 
 Some government and banking apps refuse to run on a custom ROM. `integrity`
@@ -418,6 +423,18 @@ but it is honest about the cost: it always prints three warnings —
 overnight), **liability shift** (bank/eID terms may put fraud liability on
 you), and **root attack surface**. This tool never deals in attestation
 keyboxes.
+
+`integrity install` installs a fingerprint-spoofing Magisk/KernelSU/APatch
+module on an **already-rooted** device — the one mutating command in this
+mode. It is gated on both `--root` and `--confirm`; without `--confirm` it
+previews the module's `module.prop`, its SHA-256, the detected root manager,
+and the three warnings, then stops. It refuses any zip without a
+`module.prop`. Give it a local module zip you downloaded, or `--fetch <name>`
+to pull the latest release from a repo declared in the bundled registry
+(`integrity install --list`). `--fetch` is the only part that touches the
+network. The registry lists only fingerprint-spoofing modules — never
+keybox/TrickyStore ones. This tool does not root your device; see
+`integrity guide` for that.
 
 ### Camera / GCam port profiles (Phase 5)
 
@@ -550,8 +567,13 @@ everywhere.
 - It does not automate Samsung Odin (closed-source, Windows-only) or
   Xiaomi's Mi Unlock Tool (proprietary, server-enforced). It guides you
   through those manually.
-- It does not auto-distribute GCam APKs or other proprietary binaries.
-- Root is opt-in (`harden --root`) and only used to read SELinux state.
+- It does not auto-distribute GCam APKs or other proprietary binaries, and
+  it never ships, fetches, or explains how to obtain Play Integrity
+  attestation keyboxes. `integrity install --fetch` lists only
+  fingerprint-spoofing modules, pulled from their own repos.
+- Root is opt-in. `harden --root` reads SELinux state; `integrity install`
+  (`--root --confirm`) installs a spoofing module on an already-rooted
+  device. This tool never roots the device for you.
 - It does not verify APK signatures — verify downloads out-of-band
   for security-critical installs (F-Droid, ReVanced Manager).
 

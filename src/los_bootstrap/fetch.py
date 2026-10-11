@@ -38,8 +38,8 @@ def download_apk(url: str, dest_dir: Path) -> Path:
     return dest
 
 
-def _resolve_github(repo: str) -> str:
-    """Return the browser_download_url of the first .apk asset in the latest release."""
+def _github_latest(repo: str) -> dict:
+    """Return the parsed JSON of a repo's latest GitHub release."""
     api_url = GITHUB_API.format(repo=repo)
     try:
         req = urllib.request.Request(
@@ -47,16 +47,45 @@ def _resolve_github(repo: str) -> str:
             headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
         )
         with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read())
+            return json.loads(resp.read())
     except urllib.error.HTTPError as exc:
         raise FetchError(f"GitHub API returned {exc.code} for {repo}") from exc
     except OSError as exc:
         raise FetchError(f"network error querying GitHub: {exc}") from exc
 
-    apk_assets = [a for a in data.get("assets", []) if a.get("name", "").endswith(".apk")]
-    if not apk_assets:
-        raise FetchError(f"no .apk asset found in latest release of {repo}")
-    return apk_assets[0]["browser_download_url"]
+
+def _resolve_github(repo: str) -> str:
+    """Return the browser_download_url of the first .apk asset in the latest release."""
+    url, _name, _tag = resolve_github_asset(repo, suffix=".apk")
+    return url
+
+
+def resolve_github_asset(repo: str, suffix: str = ".apk") -> tuple[str, str, str]:
+    """Return (download_url, asset_name, release_tag) for the first matching asset.
+
+    `suffix` filters release assets by filename extension (e.g. ".zip" for a
+    Magisk/KernelSU module). Used by `integrity install --fetch`.
+    """
+    data = _github_latest(repo)
+    assets = [a for a in data.get("assets", []) if a.get("name", "").endswith(suffix)]
+    if not assets:
+        raise FetchError(f"no {suffix} asset found in latest release of {repo}")
+    tag = data.get("tag_name", "") or ""
+    return assets[0]["browser_download_url"], assets[0]["name"], tag
+
+
+def download_url(url: str, dest_dir: Path) -> Path:
+    """Download a plain HTTPS URL into `dest_dir`, returning the local path.
+
+    A file already present is returned as a cache hit (same policy as
+    `download_apk`).
+    """
+    filename = url.rsplit("/", 1)[-1].split("?")[0]
+    dest = dest_dir / filename
+    if dest.exists():
+        return dest
+    _stream(url, dest)
+    return dest
 
 
 def _resolve_fdroid(package_id: str) -> str:

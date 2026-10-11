@@ -13,7 +13,7 @@ audit privacy posture, and (eventually) apply opinionated hardening.
 It can guide users through flashing a ROM and unlocking their bootloader,
 and helps with everything that comes after the ROM is installed.
 
-## Current scope (Phase 12 in progress, version 0.15.x)
+## Current scope (Phase 12 complete, version 0.16.x)
 
 Audit MVP, bootstrap profiles, hardening assistant, location / maps
 integration, camera / GCam port profiles, interactive wizard, ROM
@@ -22,8 +22,8 @@ post-flash first-boot verification, pre-flash backup guidance), one-line
 install distribution, and Android tablet support. Phases 1–11 have all
 shipped; 0.13.0 layered cross-cutting CLI polish and bug fixes on top of
 the Phases 1–10 scope. **Phase 12 (device integrity & app compatibility)
-is scoped but not started** — see `roadmap.md` for its scope, exclusions,
-and exit criteria.
+has shipped** (0.15.0 read-only surface, 0.16.0 `integrity install`) — see
+`roadmap.md` for its scope, exclusions, and exit criteria.
 
 - Phase 1–5 (still in place): see prior changelog entries
 - Phase 6 (still in place):
@@ -148,8 +148,8 @@ and exit criteria.
     not be read are reported without failing the command — a check that
     could not run must never render as a clean result.
 
-- Phase 12 (in progress — full scope in `roadmap.md`):
-  - Read-only surface shipped in 0.15.0:
+- Phase 12 (current — full scope in `roadmap.md`):
+  - Read-only surface (shipped 0.15.0):
     - `los-bootstrap integrity doctor` — diagnose the signals apps inspect
       (bootloader state, build keys, GMS/microG, Developer options; `--root`
       adds installed root managers). Cannot obtain a real Play Integrity
@@ -160,13 +160,20 @@ and exit criteria.
     - `los-bootstrap integrity guide` — alternatives-first guidance; always
       prints three mandatory warnings: fragility, liability shift, root
       attack surface.
-    - `integrity/` package: `models.py`, `checks.py`, `compat.py`,
-      `guide.py`, `report.py`.
-  - Not yet built: `los-bootstrap integrity install` (Magisk/KernelSU module
-    install; `--root --confirm` gated, `--fetch` opt-in) — lands in a
-    separate change.
+  - Mutating surface (shipped 0.16.0):
+    - `los-bootstrap integrity install [<module.zip>]` — install a
+      Magisk/KernelSU/APatch spoofing module. Gated on `--root` AND
+      `--confirm`; without `--confirm` it previews (module.prop, SHA-256,
+      detected root manager) and the three warnings, then stops. Refuses a
+      zip with no `module.prop`. `--fetch <name>` pulls a release asset from
+      a repo declared in `integrity_data/modules.yml` (the only networked
+      path; `--list` prints the registry). `integrity/install.py` is the
+      only mutating module in the package.
+  - `integrity/` package: `models.py`, `checks.py`, `compat.py`,
+    `guide.py`, `report.py`, `modules.py`, `install.py`.
   - Never ship, fetch, link to, or explain how to obtain attestation
-    keyboxes.
+    keyboxes; the `--fetch` registry lists only fingerprint-spoofing
+    modules, never keybox/TrickyStore ones.
 
 If a change does not fit Phase 12 or the maintenance/polish of an
 already-shipped phase, it goes in the roadmap, not the code.
@@ -253,7 +260,11 @@ src/los_bootstrap/
         checks.py          # read-only signal checks + run_integrity_doctor()
         compat.py          # static German app COMPAT_MATRIX (no ADB required)
         guide.py           # alternatives-first GUIDE_STEPS + mandatory WARNINGS
-        report.py          # render_integrity_report(), render_compat_matrix(), render_guide()
+        modules.py         # spoofing-module registry loader (integrity_data/)
+        install.py         # run_install() — module install (mutating; --root --confirm)
+        report.py          # render_integrity_report/compat_matrix/guide/module_list
+    integrity_data/        # bundled module registry (package data)
+        modules.yml        # declared upstream spoofing-module repos for --fetch
     wizard/                # Phase 6 — interactive guided menu
         __init__.py        # run_wizard() entry point
         menu.py            # screens + routing
@@ -284,8 +295,9 @@ Design rules:
   - *camera mode* — static GCam port profiles, no ADB required (P5)
   - *flash mode* — ROM flashing assistant with manufacturer-aware guidance (P8)
   - *integrity mode* — app-compatibility diagnosis and opt-in Play
-    Integrity spoofing, always with warnings (P12, scoped). The only
-    mode that may install root modules; `harden` never does.
+    Integrity spoofing, always with warnings (P12). The only mode that may
+    install root modules (`integrity install`, `--root --confirm` gated);
+    `harden` never does.
 - **Mutation is gated.** The applier is the only place that calls
   mutating ADB methods (`install_apk`, `setting_put`), and only after
   the user passes `--confirm`. `plan` is read-only; so is everything

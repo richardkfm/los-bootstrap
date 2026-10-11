@@ -21,6 +21,9 @@ def test_serial_accepted_before_and_after_subcommand():
     assert parser.parse_args(["flash", "status", "--serial", "C"]).serial == "C"
     assert parser.parse_args(["location", "doctor", "-s", "D"]).serial == "D"
     assert parser.parse_args(["integrity", "doctor", "-s", "E"]).serial == "E"
+    args = parser.parse_args(["integrity", "install", "m.zip", "--root", "--confirm"])
+    assert args.module == "m.zip" and args.root and args.confirm
+    assert parser.parse_args(["integrity", "install", "--fetch", "playintegrityfix"]).fetch == "playintegrityfix"
 
 
 def test_subcommand_serial_wins_over_global():

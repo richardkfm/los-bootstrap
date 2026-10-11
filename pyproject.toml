@@ -51,7 +51,7 @@ Changelog = "https://github.com/richardkfm/los-bootstrap/blob/main/CHANGELOG.md"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"los_bootstrap" = ["py.typed", "profiles_data/*.yml"]
+"los_bootstrap" = ["py.typed", "profiles_data/*.yml", "integrity_data/*.yml"]
 
 [tool.setuptools.dynamic]
 version = { attr = "los_bootstrap.__version__" }

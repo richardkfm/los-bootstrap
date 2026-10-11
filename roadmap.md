@@ -511,23 +511,24 @@ Read-only surface — ✓ shipped in 0.15.0:
 - `integrity guide` lists the alternatives before spoofing and prints all
   three mandatory warnings.
 
-Mutating surface — not yet built (separate change):
+Mutating surface — ✓ shipped in 0.16.0:
 - `integrity install`:
   - refuses to run without both `--root` and `--confirm`
   - refuses a zip without `module.prop`
   - makes no network call without `--fetch`
-  - shows the SHA-256 and `module.prop` details before installing.
+  - shows the SHA-256 and `module.prop` details, and the three warnings,
+    before installing (preview without `--confirm`).
 - All tests pass with adb and network mocked.
 
 ---
 
 ## What's next
 
-**Phase 12 (above) is in progress.** The read-only surface (`integrity
-doctor | compat | guide`) shipped in 0.15.0; the mutating `integrity
-install` path is still to be built. Per the roadmap discipline in
-`CLAUDE.md`, anything beyond Phase 12's stated scope still needs to be
-proposed here first.
+**Phase 12 is complete.** The read-only surface (`integrity doctor |
+compat | guide`) shipped in 0.15.0 and `integrity install` shipped in
+0.16.0. No Phase 13 is scoped. Per the roadmap discipline in `CLAUDE.md`,
+a new phase must be proposed here — with goal, scope, exclusions, and exit
+criteria — before any code for it is written.
 
 Candidate ideas raised in issues or discussion but not yet promoted to a
 scoped phase belong in a "candidates" note here or in a GitHub issue,

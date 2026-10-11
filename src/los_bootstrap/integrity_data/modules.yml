@@ -1,0 +1,30 @@
+# Declared upstream Magisk / KernelSU modules for
+# `los-bootstrap integrity install --fetch <name>`.
+#
+# These are FINGERPRINT-SPOOFING Play Integrity modules. This tool never ships
+# the module itself: with --fetch it pulls the release asset from the repo
+# below and shows its SHA-256 and module.prop before anything is installed.
+#
+# Keybox-based modules (TrickyStore-style "strong"/device attestation forgery)
+# are out of scope and are deliberately NOT listed here — see the Phase 12
+# non-goals in CLAUDE.md.
+#
+# name         short id passed to --fetch
+# repo         GitHub <owner>/<repo>; the latest release's matching asset is used
+# asset_suffix filename suffix that selects the module zip in that release
+# summary      one line shown to the user before installing
+modules:
+  - name: playintegrityfork
+    repo: osm0sis/PlayIntegrityFork
+    asset_suffix: .zip
+    summary: >
+      Fork of the discontinued PlayIntegrityFix lineage. Injects custom
+      android.os.Build fields and system props; does not use attestation
+      keyboxes. Requires Magisk/KernelSU/APatch with Zygisk.
+  - name: playintegrityfix
+    repo: KOWX712/PlayIntegrityFix
+    asset_suffix: .zip
+    summary: >
+      Maintained continuation of chiteroman's PlayIntegrityFix. Fingerprint
+      spoof (spoofBuild) on by default; not a root-hiding module and not
+      keybox-based.
