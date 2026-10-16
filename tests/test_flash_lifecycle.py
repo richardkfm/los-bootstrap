@@ -256,11 +256,20 @@ def test_first_boot_verified_boot_green_or_orange_passes(boot_state):
     assert fb["fb.verified_boot"].status is FirstBootStatus.PASS
 
 
-@pytest.mark.parametrize("boot_state", ["yellow", "red"])
-def test_first_boot_verified_boot_yellow_or_red_fails(boot_state):
+@pytest.mark.parametrize("boot_state", ["red", "RED"])
+def test_first_boot_verified_boot_red_fails(boot_state):
     fb = _by_id(evaluate_first_boot(_facts(), _probes(verified_boot=boot_state)))
     assert fb["fb.verified_boot"].status is FirstBootStatus.FAIL
     assert fb["fb.verified_boot"].fix_hint
+
+
+def test_first_boot_verified_boot_yellow_is_a_relocked_device():
+    """yellow = locked with a user-set key (relocked /e/OS, GrapheneOS), not a failure."""
+    report = evaluate_first_boot(_eos_facts(), _probes(verified_boot="yellow", gms_variant="microg"))
+    fb = _by_id(report)
+    assert fb["fb.verified_boot"].status is FirstBootStatus.PASS
+    assert "relocked" in fb["fb.verified_boot"].detail
+    assert not report.has_failures()
 
 
 def test_first_boot_verified_boot_unset_is_unknown():

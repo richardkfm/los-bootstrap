@@ -339,26 +339,34 @@ def check_verified_boot(
 
     vbs = probes.verified_boot.strip()
     vbs_lc = vbs.lower()
-    if vbs_lc in ("green", "orange"):
+    if vbs_lc in ("green", "orange", "yellow"):
         detail = f"ro.boot.verifiedbootstate = {vbs}"
         if vbs_lc == "orange":
             detail += " (self-attested — expected with an unlocked bootloader)"
+        elif vbs_lc == "yellow":
+            detail += (
+                " (bootloader relocked with the ROM's own signing key — "
+                "expected on ROMs that support relocking, e.g. /e/OS on "
+                "Fairphone, GrapheneOS, CalyxOS; the boot warning screen "
+                "shows the key fingerprint to compare with the ROM's "
+                "published one)"
+            )
         yield FirstBootFinding(
             check_id="fb.verified_boot",
             title="Verified Boot state acceptable",
             status=FirstBootStatus.PASS,
             detail=detail,
         )
-    elif vbs_lc in ("yellow", "red"):
+    elif vbs_lc == "red":
         yield FirstBootFinding(
             check_id="fb.verified_boot",
             title="Verified Boot reported a failure",
             status=FirstBootStatus.FAIL,
             detail=f"ro.boot.verifiedbootstate = {vbs}",
             why=(
-                "yellow or red means the boot image failed integrity "
-                "verification; right after a flash this most often "
-                "means a ROM or boot image for the wrong device"
+                "red means the boot image failed integrity verification; "
+                "right after a flash this most often means a ROM or boot "
+                "image for the wrong device"
             ),
             fix_hint=(
                 "stop and re-check the zip with `flash verify` against "

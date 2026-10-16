@@ -538,7 +538,9 @@ benefit from this tool run it, and until 0.16.1 the tool misidentified it.
 `DeviceFacts.eos_version` / `eos_channel` parsed from `ro.lineage.version`;
 /e/OS named correctly in `info`, `audit`, the wizard and `flash check`;
 `flash update` refuses to compare /e/OS with LineageOS builds; microG-aware
-`audit` GMS checks; channel-independent /e/OS page link.
+`audit` GMS checks; channel-independent /e/OS page link; `flash check`
+accepts a `yellow` verified-boot state (bootloader relocked with the ROM's
+own key).
 
 **Included:**
 - `flash update` on /e/OS — compare against the /e/OS build API
@@ -552,10 +554,7 @@ benefit from this tool run it, and until 0.16.1 the tool misidentified it.
 - `flash download <codename> --distro eos [--fetch]` — list /e/OS builds per
   channel and, with `--fetch`, download the zip and verify the SHA-256 the
   API reports. The LineageOS path stays the default.
-- `flash check` on /e/OS — expect microG, report the channel, and on devices
-  where /e/OS documents relocking (e.g. Fairphone 4/5) treat a locked
-  bootloader with a `yellow` verified-boot state (custom key) as expected
-  rather than a failure.
+- `flash check` on /e/OS — expect microG and report the channel.
 - `integrity doctor` on /e/OS — recognise the SafetyNet / Play Integrity
   compatibility shim /e/OS ships on official and community builds (ih8sn),
   and say so before anyone reaches for `integrity install`; stacking a
@@ -584,8 +583,6 @@ benefit from this tool run it, and until 0.16.1 the tool misidentified it.
   with `--no-network`.
 - `flash download --distro eos --fetch` downloads a build and refuses it on
   a SHA-256 mismatch.
-- `flash check` on a relocked /e/OS device with a `yellow` verified-boot
-  state exits 0.
 - `integrity doctor` on /e/OS mentions the built-in shim; `audit` on a stock
   /e/OS install raises no Google-services WARN.
 - All tests pass with adb and network mocked, using real /e/OS `getprop`

@@ -289,8 +289,9 @@ and what the flash each wipe, and per-manufacturer notes (Samsung EFS,
 Xiaomi, Pixel). No device needed.
 
 `flash check` is the post-flash first-boot verification: LineageOS
-detection, build fingerprint, verified-boot state (yellow/red is a
-failure — usually a ROM for the wrong device), A/B slot, GMS presence,
+detection (including /e/OS), build fingerprint, verified-boot state
+(red is a failure — usually a ROM for the wrong device; yellow, a
+bootloader relocked with the ROM's own key, passes), A/B slot, GMS presence,
 and build type. It distinguishes microG from real Play Services, and
 probes that could not be read are reported as unknown rather than
 silently counted as clean. Exits 3 on a genuine failure; warnings are

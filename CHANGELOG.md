@@ -78,6 +78,11 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   "upgrade" (which would mean replacing the ROM and wiping data). It now
   says the device runs /e/OS and points to the /e/OS updater and the
   device's /e/OS page.
+- `flash check` no longer fails a bootloader relocked with the ROM's own
+  signing key. `ro.boot.verifiedbootstate=yellow` means "locked, verified
+  with a user-set key" — the normal state of a relocked /e/OS Fairphone,
+  GrapheneOS or CalyxOS device — but was reported as a failed boot image
+  and exited 3. It now passes with an explanation; only `red` fails.
 - `flash update` compares major versions numerically; a text comparison
   ranked "9" above "10".
 - `audit` no longer warns about Google services on microG devices (/e/OS,
