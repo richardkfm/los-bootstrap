@@ -522,12 +522,86 @@ Mutating surface — ✓ shipped in 0.16.0:
 
 ---
 
+## Phase 13 — /e/OS as a first-class target (scoped, not started)
+
+**Goal:** an /e/OS user gets the same quality of answers as a LineageOS
+user: correct identity, a working "is my ROM current?" check, a download
+path, and audits that understand what /e/OS ships by default instead of
+flagging it.
+
+**Why /e/OS:** it is the most widely used LineageOS derivative that ships
+microG out of the box, is sold preinstalled (Murena, Fairphone), and
+supports a relocked bootloader on several devices. Many users who would
+benefit from this tool run it, and until 0.16.1 the tool misidentified it.
+
+**Baseline (already shipped as fixes in 0.16.1, not Phase 13 work):**
+`DeviceFacts.eos_version` / `eos_channel` parsed from `ro.lineage.version`;
+/e/OS named correctly in `info`, `audit`, the wizard and `flash check`;
+`flash update` refuses to compare /e/OS with LineageOS builds; microG-aware
+`audit` GMS checks; channel-independent /e/OS page link.
+
+**Included:**
+- `flash update` on /e/OS — compare against the /e/OS build API
+  (`images.ecloud.global/api/v2/devices/<codename>/downloads?type=<channel>`)
+  within the device's own channel and Android base (`a14`, `a15`, …).
+  A newer Android base is reported as a separate upgrade, the same way a
+  LineageOS major version is. A channel the device is not on (community vs
+  official) is mentioned, never treated as staleness. Network rules are the
+  same as the LineageOS lookup: only when `flash update` runs, and
+  `--no-network` reports "unverifiable".
+- `flash download <codename> --distro eos [--fetch]` — list /e/OS builds per
+  channel and, with `--fetch`, download the zip and verify the SHA-256 the
+  API reports. The LineageOS path stays the default.
+- `flash check` on /e/OS — expect microG, report the channel, and on devices
+  where /e/OS documents relocking (e.g. Fairphone 4/5) treat a locked
+  bootloader with a `yellow` verified-boot state (custom key) as expected
+  rather than a failure.
+- `integrity doctor` on /e/OS — recognise the SafetyNet / Play Integrity
+  compatibility shim /e/OS ships on official and community builds (ih8sn),
+  and say so before anyone reaches for `integrity install`; stacking a
+  spoofing module on top of it is a known source of breakage.
+- `audit` / `location doctor` — recognise the /e/OS system components and
+  explain them instead of ignoring them: App Lounge (app store), Advanced
+  Privacy (tracker blocking, IP hiding, fake location — the last one
+  changes what `location doctor` measures), and the bundled microG.
+  Package ids are verified on a real device before they go into code.
+- `profiles_data/eos-default.yml` — a bootstrap profile for /e/OS that does
+  not reinstall what /e/OS already ships (microG, an app store, maps).
+
+**Excluded:**
+- Murena account / Murena Workspace (ecloud) setup or sign-in.
+- Automating Easy Installer or the Murena web installer; they are linked,
+  not wrapped.
+- Driving App Lounge (including its anonymous Google Play mode).
+- Removing or disabling /e/OS system apps.
+- /e/OS-specific forks of other phases' data (camera profiles, compat
+  matrix entries) beyond what a check above needs.
+
+**Exit criteria:**
+- On an /e/OS device, `flash update` reports up to date / N days behind /
+  newer Android base available from the /e/OS API, exits 3 only when
+  outdated within the device's channel and base, and makes no network call
+  with `--no-network`.
+- `flash download --distro eos --fetch` downloads a build and refuses it on
+  a SHA-256 mismatch.
+- `flash check` on a relocked /e/OS device with a `yellow` verified-boot
+  state exits 0.
+- `integrity doctor` on /e/OS mentions the built-in shim; `audit` on a stock
+  /e/OS install raises no Google-services WARN.
+- All tests pass with adb and network mocked, using real /e/OS `getprop`
+  and API fixtures.
+
+**Version:** 0.17.0 (minor — new user-facing capability).
+
+---
+
 ## What's next
 
 **Phase 12 is complete.** The read-only surface (`integrity doctor |
 compat | guide`) shipped in 0.15.0 and `integrity install` shipped in
-0.16.0. No Phase 13 is scoped. Per the roadmap discipline in `CLAUDE.md`,
-a new phase must be proposed here — with goal, scope, exclusions, and exit
+0.16.0. **Phase 13 (/e/OS as a first-class target) is scoped above and
+not started.** Per the roadmap discipline in `CLAUDE.md`, any further
+phase must be proposed here — with goal, scope, exclusions, and exit
 criteria — before any code for it is written.
 
 Candidate ideas raised in issues or discussion but not yet promoted to a

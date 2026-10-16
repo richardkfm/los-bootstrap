@@ -105,7 +105,7 @@ def evaluate_rom_update(
     if latest_overall is not None:
         device_major = major_version(device_version)
         overall_major = major_version(latest_overall.version)
-        if device_major and overall_major and overall_major > device_major:
+        if device_major and overall_major and int(overall_major) > int(device_major):
             upgrade_version = latest_overall.version
             upgrade_build_date = latest_overall.datetime
 
@@ -244,6 +244,17 @@ def check_probe_health(
 def check_lineage(
     facts: "DeviceFacts", _probes: FirstBootProbes
 ) -> Iterable[FirstBootFinding]:
+    if facts.is_eos:
+        yield FirstBootFinding(
+            check_id="fb.lineage",
+            title="/e/OS detected (LineageOS-based)",
+            status=FirstBootStatus.PASS,
+            detail=(
+                f"/e/OS {facts.eos_version} ({facts.eos_channel}); "
+                f"ro.lineage.version = {facts.lineage_version}"
+            ),
+        )
+        return
     if facts.is_lineage:
         yield FirstBootFinding(
             check_id="fb.lineage",

@@ -175,6 +175,13 @@ has shipped** (0.15.0 read-only surface, 0.16.0 `integrity install`) — see
     keyboxes; the `--fetch` registry lists only fingerprint-spoofing
     modules, never keybox/TrickyStore ones.
 
+- Phase 13 (scoped, not started — full scope in `roadmap.md`): /e/OS as
+  a first-class target (/e/OS build API for `flash update` / `flash
+  download`, /e/OS-aware `flash check`, `integrity doctor`, `audit`,
+  `location doctor`, and an `eos-default` profile). 0.16.1 already ships
+  /e/OS detection (`DeviceFacts.is_eos`, `eos_version`, `eos_channel`) as
+  a bug fix; do not build the rest before Phase 13 is started.
+
 If a change does not fit Phase 12 or the maintenance/polish of an
 already-shipped phase, it goes in the roadmap, not the code.
 

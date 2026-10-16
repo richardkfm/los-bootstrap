@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Optional
 
 from .. import __version__
+from ..device import rom_label
 from ..logo import banner
 from .prompt import BOLD, CYAN, GREEN, RED, RESET, YELLOW, ask_confirm, ask_select, ask_text, clear_screen
 from .render import render_finding_detail
@@ -68,7 +69,7 @@ def _device_line(ctx: WizardContext) -> str:
         return f"{YELLOW}  ⚠  No ADB device — offline mode (camera & location compat only){RESET}"
     try:
         facts = ctx.get_facts()
-        rom = f"LineageOS {facts.lineage_version}" if facts.is_lineage else "AOSP-derived"
+        rom = rom_label(facts)
         return f"{GREEN}  ✓  {facts.manufacturer} {facts.model}  ({facts.codename} / {rom} / Android {facts.android_release}){RESET}"
     except Exception as exc:
         return f"{RED}  ✗  Device error: {exc}{RESET}"
