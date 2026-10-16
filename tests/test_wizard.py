@@ -44,6 +44,9 @@ def _audit_check_ids() -> set[str]:
     class _NoopFacts:
         is_lineage = True
         lineage_version = "21.0"
+        is_eos = False
+        eos_version = None
+        eos_channel = None
         adb_tcp_port = "0"
 
     adb = _NoopAdb()

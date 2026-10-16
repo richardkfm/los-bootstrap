@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from .._render_utils import paint, paint_glyph, partition_findings, wrap
-from ..device import DeviceFacts
+from ..device import DeviceFacts, rom_label
 from .distros import LineageBuild
 from .models import (
     DeviceState,
@@ -260,7 +260,12 @@ def render_update_report(
     lines.append("═════════════════════")
     lines.append(f"  Device    : {facts.model or '(unknown)'}")
     lines.append(f"  Codename  : {facts.codename or '(unknown)'}")
-    if result.device_version:
+    if facts.is_eos:
+        lines.append(
+            f"  Running   : {rom_label(facts)} "
+            f"(built {_format_build_date(result.device_build_date)})"
+        )
+    elif result.device_version and facts.is_lineage:
         lines.append(
             f"  Running   : LineageOS {result.device_version} "
             f"(built {_format_build_date(result.device_build_date)})"
@@ -288,6 +293,19 @@ def render_update_report(
                 "Update with `los-bootstrap flash download "
                 f"{facts.codename or '<codename>'}`, then re-flash with "
                 "`los-bootstrap flash run <rom.zip> --confirm`.",
+                "  ",
+            )
+        )
+    elif result.state is RomUpdateState.NOT_LINEAGEOS and facts.is_eos:
+        lines.append(paint("  ! This device runs /e/OS, not upstream LineageOS", "yellow"))
+        lines.append(
+            wrap(
+                "`flash update` tracks official LineageOS builds only, and "
+                "/e/OS has its own release numbers and channels. Use the "
+                "System updates screen in /e/OS Settings, or compare with "
+                "the device's /e/OS page. Do not flash a LineageOS build "
+                "over /e/OS to \"update\" — it is a different ROM and needs "
+                "a full data wipe.",
                 "  ",
             )
         )

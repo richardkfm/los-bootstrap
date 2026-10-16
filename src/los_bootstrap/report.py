@@ -8,7 +8,7 @@ from typing import Optional
 
 from ._render_utils import color_enabled, paint, paint_glyph, partition_findings, wrap
 from .audit.models import AuditReport, Severity
-from .device import DeviceFacts
+from .device import DeviceFacts, rom_label
 
 
 _SEV_GLYPH = {
@@ -36,10 +36,7 @@ def render_text(facts: DeviceFacts, report: Optional[AuditReport]) -> str:
     lines.append(f"  Android         : {facts.android_release} (SDK {facts.sdk})")
     lines.append(f"  Security patch  : {facts.security_patch}")
     lines.append(f"  Build ID        : {facts.build_id}")
-    lines.append(
-        f"  ROM             : "
-        f"{'LineageOS ' + (facts.lineage_version or '') if facts.is_lineage else 'AOSP-derived'}"
-    )
+    lines.append(f"  ROM             : {rom_label(facts)}")
 
     if report is not None:
         lines.append("")

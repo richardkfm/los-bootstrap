@@ -67,6 +67,36 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   codename, newest first, so freshness can be judged per major version.
 
 ### Fixed
+- /e/OS is no longer reported as LineageOS. /e/OS reuses
+  `ro.lineage.version` with its own release scheme
+  (`4.3-a14-<date>-community-<device>`); it is now recognised and shown as
+  "/e/OS 4.3 (LineageOS-based, community)" in `info`, `audit`, the wizard
+  and `flash check`. The wizard text claiming /e/OS does not set the
+  property is corrected.
+- `flash update` on /e/OS no longer queries the LineageOS API, reports the
+  device as "unsupported", or offers a LineageOS major version as an
+  "upgrade" (which would mean replacing the ROM and wiping data). It now
+  says the device runs /e/OS and points to the /e/OS updater and the
+  device's /e/OS page.
+- `flash check` no longer fails a bootloader relocked with the ROM's own
+  signing key. `ro.boot.verifiedbootstate=yellow` means "locked, verified
+  with a user-set key" — the normal state of a relocked /e/OS Fairphone,
+  GrapheneOS or CalyxOS device — but was reported as a failed boot image
+  and exited 3. It now passes with an explanation; only `red` fails.
+- `flash update` compares major versions numerically; a text comparison
+  ranked "9" above "10".
+- `audit` no longer warns about Google services on microG devices (/e/OS,
+  LineageOS for microG). `gms.present` now classifies the package the way
+  `flash check` and `location doctor` already did: microG is INFO, real
+  Play services WARN, an unreadable version still WARN. microG's
+  Services Framework proxy and companion (`com.android.vending`, 0.x) no
+  longer count as Google packages. The wizard's GMS fix text no longer
+  claims a `/system/priv-app` install means real GApps — ROMs that bundle
+  microG install it there.
+- The /e/OS link printed by `flash download` pointed at the image
+  server's `stable/` channel, which returns 404 for devices that only have
+  community builds. It now points to the per-device page on
+  `doc.e.foundation`, which covers every channel.
 - `flash check` no longer fails on a healthy device. The fingerprint
   check tested `startswith("LineageOS/")`, a shape `ro.build.fingerprint`
   never has (it is `brand/product/device:release/...`, with
@@ -107,6 +137,8 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   not exist; it now documents `heimdall dump --partition EFS`.
 
 ### Changed
+- `roadmap.md`: Phase 13 (/e/OS as a first-class target) is scoped. No
+  Phase 13 code is in this release.
 - Scope: Phase 12 (device integrity & app compatibility) is now scoped in
   `roadmap.md`. Play Integrity spoofing on the user's own device moves
   from non-goal to in-scope (opt-in, root-gated, with mandatory

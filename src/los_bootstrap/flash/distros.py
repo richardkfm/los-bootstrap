@@ -3,6 +3,7 @@
 Provides:
 
 - ``lineage_device_url(codename)`` — the human-browsable LOS download page.
+- ``eos_device_url(codename)`` — the /e/OS per-device install and download page.
 - ``lookup_lineage_build(codename)`` — query the LOS public JSON API and
   return the latest build's filename, URL, size and SHA-256.
 - ``lookup_lineage_builds(codename)`` — the same query, returning every
@@ -29,6 +30,10 @@ from typing import Callable, Optional
 
 LOS_API = "https://download.lineageos.org/api/v2/devices/{codename}/builds"
 LOS_PAGE = "https://download.lineageos.org/devices/{codename}/builds"
+# The per-device docs page covers every /e/OS channel. The image server's
+# /<channel>/<codename>/ pages 404 for a device without builds on that
+# channel, and which channels a device has is only known by asking its API.
+EOS_PAGE = "https://doc.e.foundation/devices/{codename}/"
 
 HttpOpener = Callable[[str, float], "urllib.request.addinfourl"]
 
@@ -59,7 +64,7 @@ class LineageBuild:
 _ALT_DISTROS: list[tuple[str, str, bool]] = [
     # (display name, URL template, is_codename_based)
     ("LineageOS for microG", "https://download.lineage.microg.org/{codename}/", True),
-    ("/e/OS",                "https://images.ecloud.global/stable/{codename}/", True),
+    ("/e/OS",                EOS_PAGE,                                          True),
     ("DivestOS",             "https://divestos.org/index.php?page=devices",     False),
     ("CalyxOS",              "https://calyxos.org/install/devices/",            False),
     ("GrapheneOS",           "https://grapheneos.org/install/",                 False),
@@ -70,6 +75,11 @@ _ALT_DISTROS: list[tuple[str, str, bool]] = [
 def lineage_device_url(codename: str) -> str:
     """Return the human-browsable LineageOS downloads page for a codename."""
     return LOS_PAGE.format(codename=codename)
+
+
+def eos_device_url(codename: str) -> str:
+    """Return the /e/OS install and download page for a codename."""
+    return EOS_PAGE.format(codename=codename)
 
 
 def alt_distro_links(codename: str) -> list[tuple[str, str]]:

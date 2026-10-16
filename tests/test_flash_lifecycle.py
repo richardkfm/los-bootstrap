@@ -256,11 +256,20 @@ def test_first_boot_verified_boot_green_or_orange_passes(boot_state):
     assert fb["fb.verified_boot"].status is FirstBootStatus.PASS
 
 
-@pytest.mark.parametrize("boot_state", ["yellow", "red"])
-def test_first_boot_verified_boot_yellow_or_red_fails(boot_state):
+@pytest.mark.parametrize("boot_state", ["red", "RED"])
+def test_first_boot_verified_boot_red_fails(boot_state):
     fb = _by_id(evaluate_first_boot(_facts(), _probes(verified_boot=boot_state)))
     assert fb["fb.verified_boot"].status is FirstBootStatus.FAIL
     assert fb["fb.verified_boot"].fix_hint
+
+
+def test_first_boot_verified_boot_yellow_is_a_relocked_device():
+    """yellow = locked with a user-set key (relocked /e/OS, GrapheneOS), not a failure."""
+    report = evaluate_first_boot(_eos_facts(), _probes(verified_boot="yellow", gms_variant="microg"))
+    fb = _by_id(report)
+    assert fb["fb.verified_boot"].status is FirstBootStatus.PASS
+    assert "relocked" in fb["fb.verified_boot"].detail
+    assert not report.has_failures()
 
 
 def test_first_boot_verified_boot_unset_is_unknown():
@@ -565,3 +574,58 @@ def test_render_first_boot_report_handles_empty_findings():
     from los_bootstrap.flash.models import FirstBootReport
 
     assert "(no findings)" in render_first_boot_report(FirstBootReport(()))
+
+
+# ---------------------------------------------------------------------------
+# /e/OS — LineageOS-based, but not tracked by the LineageOS API
+# ---------------------------------------------------------------------------
+
+_EOS_VERSION = "4.3-a14-20260921678710-community-panther"
+
+
+def _eos_facts(**overrides) -> DeviceFacts:
+    base = dict(
+        is_lineage=False,
+        lineage_version=_EOS_VERSION,
+        eos_version="4.3",
+        eos_channel="community",
+    )
+    base.update(overrides)
+    return _facts(**base)
+
+
+def test_rom_update_eos_is_not_compared_with_lineageos_builds():
+    result = evaluate_rom_update(
+        _eos_facts(), None, _build(_BASE + 30 * _DAY, version="22.1")
+    )
+    assert result.state is RomUpdateState.NOT_LINEAGEOS
+    assert not result.major_upgrade_available
+
+
+def test_render_update_report_eos_points_to_its_own_updater():
+    facts = _eos_facts()
+    result = evaluate_rom_update(facts, None)
+    out = render_update_report(
+        facts, result, None, page_url="https://doc.e.foundation/devices/panther/"
+    )
+    assert "/e/OS 4.3" in out
+    assert "runs /e/OS" in out
+    assert "LineageOS 4.3" not in out
+    assert "doc.e.foundation/devices/panther" in out
+
+
+def test_first_boot_eos_passes_rom_check():
+    fb = _by_id(evaluate_first_boot(_eos_facts(), _probes(gms_variant="microg")))
+    assert fb["fb.lineage"].status is FirstBootStatus.PASS
+    assert "/e/OS" in fb["fb.lineage"].title
+    assert fb["fb.gms"].status is FirstBootStatus.PASS
+
+
+def test_major_upgrade_compares_versions_numerically():
+    """String comparison would rank "9" above "10"."""
+    result = evaluate_rom_update(
+        _facts(lineage_version="9.0-20190101-NIGHTLY-panther"),
+        _build(_BASE, version="9.0"),
+        _build(_BASE + _DAY, version="10.0"),
+    )
+    assert result.upgrade_version == "10.0"

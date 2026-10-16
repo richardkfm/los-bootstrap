@@ -10,16 +10,24 @@ from typing import Callable, Iterable
 
 from ..adb import Adb
 from ..device import DeviceFacts
+from ..gms import (
+    GMS_MICROG,
+    GMS_NONE,
+    GMS_REAL,
+    GSF_PACKAGE,
+    VENDING_PACKAGE,
+    classify_gms_variant,
+    classify_package_variant,
+)
 from .models import AuditFinding, AuditReport, Severity
 
 
 # Packages we care about. Keep this list short and curated; long lists
 # rot fast and add noise. Phase 2 can move this to a YAML profile.
 GMS_PACKAGE = "com.google.android.gms"
-GSF_PACKAGE = "com.google.android.gsf"
 
 COMMON_GOOGLE_PACKAGES = (
-    "com.android.vending",            # Play Store
+    VENDING_PACKAGE,                  # Play Store (or microG's companion)
     "com.google.android.apps.maps",   # Maps
     "com.google.android.gm",          # Gmail
     "com.google.android.youtube",     # YouTube
@@ -31,7 +39,19 @@ CheckFn = Callable[[Adb, DeviceFacts], Iterable[AuditFinding]]
 
 
 def check_lineage_identity(_adb: Adb, facts: DeviceFacts) -> Iterable[AuditFinding]:
-    if facts.is_lineage:
+    if facts.is_eos:
+        yield AuditFinding(
+            check="rom.lineage",
+            title="/e/OS detected (LineageOS-based)",
+            severity=Severity.INFO,
+            detail=(
+                f"/e/OS {facts.eos_version} ({facts.eos_channel} build); "
+                f"ro.lineage.version = {facts.lineage_version!r}. /e/OS is "
+                "built on LineageOS, so the audit applies, but it ships "
+                "microG and its own updater and app store."
+            ),
+        )
+    elif facts.is_lineage:
         yield AuditFinding(
             check="rom.lineage",
             title="LineageOS detected",
@@ -52,43 +72,87 @@ def check_lineage_identity(_adb: Adb, facts: DeviceFacts) -> Iterable[AuditFindi
 
 
 def check_gms(adb: Adb, _facts: DeviceFacts) -> Iterable[AuditFinding]:
-    if adb.package_installed(GMS_PACKAGE):
-        yield AuditFinding(
-            check="gms.present",
-            title="Google Mobile Services is installed",
-            severity=Severity.WARN,
-            detail=(
-                f"{GMS_PACKAGE} is installed. This indicates a GApps build "
-                "or microG. If you intended a fully degoogled setup, "
-                "investigate which build was flashed."
-            ),
-            recommendation=(
-                "If unintended: reflash a vanilla LineageOS build. If this "
-                "is microG, ignore this finding."
-            ),
-        )
-    else:
+    variant = classify_gms_variant(adb)
+    if variant == GMS_NONE:
         yield AuditFinding(
             check="gms.present",
             title="No Google Mobile Services",
             severity=Severity.OK,
             detail=f"{GMS_PACKAGE} is not installed. Degoogled-friendly.",
         )
-
-
-def check_gsf(adb: Adb, _facts: DeviceFacts) -> Iterable[AuditFinding]:
-    if adb.package_installed(GSF_PACKAGE):
+    elif variant == GMS_MICROG:
         yield AuditFinding(
-            check="gsf.present",
-            title="Google Services Framework is installed",
+            check="gms.present",
+            title="microG installed (free-software GMS replacement)",
+            severity=Severity.INFO,
+            detail=(
+                f"{GMS_PACKAGE} is microG (versionName 0.x), not Google Play "
+                "services. ROMs such as /e/OS and LineageOS for microG ship "
+                "it on purpose."
+            ),
+        )
+    elif variant == GMS_REAL:
+        yield AuditFinding(
+            check="gms.present",
+            title="Google Mobile Services is installed",
             severity=Severity.WARN,
-            detail=f"{GSF_PACKAGE} is installed.",
-            recommendation="See GMS guidance — same root cause.",
+            detail=(
+                f"{GMS_PACKAGE} is real Google Play services, which points "
+                "to a GApps build. If you intended a fully degoogled setup, "
+                "investigate which build was flashed."
+            ),
+            recommendation=(
+                "If unintended: reflash a build without GApps, or one that "
+                "ships microG instead."
+            ),
+        )
+    else:
+        yield AuditFinding(
+            check="gms.present",
+            title="GMS package installed, variant unclear",
+            severity=Severity.WARN,
+            detail=(
+                f"{GMS_PACKAGE} is installed but its versionName could not be "
+                "read, so microG and Google Play services cannot be told apart."
+            ),
+            recommendation=(
+                f"Check: adb shell dumpsys package {GMS_PACKAGE} | grep "
+                "versionName — microG reports 0.x versions."
+            ),
         )
 
 
+def check_gsf(adb: Adb, _facts: DeviceFacts) -> Iterable[AuditFinding]:
+    if not adb.package_installed(GSF_PACKAGE):
+        return
+    if classify_gms_variant(adb) == GMS_MICROG:
+        yield AuditFinding(
+            check="gsf.present",
+            title="Services Framework proxy (microG)",
+            severity=Severity.INFO,
+            detail=(
+                f"{GSF_PACKAGE} is installed alongside microG, which ships "
+                "its own proxy under this package id."
+            ),
+        )
+        return
+    yield AuditFinding(
+        check="gsf.present",
+        title="Google Services Framework is installed",
+        severity=Severity.WARN,
+        detail=f"{GSF_PACKAGE} is installed.",
+        recommendation="See GMS guidance — same root cause.",
+    )
+
+
+def _google_client_installed(adb: Adb, package: str) -> bool:
+    if package == VENDING_PACKAGE:
+        return classify_package_variant(adb, package) not in (GMS_NONE, GMS_MICROG)
+    return adb.package_installed(package)
+
+
 def check_common_google_packages(adb: Adb, _facts: DeviceFacts) -> Iterable[AuditFinding]:
-    found = [p for p in COMMON_GOOGLE_PACKAGES if adb.package_installed(p)]
+    found = [p for p in COMMON_GOOGLE_PACKAGES if _google_client_installed(adb, p)]
     if not found:
         yield AuditFinding(
             check="google.client_packages",

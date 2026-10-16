@@ -75,6 +75,7 @@ from .flash import (
     detect_state,
     developer_options_enabled,
     download_lineage_zip,
+    eos_device_url,
     evaluate_rom_update,
     execute_flash_plan,
     heimdall_available,
@@ -1005,7 +1006,9 @@ def cmd_flash_update(args: argparse.Namespace) -> int:
     latest: Optional[LineageBuild] = None
     latest_overall: Optional[LineageBuild] = None
     api_error: Optional[str] = None
-    lookup_performed = not args.no_network
+    # The LineageOS API has nothing to say about a non-LineageOS build, and
+    # /e/OS release numbers would be misread as LineageOS major versions.
+    lookup_performed = not args.no_network and facts.is_lineage
 
     if lookup_performed:
         try:
@@ -1032,13 +1035,17 @@ def cmd_flash_update(args: argparse.Namespace) -> int:
         ),
     )
 
+    page_url: Optional[str] = None
+    if codename:
+        page_url = eos_device_url(codename) if facts.is_eos else lineage_device_url(codename)
+
     print(
         render_update_report(
             facts,
             result,
             latest,
             api_error=api_error,
-            page_url=lineage_device_url(codename) if codename else None,
+            page_url=page_url,
         ),
         end="",
     )

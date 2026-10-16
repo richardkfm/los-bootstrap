@@ -19,6 +19,7 @@ from los_bootstrap.flash.distros import (
     LineageBuild,
     _pick_latest_build,
     alt_distro_links,
+    eos_device_url,
     download_lineage_zip,
     lineage_device_url,
     lookup_lineage_build,
@@ -61,6 +62,13 @@ def _opener_raising(exc: Exception):
 # ---------------------------------------------------------------------------
 # lineage_device_url / alt_distro_links
 # ---------------------------------------------------------------------------
+
+def test_eos_device_url_is_channel_independent():
+    # The image server's per-channel pages 404 for devices without builds on
+    # that channel; the docs page covers every channel.
+    assert eos_device_url("bluejay") == "https://doc.e.foundation/devices/bluejay/"
+    assert dict(alt_distro_links("bluejay"))["/e/OS"] == eos_device_url("bluejay")
+
 
 def test_lineage_device_url_substitutes_codename():
     assert lineage_device_url("bluejay") == "https://download.lineageos.org/devices/bluejay/builds"

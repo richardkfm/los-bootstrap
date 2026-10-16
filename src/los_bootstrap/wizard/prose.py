@@ -30,7 +30,8 @@ _AUDIT_PROSE: list[FindingProse] = [
         check_id="rom.lineage",
         what=(
             "This check detects whether the ROM is LineageOS by reading the "
-            "ro.lineage.version system property."
+            "ro.lineage.version system property. /e/OS reuses that property "
+            "with its own version scheme and is reported as /e/OS."
         ),
         why=(
             "los-bootstrap gives device-specific guidance based on LineageOS "
@@ -41,8 +42,9 @@ _AUDIT_PROSE: list[FindingProse] = [
         tradeoff="N/A.",
         common_causes=(
             "Not LineageOS? Other AOSP derivatives (CalyxOS, GrapheneOS, "
-            "DivestOS, /e/OS) do not set ro.lineage.version. The rest of the "
-            "audit still applies."
+            "DivestOS) do not set ro.lineage.version. /e/OS does, with its "
+            "own release number (e.g. 4.3) instead of a LineageOS one. The "
+            "rest of the audit still applies."
         ),
     ),
     FindingProse(
@@ -60,11 +62,15 @@ _AUDIT_PROSE: list[FindingProse] = [
             "communicates with Google servers in the background."
         ),
         fix=(
-            "1. Run: adb shell pm path com.google.android.gms\n"
-            "2. If the path starts with /system/app or /system/priv-app, "
-            "real GApps were flashed. Reflash a vanilla LineageOS build.\n"
-            "3. If the path is under /data/app, this is likely microG — "
-            "a free-software GMS replacement. That is intentional and safe."
+            "1. Run: adb shell dumpsys package com.google.android.gms | grep "
+            "versionName\n"
+            "2. A 0.x version is microG — a free-software GMS replacement. "
+            "That is intentional and safe. ROMs that bundle it (/e/OS, "
+            "LineageOS for microG) install it under /system/priv-app, so "
+            "the install path does not tell the two apart.\n"
+            "3. A double-digit version is real Play services: a GApps "
+            "package was flashed. Reflash a build without GApps if that was "
+            "unintended."
         ),
         tradeoff=(
             "Removing real GMS breaks every app that depends on it: Play "
@@ -77,7 +83,7 @@ _AUDIT_PROSE: list[FindingProse] = [
             "1. A GApps package was flashed alongside LineageOS (e.g. "
             "BiTGApps, MindTheGApps, NikGApps).\n"
             "2. microG GmsCore is installed as an intentional GMS replacement "
-            "on a microG-enabled ROM (e.g. LineageOS for microG)."
+            "on a microG-enabled ROM (e.g. /e/OS, LineageOS for microG)."
         ),
     ),
     FindingProse(
@@ -90,9 +96,10 @@ _AUDIT_PROSE: list[FindingProse] = [
         why=(
             "GSF registers the device with Google servers on first boot and "
             "assigns a persistent device ID used across all Google services. "
-            "Its presence strongly implies real GMS was flashed."
+            "Next to real GMS it means GApps were flashed; next to microG it "
+            "is microG's own proxy under the same package id."
         ),
-        fix="Same as GMS: investigate the APK path and reflash if unintended.",
+        fix="Same as GMS: check the GMS versionName and reflash if unintended.",
         tradeoff="Same as GMS removal — app compatibility breaks without a replacement.",
     ),
     FindingProse(

@@ -88,6 +88,8 @@ def test_gms_present_and_adb_tcp_open_flag_concerns():
     answers["pm list packages com.google.android.gms"] = "package:com.google.android.gms\n"
     answers["pm list packages com.google.android.gsf"] = "package:com.google.android.gsf\n"
     answers["pm list packages com.android.vending"] = "package:com.android.vending\n"
+    answers["dumpsys package com.google.android.gms"] = "    versionName=24.38.33 (190400-680848563)\n"
+    answers["dumpsys package com.android.vending"] = "    versionName=42.6.21-31 [0] [PR] 671392713\n"
     answers["settings get secure lockscreen.disabled"] = "1\n"
     adb = Adb(serial="S1", runner=_runner(answers))
     report = run_audit(adb, facts)
@@ -108,3 +110,45 @@ def test_non_lineage_rom_emits_info_finding():
     rom_finding = next(f for f in report.findings if f.check == "rom.lineage")
     assert rom_finding.severity == Severity.INFO
     assert "Not a LineageOS" in rom_finding.title
+
+
+def _microg_answers() -> dict[str, str]:
+    """/e/OS and LineageOS for microG: GmsCore, GsfProxy and the companion."""
+    answers = _base_answers()
+    answers["pm list packages com.google.android.gms"] = "package:com.google.android.gms\n"
+    answers["pm list packages com.google.android.gsf"] = "package:com.google.android.gsf\n"
+    answers["pm list packages com.android.vending"] = "package:com.android.vending\n"
+    answers["dumpsys package com.google.android.gms"] = "    versionName=0.3.6.244735\n"
+    answers["dumpsys package com.android.vending"] = "    versionName=0.3.6.244735\n"
+    return answers
+
+
+def test_microg_is_not_reported_as_google_services():
+    adb = Adb(serial="S1", runner=_runner(_microg_answers()))
+    by_check = {f.check: f for f in run_audit(adb, _facts()).findings}
+    assert by_check["gms.present"].severity == Severity.INFO
+    assert "microG" in by_check["gms.present"].title
+    assert by_check["gsf.present"].severity == Severity.INFO
+    assert by_check["google.client_packages"].severity == Severity.OK
+
+
+def test_unreadable_gms_version_still_warns():
+    answers = _base_answers()
+    answers["pm list packages com.google.android.gms"] = "package:com.google.android.gms\n"
+    answers["dumpsys package com.google.android.gms"] = ""
+    adb = Adb(serial="S1", runner=_runner(answers))
+    by_check = {f.check: f for f in run_audit(adb, _facts()).findings}
+    assert by_check["gms.present"].severity == Severity.WARN
+
+
+def test_eos_rom_is_named_eos():
+    facts = _facts(
+        is_lineage=False,
+        lineage_version="4.3-a14-20260921678710-community-bluejay",
+        eos_version="4.3",
+        eos_channel="community",
+    )
+    adb = Adb(serial="S1", runner=_runner(_microg_answers()))
+    rom_finding = next(f for f in run_audit(adb, facts).findings if f.check == "rom.lineage")
+    assert rom_finding.title == "/e/OS detected (LineageOS-based)"
+    assert "4.3" in rom_finding.detail

@@ -303,3 +303,22 @@ def test_flash_update_flags_major_upgrade(monkeypatch, capsys):
     assert "up to date" in out
     assert "newer major version" in out
     assert "full data wipe" in out
+
+
+def test_flash_update_eos_skips_lineageos_lookup(monkeypatch, capsys):
+    """/e/OS release numbers must never be compared with LineageOS builds."""
+    from los_bootstrap import cli as cli_mod
+    from los_bootstrap.cli import main
+
+    props = dict(_LIFECYCLE_PROPS)
+    props["ro.lineage.version"] = "4.3-a14-20260921678710-community-panther"
+    _stub_booted_device(monkeypatch, _StubAdb(props))
+
+    def _boom(codename):
+        raise AssertionError("/e/OS must not query the LineageOS API")
+
+    monkeypatch.setattr(cli_mod, "lookup_lineage_builds", _boom)
+    assert main(["flash", "update", "--no-banner"]) == EXIT_OK
+    out = capsys.readouterr().out
+    assert "runs /e/OS" in out
+    assert "doc.e.foundation/devices/panther" in out
