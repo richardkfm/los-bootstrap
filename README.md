@@ -1,608 +1,117 @@
-<pre>
-██╗      ██████╗ ███████╗  ╷  ╔╗ ╔═╗╔═╗╔╦╗╔═╗╔╦╗╦═╗╔═╗╔═╗
-██║     ██╔═══██╗██╔════╝  │  ╠╩╗║ ║║ ║ ║ ╚═╗ ║ ╠╦╝╠═╣╠═╝
-██║     ██║   ██║███████╗  │  ╚═╝╚═╝╚═╝ ╩ ╚═╝ ╩ ╩╚═╩ ╩╩
-██║     ██║   ██║╚════██║  │
-███████╗╚██████╔╝███████║  │
-╚══════╝ ╚═════╝ ╚══════╝  ╵
-</pre>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/docs/assets/logo-dark.svg">
+    <img alt="los-bootstrap" src="https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/docs/assets/logo-light.svg" width="560">
+  </picture>
+</p>
 
-[![CI](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg)](https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.14.0-blue)](CHANGELOG.md)
-[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen)](https://lineageos.org/)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+<p align="center">
+  <a href="https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/richardkfm/los-bootstrap/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://pypi.org/project/los-bootstrap/"><img alt="PyPI" src="https://img.shields.io/pypi/v/los-bootstrap"></a>
+  <a href="https://github.com/richardkfm/los-bootstrap/blob/main/LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-blue"></a>
+  <a href="https://lineageos.org/"><img alt="Platform: Android / LineageOS" src="https://img.shields.io/badge/platform-Android%20%2F%20LineageOS-brightgreen"></a>
+  <a href="https://www.python.org/"><img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-blue"></a>
+</p>
 
-A CLI-first toolkit for degoogled Android. It goes further than helping
-you find degoogled app alternatives: `los-bootstrap` can **flash an
-alternative ROM** — LineageOS and other AOSP-derived builds — onto your
-Android phone or tablet, then walk you from a locked bootloader to a
-hardened, privacy-audited daily driver.
+<p align="center">
+  <b>Set up a degoogled Android phone or tablet from your terminal.</b><br>
+  Flash LineageOS, audit privacy, harden settings and install apps,<br>
+  with the tradeoff of every recommendation spelled out.
+</p>
 
-> **Status:** v0.14.0. Phase 11 (flash lifecycle) is complete —
-> `flash update` checks whether your installed LineageOS build is
-> current, `flash check` verifies a fresh flash after first boot, and
-> `flash backup` walks you through pre-flash backup, so the ROM
-> flashing assistant now covers the whole journey: unlock, download,
-> verify, flash, verify the result, and keep the build current. All of
-> Phases 1–10 remain in place, including tablet detection and GCam
-> port profiles, audit, profiles, hardening, location, camera, and the
-> interactive wizard. Install with a single `curl … | sh`
-> (Linux/macOS) or `irm … | iex` (Windows PowerShell) command. Mutating
-> commands only run with explicit `--confirm`. No new phase is scoped yet
-> — see [`roadmap.md`](./roadmap.md) for what's next.
-
-[Why](#why) · [Install](#install) · [Upgrade](#upgrade) · [Quick start](#quick-start) · [What it currently does](#what-it-currently-does) · [What it does NOT do](#what-it-does-not-do) · [Project layout](#project-layout) · [License](#license)
-
-
-
-https://github.com/user-attachments/assets/b16cee78-77dc-40ca-9032-edf7fd653603
-
-
-
+<p align="center">
+  <img alt="Animated terminal demo: devices, audit, harden, plan, flash check and integrity doctor" src="https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/docs/assets/demo.svg" width="860">
+</p>
 
 ## Why
 
-Getting onto a degoogled ROM used to mean piecing together a dozen
-forum posts: unlock the bootloader here, find the right recovery there,
-figure out why location is broken, hunt for the right GCam port, and
-remember which Google package crept back in. `los-bootstrap` covers
-the whole process end-to-end from a single CLI:
+Getting onto a degoogled ROM used to mean piecing together a dozen forum
+posts. `los-bootstrap` covers the whole path from one CLI:
 
-- **Full lifecycle.** Bootloader unlock → ROM flash → privacy audit →
-  hardening → app bootstrap → location diagnostics → camera tuning.
-- **It does the flashing.** `los-bootstrap flash` doesn't just list
-  steps — it runs the actual fastboot sequence against your phone or
-  tablet: manufacturer-aware unlock guidance, official-API ROM downloads
-  with SHA-256 verification, device-match checks, and two-step
-  confirmation before anything destructive.
-- **Honest about tradeoffs.** Every recommendation surfaces its downside.
-  "Unlock your bootloader" also tells you about the verified-boot warning
-  and data wipe. "Enable location" also tells you who can see it.
-- **Manufacturer-aware.** Pixel/OnePlus (standard fastboot), Motorola
-  (unlock key portal), Samsung (Heimdall + Odin fallback), Xiaomi
-  (Mi Unlock Tool + mandatory waiting period) — each gets a real guide,
-  not a generic "check your XDA thread."
-- **CLI over GUI.** Every feature is reachable from the terminal.
-  No web UI, no app to install on the device first.
-- **Pluggable.** Device-specific knowledge lives in YAML, not `if`-trees.
+- **Full lifecycle:** bootloader unlock → ROM flash → privacy audit →
+  hardening → apps → location → camera.
+- **It does the flashing.** It runs the real fastboot sequence:
+  manufacturer-aware unlock guides (Pixel, OnePlus, Fairphone, Motorola,
+  Samsung, Xiaomi), SHA-256-verified downloads, device-match checks, and a
+  two-step confirm before anything destructive.
+- **Honest about tradeoffs.** Every recommendation names its downside.
+- **Safe by default.** Commands are read-only unless you pass `--confirm`;
+  root is opt-in with `--root`.
 
-## Install
+## Get started
 
-### One-liner (recommended)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/docs/assets/getting-started-dark.svg">
+    <img alt="1. Install on your computer. 2. Turn on USB debugging. 3. Plug in and tap Allow. 4. Run los-bootstrap." src="https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/docs/assets/getting-started-light.svg" width="980">
+  </picture>
+</p>
 
-**Linux / macOS:**
+**1. Install** (also installs `adb`; prints every command before running it):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/scripts/install.sh | sh
 ```
 
-**Windows (PowerShell):**
+On Windows (PowerShell):
 
 ```powershell
 irm https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/scripts/install.ps1 | iex
 ```
 
-The install script detects your OS, installs `pipx` and `adb` via your
-system package manager (`apt` / `dnf` / `pacman` / `brew` / `winget`),
-then runs `pipx install "los-bootstrap[wizard]"`. It prints every command
-before running it, supports `--dry-run` (preview only), and exits cleanly
-if your package manager isn't recognised.
+Already have Python and `adb`? Run `pipx install "los-bootstrap[wizard]"`.
+For the checksum-verified variant, source installs and upgrades, see
+[docs/INSTALL.md](https://github.com/richardkfm/los-bootstrap/blob/main/docs/INSTALL.md).
 
-**Audit-first variant** (recommended on machines you don't fully control):
+**2. Turn on USB debugging.** On the phone, open *Settings › About phone*
+(or *About tablet*) and tap *Build number* seven times. Then go to
+*Settings › System › Developer options* and switch on *USB debugging*.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/richardkfm/los-bootstrap/main/scripts/install.sh -o install.sh
-sha256sum -c install.sh.sha256   # checksum is published on the GitHub Release
-sh install.sh
-```
+**3. Plug in and tap Allow.** Connect the phone with a USB cable. When it
+asks *Allow USB debugging?*, tap *Allow*. Tick *Always allow from this
+computer* if it is your own machine.
 
-**Caveats — surfaced honestly:**
-
-- `adb` is required and is installed via your OS package manager, not
-  bundled. On unusual distros or locked-down corporate machines the
-  script will exit with a "install platform-tools manually" message.
-- `fastboot` and `heimdall` are only needed for `flash run` and Samsung
-  devices. The install script does **not** install them by default;
-  the `flash` subcommand prints what to install when needed.
-- Piping a script into `sh` is a trust decision. The script is in this
-  repo (auditable diff), short enough to read in one sitting, and
-  ships with a SHA-256 checksum on every release.
-
-### If you already have Python and adb
+**4. Run it:**
 
 ```bash
-pipx install "los-bootstrap[wizard]"
+los-bootstrap
 ```
 
-The `[wizard]` extra adds `questionary` for arrow-key menus. Without it
-the wizard falls back to numbered `input()` prompts.
+The wizard detects your device and lets you choose what to do. Is the phone
+still on its stock ROM? Choose **Flash** for the bootloader unlock and
+install guide, or start with `los-bootstrap flash backup`.
 
-### Manual install (from source)
+## What it can do
 
-For users who'd rather read the code before installing anything, or for
-contributors. Requires Python 3.10+ and the `adb` binary on `$PATH`.
-
-```bash
-git clone https://github.com/richardkfm/los-bootstrap
-cd los-bootstrap
-python -m venv venv
-source venv/bin/activate                  # or: source venv/bin/activate.fish
-pip install -e ".[wizard,dev]"
-python -m pytest                          # optional sanity check
-los-bootstrap version
-```
-
-On Windows, pip installs the `los-bootstrap` script into a `Scripts`
-folder that is often not on `PATH` — `pipx` (used by the install scripts
-above) handles this for you; in a manual venv install you may need to add
-`Scripts` to `PATH` yourself.
-
-**Arch Linux / PEP 668 error?** Modern Python distributions protect system
-Python with PEP 668. The virtual environment above handles this; the
-`pipx`-based one-liner above also handles it without a venv.
-
-## Upgrade
-
-To update an existing installation to the latest published release:
-
-```bash
-# One-liner / pipx users
-pipx upgrade los-bootstrap
-#   …or re-run the install script — it's idempotent and always pulls the
-#   newest version from PyPI.
-
-# Manual install (from source)
-cd los-bootstrap
-git pull
-pip install -e ".[wizard,dev]"
-```
-
-Check the installed version any time with `los-bootstrap version`. The
-project follows Semantic Versioning; see [`CHANGELOG.md`](./CHANGELOG.md)
-for what each release changed.
-
-## Quick start
-
-### Flashing a ROM (Phase 8)
-
-```bash
-# 0. Before anything destructive, read the pre-flash backup guidance
-los-bootstrap flash backup
-
-# 1. Check what state your device is in and identify the manufacturer
-los-bootstrap flash status
-
-# 2. Get the full bootloader unlock guide for your device (with live pre-checks)
-los-bootstrap flash prepare
-
-# 3. Verify your ROM zip targets the right device before flashing
-los-bootstrap flash verify ~/Downloads/lineage-21-*.zip
-
-# 4. Preview the flash sequence without running anything
-los-bootstrap flash run ~/Downloads/lineage-21-*.zip --recovery ~/Downloads/recovery.img --dry-run
-
-# 5. Execute the flash (destructive steps require --confirm)
-los-bootstrap flash run ~/Downloads/lineage-21-*.zip --recovery ~/Downloads/recovery.img --confirm
-
-# 6. After the first boot: verify the install, then track updates
-los-bootstrap flash check
-los-bootstrap flash update
-```
-
-### After the ROM is installed
-
-Plug in your phone or tablet, enable USB debugging, accept the RSA
-prompt, then:
-
-```bash
-los-bootstrap                    # launch the interactive guided wizard
-```
-
-Or use individual subcommands directly:
-
-```bash
-los-bootstrap devices            # list connected devices
-los-bootstrap info               # device, ROM, build, security patch
-los-bootstrap audit              # privacy/degoogle audit
-los-bootstrap report             # full report (info + audit)
-los-bootstrap report --json      # machine-readable
-los-bootstrap recommend          # non-binding bootstrap suggestions
-
-los-bootstrap profiles list                       # list bundled profiles
-los-bootstrap plan    --profile privacy-default   # dry-run a profile
-los-bootstrap apply   --profile privacy-default --confirm
-
-los-bootstrap harden                              # lockdown report with why + tradeoff
-los-bootstrap harden --interactive                # walk through findings, show fix commands
-los-bootstrap harden --interactive --confirm      # walk through and apply fixes via adb
-los-bootstrap harden --root                       # add SELinux check (needs su access)
-
-los-bootstrap location doctor                     # diagnose the location stack on device
-los-bootstrap location compat                     # app location compatibility matrix
-
-los-bootstrap integrity doctor                    # why do apps block this custom ROM?
-los-bootstrap integrity compat                    # German gov/banking app compatibility
-los-bootstrap integrity guide                     # alternatives-first workaround guidance
-los-bootstrap integrity install --list            # known spoofing modules for --fetch
-los-bootstrap integrity install mod.zip --root --confirm  # install a spoofing module
-
-los-bootstrap camera list-profiles                # list known GCam port profiles
-los-bootstrap camera show panther                 # full port details + XML config path
-
-los-bootstrap flash update                        # is my installed build current?
-los-bootstrap flash check                         # post-flash first-boot verification
-los-bootstrap flash backup                        # pre-flash backup guidance (no device)
-```
-
-If you have more than one device connected, pass `--serial <id>`.
-The `camera`, `location compat`, `integrity compat`, `integrity guide`, `flash prepare`, `flash download <codename>`, and `flash backup` commands work without a device.
-
-## What it currently does
-
-### ROM flashing assistant (Phase 8)
-
-The complete ROM-install path for your phone or tablet — unlock,
-download, verify, and the actual fastboot flash:
-
-```bash
-los-bootstrap flash status    # detect device state + manufacturer
-los-bootstrap flash prepare   # manufacturer-aware unlock guide
-los-bootstrap flash download  # download links (+ --fetch to get the zip)
-los-bootstrap flash verify    # validate ROM zip
-los-bootstrap flash run       # execute the flash sequence
-los-bootstrap flash backup    # pre-flash backup guidance (no device needed)
-los-bootstrap flash check     # post-flash first-boot verification
-los-bootstrap flash update    # is my installed LineageOS build current?
-```
-
-`flash status` detects whether your device is in normal ADB mode,
-fastboot/bootloader mode, or recovery, and identifies the manufacturer
-from `ro.product.manufacturer`.
-
-`flash prepare` shows the full bootloader unlock walkthrough for your
-specific device, plus live pre-checks (Developer Options enabled? OEM
-unlocking enabled?) when the device is accessible via ADB:
-
-| Manufacturer | Approach |
+| Command | What it does |
 |---|---|
-| Google Pixel, OnePlus, Fairphone | Standard `fastboot flashing unlock` |
-| Motorola | Unlock key from motorola.com, then `fastboot oem unlock` |
-| Samsung | Heimdall (open-source, cross-platform); Odin fallback guide |
-| Xiaomi / Redmi / POCO | Mi Unlock Tool walkthrough (Windows, 7–30 day wait) |
-| Unknown / generic | XDA-oriented generic fastboot guide |
-
-`flash verify` extracts `pre-device` from the ROM's OTA metadata and
-cross-checks it against the connected device codename — a wrong-device
-catch before anything destructive runs.
-
-`flash run` executes the sequence. It detects A/B vs A-only partition
-layout (`fastboot getvar slot-count`) and adjusts accordingly. Every
-destructive step is skipped without `--confirm`. `--dry-run` prints the
-full command sequence without running any of it.
-
-The lifecycle checks (Phase 11) close the loop around the flash:
-
-`flash backup` prints honest pre-flash backup guidance — what
-`adb backup` can and can't capture, nandroid caveats, what the unlock
-and what the flash each wipe, and per-manufacturer notes (Samsung EFS,
-Xiaomi, Pixel). No device needed.
-
-`flash check` is the post-flash first-boot verification: LineageOS
-detection (including /e/OS), build fingerprint, verified-boot state
-(red is a failure — usually a ROM for the wrong device; yellow, a
-bootloader relocked with the ROM's own key, passes), A/B slot, GMS presence,
-and build type. It distinguishes microG from real Play Services, and
-probes that could not be read are reported as unknown rather than
-silently counted as clean. Exits 3 on a genuine failure; warnings are
-printed but do not change the exit code.
-
-`flash update` compares your installed build date against the latest
-official LineageOS build **on your own major version** and tells you how
-many days you are behind. A newer major version is reported separately,
-with the data-wipe caveat, because it is not a routine update. Exits 3
-when outdated. `--no-network` skips the API lookup; if the API is
-unreachable the report is still printed (with a link to the download
-page) rather than the command failing.
-
-### Audit (Phase 1)
-
-- Detects connected devices via `adb devices`.
-- Reads ROM identity from `getprop` (`ro.build.*`, `ro.product.*`,
-  `ro.lineage.*` when present). Detects form factor (phone vs tablet)
-  from `ro.build.characteristics` and surfaces it in `los-bootstrap info`.
-- Runs a privacy audit:
-  - Google Mobile Services (`com.google.android.gms`) presence
-  - Google Services Framework (`com.google.android.gsf`) presence
-  - Common Google client packages (Maps, Play Store, GBoard, etc.)
-  - ADB-over-network (`service.adb.tcp.port`) state
-  - Private DNS (DoT) configuration
-  - Screen lock configuration
-- Renders findings as a human-readable report (or JSON).
-- Suggests bootstrap actions — without applying them.
-
-### Bootstrap profiles (Phase 2)
-
-Builds and applies **profiles**: a YAML-described list of apps to
-install and `settings put` toggles. Bundled profiles:
-
-- `minimal` — F-Droid + Private DNS
-- `privacy-default` — adds maps, contacts, a browser, and DoT
-- `messaging-light` — Signal, Element, Telegram X
-- `max-tools` — broadest non-Google bundle: store, browser, maps,
-  messaging, contacts/calendar, mail, media, productivity, password
-  manager, RSS/podcasts, and **ReVanced Manager** for ad-free YouTube
-- `camera` — sideloads LMC 8.4 from a manually staged APK (see below)
-
-APKs are downloaded automatically when `apply` runs:
-
-| Source in profile | How it's fetched |
-|---|---|
-| `source: sideload` + `url: https://…` | Downloaded directly |
-| `source: sideload` + `url: github://owner/repo` | Latest `.apk` release asset from GitHub |
-| `source: fdroid` | Resolved via F-Droid API → downloaded from `f-droid.org/repo/` |
-| `source: aurora` | Manual — Aurora Store handles Play Store apps |
-
-Pass `--no-fetch` to disable downloads and revert to manual staging.
-
-```bash
-los-bootstrap plan  --profile privacy-default               # dry-run
-los-bootstrap apply --profile privacy-default --confirm     # execute
-los-bootstrap apply --profile privacy-default --apk-dir ~/los-apks --confirm
-```
-
-### Hardening assistant (Phase 3)
-
-Runs lockdown checks and guides you through each one:
-
-| Check | What it detects |
-|---|---|
-| `dev.options` | Developer options enabled |
-| `dev.adb` | USB debugging (ADB) enabled |
-| `sec.screen_lock` | Screen lock disabled |
-| `sec.encryption` | Unencrypted storage |
-| `sec.unknown_sources` | Global unknown-sources install flag |
-| `sec.verified_boot` | Bootloader unlocked / verification failed |
-| `sec.lockdown_menu` | Lockdown option absent from power menu |
-| `sec.selinux` | SELinux permissive (`--root` only) |
-
-Every finding explains *why* it matters and *what you give up* by
-hardening it. `--interactive` walks through each WARN/FAIL one at a
-time and offers to apply the fix; `--confirm` is required to execute.
-
-### Location stack (Phase 4)
-
-```bash
-los-bootstrap location doctor   # diagnose the device's location stack
-los-bootstrap location compat   # static app compatibility matrix
-```
-
-`location doctor` checks: location master switch, real GMS conflict
-with microG, microG GmsCore install, signature-spoofing grant, and
-which UnifiedNlp network-location backends are installed. Every finding
-has a *why* and a *tradeoff*.
-
-`location compat` shows a static matrix of 14 real-world apps
-(OsmAnd, Telegram, Signal, WhatsApp, Firefox, Chromium, Uber, and more)
-rated as `yes / gps-only / partial / no` on a degoogled ROM. No device
-connection required.
-
-### Device integrity & app compatibility (Phase 12)
-
-```bash
-los-bootstrap integrity doctor          # diagnose the signals apps check (read-only)
-los-bootstrap integrity doctor --root   # also list installed root/spoofing managers
-los-bootstrap integrity compat          # German gov/banking app matrix (no device)
-los-bootstrap integrity guide           # alternatives-first workaround guidance
-los-bootstrap integrity install --list  # known spoofing modules
-los-bootstrap integrity install <mod.zip> --root --confirm   # install a module
-los-bootstrap integrity install --fetch <name> --root --confirm  # fetch + install
-```
-
-Some government and banking apps refuse to run on a custom ROM. `integrity`
-helps you understand why and what your honest options are.
-
-`integrity doctor` reports the signals those apps inspect — bootloader /
-verified-boot state, whether the build is signed with public test-keys,
-GMS vs microG, and Developer options / USB debugging — each with its likely
-app impact and a tradeoff. It **cannot** obtain a real Play Integrity verdict
-itself (that needs Google Play services and an app registered with Google);
-it says so and points you at an on-device checker for the actual verdict.
-
-`integrity compat` is a static matrix of German apps (AusweisApp, the TK ePA
-app, ElsterSmart, Sparkasse S-pushTAN, DB Navigator, VR SecureGo plus) with a
-non-phone alternative and a `last_verified` date for each. Entries older than
-six months are shown as unverified on purpose — stale compatibility data is
-worse than none.
-
-`integrity guide` lists the workarounds from lowest risk to highest: a
-web/desktop route, microG, a second device, a ROM that can relock its
-bootloader (e.g. GrapheneOS), rooting, and — as a last resort — Play Integrity
-spoofing. Spoofing keeps a working phone in service instead of replacing it,
-but it is honest about the cost: it always prints three warnings —
-**fragility** (Google revokes spoofed fingerprints, so it can break
-overnight), **liability shift** (bank/eID terms may put fraud liability on
-you), and **root attack surface**. This tool never deals in attestation
-keyboxes.
-
-`integrity install` installs a fingerprint-spoofing Magisk/KernelSU/APatch
-module on an **already-rooted** device — the one mutating command in this
-mode. It is gated on both `--root` and `--confirm`; without `--confirm` it
-previews the module's `module.prop`, its SHA-256, the detected root manager,
-and the three warnings, then stops. It refuses any zip without a
-`module.prop`. Give it a local module zip you downloaded, or `--fetch <name>`
-to pull the latest release from a repo declared in the bundled registry
-(`integrity install --list`). `--fetch` is the only part that touches the
-network. The registry lists only fingerprint-spoofing modules — never
-keybox/TrickyStore ones. This tool does not root your device; see
-`integrity guide` for that.
-
-### Camera / GCam port profiles (Phase 5)
-
-```bash
-los-bootstrap camera list-profiles      # table of known device profiles
-los-bootstrap camera show <codename>    # full details + XML config path
-```
-
-No device connection required. Per-device profiles include:
-
-- Which GCam port is recommended (LMC 8.4, BSG 9.3, etc.)
-- Verified/unverified tag — only marked verified from real usage reports
-- Source guidance: where to download the correct build for your SoC
-- XML config path (`/sdcard/GCam/Config/`) and the exact `adb push`
-  command to apply it
-
-Currently profiled devices:
-
-| Codename | Device | Port |
-|---|---|---|
-| `panther` | Google Pixel 7 | LMC 8.4 R17 |
-| `oriole` | Google Pixel 6 | LMC 8.4 R17 |
-| `sunny` | Xiaomi Redmi Note 10 | BSG 9.3.020 (+ LMC 8.4) |
-| `lemonade` | OnePlus 9 | BSG 9.3.020 |
-| `FP4` | Fairphone 4 | LMC 8.4 R17 |
-| `renoir` | Xiaomi Mi 11 Lite 5G | LMC 8.4 R17 |
-| `nabu` | Xiaomi Pad 5 *(tablet)* | LMC 8.4 R17 |
-| `jupiter` | OnePlus Pad *(tablet)* | LMC 8.4 R17 |
-
-**Device not listed?** GCam ports are matched by SoC, not device name.
-Run `adb shell getprop ro.board.platform` to find your chip, then look
-for a matching build on celsoazevedo.com or your device's XDA thread.
-`camera list-profiles` shows the full guidance.
-
-#### Sideloading LMC 8.4
-
-GCam APKs are proprietary — they are never auto-fetched by this tool.
-To install via the `camera` bootstrap profile:
-
-```bash
-# 1. Download LMC 8.4 for your SoC from celsoazevedo.com
-# 2. Rename it to lmc84.apk and place it in ~/los-apks/
-los-bootstrap apply --profile camera --apk-dir ~/los-apks --confirm
-
-# 3. Push the XML config (get the exact command from camera show)
-los-bootstrap camera show <your-codename>
-```
-
-### Interactive wizard and enriched output (Phase 6)
-
-Run `los-bootstrap` with no arguments to launch the guided wizard:
-
-```
-los-bootstrap                            (no args → wizard)
-├── Audit                — privacy & degoogle status      [read-only]
-│   └── Drill-down on a specific finding (full prose)
-├── Harden               — security checks            [can apply changes]
-│   ├── Read-only report
-│   ├── Interactive walk-through (per-finding confirm)
-│   └── Include root-only checks (SELinux)
-├── Bootstrap            — install apps + apply settings [can apply changes]
-│   ├── Pick a bundled profile (minimal | privacy-default | messaging-light | max-tools | camera)
-│   ├── Or load a custom profile path
-│   └── Plan → Apply (confirm gate)
-├── Location
-│   ├── Doctor — diagnose the location stack          [ADB required]
-│   └── App compatibility matrix                      [no ADB needed]
-├── Camera                                            [no ADB needed]
-│   ├── List all known device GCam port profiles
-│   └── Look up a specific device by codename
-├── Flash                — bootloader unlock + ROM flashing [advanced]
-│   ├── Bootloader unlock guidance for this device   [read-only]
-│   ├── Download a ROM (LineageOS API + sister distros, optional fetch)
-│   ├── Verify a ROM zip (zip integrity + OTA codename match)
-│   └── Flash a ROM                          [destructive — two-step confirm]
-└── Exit
-```
-
-Highlights:
-
-- Detects your connected device and enters offline mode if none is found
-- **Audit screen** — runs all checks and shows findings grouped into
-  *issues to address* and *passing checks*, with word-wrapped prose
-- **Drill-down** — select any finding for a full "what's happening / why
-  it matters / how to fix it / tradeoff" explanation
-- **Harden screen** — choose read-only report or interactive walk-through;
-  per-finding confirmation before applying any fix
-- **Bootstrap screen** — profile picker → plan review → apply with
-  confirmation
-- **Location / Camera screens** — same diagnostics as the subcommands
-- **Flash screen** — bootloader unlock guidance, LineageOS download
-  (with SHA-256 verification), ROM zip verify, and a destructive flash
-  run gated by a two-step confirmation
-- **Offline mode** — no ADB device? Camera, Location compat, and most
-  Flash sub-screens still work
-
-All finding renderers are also improved in standalone (non-wizard) mode:
-findings are now grouped by severity, long prose is wrapped at 72 chars,
-and `→ Fix:` / `⚠ Tradeoff:` labels replace the old flat field list.
-
-```
-  ✗  Location disabled
-     Location must be on for GPS, network, and passive providers to
-     function. With it off, every app requesting a location fix receives
-     nothing, regardless of backends or microG installed.
-
-     → Fix: Settings › Location › Use location — toggle on.
-     ⚠  Tradeoff: Enabling location allows apps with location permission
-        to request your position. Only individually granted apps receive
-        results.
-```
-
-**Optional dependency:** install `questionary` for arrow-key menus:
-
-```bash
-pip install "los-bootstrap[wizard]"
-```
-
-Without it the wizard falls back to numbered `input()` prompts and works
-everywhere.
-
-## What it does NOT do
-
-- It does not bypass bootloader verification or carrier locks — it calls
-  official unlock APIs only.
-- It only fetches ROMs you explicitly ask for, from publishers' own APIs.
-  `flash download --fetch` pulls the latest LineageOS zip from
-  `download.lineageos.org` and verifies the published SHA-256; everything
-  else is a printed link.
-- It does not automate Samsung Odin (closed-source, Windows-only) or
-  Xiaomi's Mi Unlock Tool (proprietary, server-enforced). It guides you
-  through those manually.
-- It does not auto-distribute GCam APKs or other proprietary binaries, and
-  it never ships, fetches, or explains how to obtain Play Integrity
-  attestation keyboxes. `integrity install --fetch` lists only
-  fingerprint-spoofing modules, pulled from their own repos.
-- Root is opt-in. `harden --root` reads SELinux state; `integrity install`
-  (`--root --confirm`) installs a spoofing module on an already-rooted
-  device. This tool never roots the device for you.
-- It does not verify APK signatures — verify downloads out-of-band
-  for security-critical installs (F-Droid, ReVanced Manager).
-
-These and future plans are tracked in [`roadmap.md`](./roadmap.md).
-
-## Exit codes
-
-Useful for scripting `los-bootstrap` in CI or shell pipelines:
-
-| Code | Meaning |
-|------|---------|
-| 0    | Success — and for checks (`audit`, `report`, `harden`, `location doctor`, `flash verify`, `flash check`, `flash update`): nothing needs attention |
-| 1    | Runtime failure (adb/fastboot/network error) |
-| 2    | Usage error: bad flags, missing file, unknown profile |
-| 3    | Checks ran fine but found issues that need attention |
-
-For `flash check`, exit 3 means a check actually failed. Warnings (for
-example real Play Services on a build you expected to be degoogled) are
-printed in the report but do not change the exit code.
-
-Report output is colorized when stdout is a terminal; set `NO_COLOR=1`
-to disable or `FORCE_COLOR=1` to force it (e.g. when piping to `less -R`).
-
-## Project layout
-
-See [`CLAUDE.md`](./CLAUDE.md) for the architecture, coding workflow,
-versioning policy, and roadmap discipline rules.
-
-## License
-
-GPL-3.0. See `LICENSE`.
+| `los-bootstrap` | Interactive guided wizard |
+| `audit` / `report` | Privacy and degoogle audit (GMS, Google apps, Private DNS, ADB over network) |
+| `harden` | Lockdown checks with *why* and *tradeoff*; `--interactive --confirm` applies fixes |
+| `plan` / `apply --profile <name>` | Install a bundle of FOSS apps and settings from a YAML profile |
+| `flash status / prepare / download / verify / run` | Unlock the bootloader and flash a ROM |
+| `flash backup / check / update` | Pre-flash backup guide, first-boot check, "is my ROM current?" |
+| `location doctor / compat` | Diagnose the location stack (microG, UnifiedNlp) and app compatibility |
+| `integrity doctor / compat / guide` | Why banking and government apps refuse a custom ROM, and the options you have |
+| `camera list-profiles / show` | GCam port recommendations per device |
+
+The full command reference and exit codes are in
+[docs/USAGE.md](https://github.com/richardkfm/los-bootstrap/blob/main/docs/USAGE.md),
+and what each check does is in
+[docs/FEATURES.md](https://github.com/richardkfm/los-bootstrap/blob/main/docs/FEATURES.md).
+
+## What it does not do
+
+It does not bypass bootloader locks or signature checks. It never ships or
+fetches proprietary binaries (GCam APKs) or attestation keyboxes. It never
+roots your device for you. See
+[the full list](https://github.com/richardkfm/los-bootstrap/blob/main/docs/FEATURES.md#what-it-does-not-do).
+
+## Project
+
+- [Roadmap](https://github.com/richardkfm/los-bootstrap/blob/main/roadmap.md) ·
+  [Changelog](https://github.com/richardkfm/los-bootstrap/blob/main/CHANGELOG.md) ·
+  [Contributing / architecture](https://github.com/richardkfm/los-bootstrap/blob/main/CLAUDE.md) ·
+  [Releasing](https://github.com/richardkfm/los-bootstrap/blob/main/docs/RELEASING.md)
+- README graphics are generated by `python docs/assets/build.py`.
+- License: GPL-3.0, see [LICENSE](https://github.com/richardkfm/los-bootstrap/blob/main/LICENSE).
