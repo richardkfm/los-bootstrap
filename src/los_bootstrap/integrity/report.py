@@ -126,6 +126,8 @@ def render_compat_matrix(today: date | None = None) -> str:
         lines.append(f"  [{sym}] {entry.name:<24} {label}  verified: {age}")
         lines.append(wrap(entry.summary, "       "))
         lines.append(wrap(f"↪ Alternative: {entry.alternative}", "       "))
+        if entry.root_hint:
+            lines.append(wrap(f"⚠ Root hint: {entry.root_hint}", "       "))
         lines.append(wrap(f"source: {entry.source}", "       "))
 
     lines.append("")

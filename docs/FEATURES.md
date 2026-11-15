@@ -174,8 +174,8 @@ app impact and a tradeoff. It **cannot** obtain a real Play Integrity verdict
 itself (that needs Google Play services and an app registered with Google);
 it says so and points you at an on-device checker for the actual verdict.
 
-`integrity compat` is a static matrix of German apps (AusweisApp, the TK ePA
-app, ElsterSmart, Sparkasse S-pushTAN, DB Navigator, VR SecureGo plus) with a
+`integrity compat` is a static matrix of German apps (AusweisApp and Smart-eID,
+the TK, AOK, BARMER and DAK ePA apps, Das E-Rezept, ElsterSmart, Sparkasse S-pushTAN, DB Navigator, VR SecureGo plus) with a
 non-phone alternative and a `last_verified` date for each. Entries older than
 six months are shown as unverified on purpose — stale compatibility data is
 worse than none.
