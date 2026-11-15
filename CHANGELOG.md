@@ -137,6 +137,13 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   not exist; it now documents `heimdall dump --partition EFS`.
 
 ### Changed
+- `integrity compat` now covers health and eID more fully (0.16.2): added
+  AOK Mein Leben, BARMER eCare, the DAK App, and gematik's Das E-Rezept,
+  plus a separate Smart-eID entry stating that storing the ID in the phone
+  is unavailable on any ROM (pilot halted in December 2023). The AusweisApp
+  entry now says it covers reading the physical card only. Each new entry
+  carries its source and `last_verified` date; the AOK status rests on a
+  2025 forum report and therefore renders as stale.
 - README rewritten to be short: a vector logo (light and dark) with
   centered badges replaces the ASCII-art block, an animated SVG terminal
   demo replaces the video, and a four-step "connect your phone" graphic
