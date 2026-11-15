@@ -38,6 +38,7 @@ class AppCompatEntry:
     alternative: str          # non-phone route (web / desktop / card reader)
     last_verified: Optional[date]
     source: str               # where the status came from
+    root_hint: Optional[str] = None  # what root hiding is reported to achieve
 
 
 COMPAT_MATRIX: Tuple[AppCompatEntry, ...] = (
@@ -83,6 +84,12 @@ COMPAT_MATRIX: Tuple[AppCompatEntry, ...] = (
         alternative="'Meine TK' web application; TK-Safe (ePA) on a computer.",
         last_verified=date(2026, 10, 8),
         source="tk.de app-support page (dated 2026-10-08)",
+        root_hint=(
+            "No working root-hiding setup on LineageOS was found. TK says its "
+            "attestation rates hardware and software and excludes an "
+            "unlocked bootloader, which a module cannot hide from the "
+            "hardware."
+        ),
     ),
     AppCompatEntry(
         name="AOK Mein Leben (ePA)",
@@ -101,6 +108,11 @@ COMPAT_MATRIX: Tuple[AppCompatEntry, ...] = (
         ),
         last_verified=date(2025, 10, 24),
         source="community.e.foundation (2025-10-24, anecdotal); aok.de (updated 2026-11-12)",
+        root_hint=(
+            "Reported not to help: a LineageOS 21 user with hidden Magisk "
+            "still got the rooted-device warning, and relocking the "
+            "bootloader on /e/OS changed nothing."
+        ),
     ),
     AppCompatEntry(
         name="BARMER eCare (ePA)",
@@ -119,6 +131,7 @@ COMPAT_MATRIX: Tuple[AppCompatEntry, ...] = (
         ),
         last_verified=date(2026, 11, 15),
         source="barmer.de eCare page (updated 2026-11-10), Meine BARMER page (updated 2026-10-29)",
+        root_hint="No report of a working root-hiding setup on LineageOS was found.",
     ),
     AppCompatEntry(
         name="DAK App (ePA login)",
@@ -131,12 +144,18 @@ COMPAT_MATRIX: Tuple[AppCompatEntry, ...] = (
             "the web portal use this app as their second factor."
         ),
         alternative=(
-            "No app-free login found. Use a stock-firmware second device, or "
-            "contact the DAK ombudsman office for ePA objections and access "
-            "settings."
+            "No app-free login found. Use a stock-firmware second device."
         ),
         last_verified=date(2026, 11, 15),
         source="Google Play listing (checked 2026-11-15); kuketz-forum.de (2024, anecdotal)",
+        root_hint=(
+            "One report from March 2024 had the app running on LineageOS 21 "
+            "with Magisk, Shamiko, the Magisk app hidden, the DAK app on the "
+            "hide list, a work profile, and the /system/addon.d folder "
+            "renamed. A 2024 attempt on /e/OS with Magisk modules and LSPosed "
+            "failed. Not confirmed since; expect it to break with any app "
+            "update."
+        ),
     ),
     AppCompatEntry(
         name="Das E-Rezept (gematik)",

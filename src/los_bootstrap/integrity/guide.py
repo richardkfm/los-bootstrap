@@ -40,9 +40,11 @@ GUIDE_STEPS: tuple[tuple[str, str], ...] = (
         "The lowest-risk fix changes nothing on the phone. Most German "
         "services have a browser portal or a desktop program: online banking "
         "in a browser (chipTAN with a card reader), Mein ELSTER on a desktop, "
-        "the AusweisApp desktop client with a USB card reader, the TK and "
-        "other ePA web portals. Check `los-bootstrap integrity compat` for "
-        "the alternative listed per app.",
+        "the AusweisApp desktop client with a USB card reader, and the "
+        "insurers' ePA desktop programs (TK-Safe, BARMER eCare for PC). The "
+        "ePA is also filled and used by practices without any app; you need "
+        "the app only to manage the record yourself. Check `los-bootstrap "
+        "integrity compat` for the alternative listed per app.",
     ),
     (
         "2. Install microG",
@@ -83,6 +85,10 @@ GUIDE_STEPS: tuple[tuple[str, str], ...] = (
         "strongest hardware-backed verdict cannot be spoofed this way; that "
         "needs a genuinely locked, attested device (step 4). This tool never "
         "deals in attestation keyboxes. Install a module you downloaded with "
-        "`los-bootstrap integrity install` (coming in a later release).",
+        "`los-bootstrap integrity install --root --confirm`. Do not expect "
+        "this to rescue health-insurer ePA apps on LineageOS: users report "
+        "setups that satisfy every banking app while the ePA app still "
+        "detects root, and only one old, unconfirmed report of the DAK app "
+        "running. `integrity compat` shows the root hint per app.",
     ),
 )

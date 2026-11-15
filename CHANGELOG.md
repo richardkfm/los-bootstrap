@@ -143,7 +143,11 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
   is unavailable on any ROM (pilot halted in December 2023). The AusweisApp
   entry now says it covers reading the physical card only. Each new entry
   carries its source and `last_verified` date; the AOK status rests on a
-  2025 forum report and therefore renders as stale.
+  2025 forum report and therefore renders as stale. The ePA entries also
+  print a "Root hint" line saying what root hiding is reported to achieve
+  on LineageOS (mostly nothing; one old, unconfirmed DAK report).
+- `integrity guide` now names the ePA desktop programs in step 1 and says
+  in the spoofing step that root hiding rarely rescues ePA apps.
 - README rewritten to be short: a vector logo (light and dark) with
   centered badges replaces the ASCII-art block, an animated SVG terminal
   demo replaces the video, and a four-step "connect your phone" graphic

@@ -159,6 +159,18 @@ def test_every_entry_has_an_alternative():
     assert all(e.alternative.strip() for e in COMPAT_MATRIX)
 
 
+def test_root_hints_are_rendered():
+    out = " ".join(render_compat_matrix().split())
+    hinted = [e for e in COMPAT_MATRIX if e.root_hint]
+    assert hinted
+    assert out.count("Root hint:") == len(hinted)
+
+
+def test_root_hints_never_mention_keyboxes():
+    for entry in COMPAT_MATRIX:
+        assert "keybox" not in (entry.root_hint or "").lower()
+
+
 # ── guide ─────────────────────────────────────────────────────────────────────
 
 def test_guide_prints_all_three_warnings():
