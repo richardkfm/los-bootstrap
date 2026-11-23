@@ -43,14 +43,22 @@ function Write-Warn {
 }
 
 function Invoke-Step {
-    param([string]$Command)
+    param(
+        [string]$Command,
+        [int[]]$OkExitCodes = @(0)
+    )
     Write-Host "    $ $Command" -ForegroundColor DarkGray
     if ($DryRun) { return }
     & cmd /c $Command
-    if ($LASTEXITCODE -ne 0) {
+    if ($OkExitCodes -notcontains $LASTEXITCODE) {
         throw "command failed (exit $LASTEXITCODE): $Command"
     }
 }
+
+# winget returns these when the package is already present, which is fine:
+#   0x8A15002B APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE  (no newer version)
+#   0x8A150061 APPINSTALLER_CLI_ERROR_PACKAGE_ALREADY_INSTALLED
+$WingetOkExitCodes = @(0, -1978335189, -1978335135)
 
 function Confirm-Or-Exit {
     param([string]$Prompt)
@@ -98,11 +106,11 @@ switch ($PM) {
         # --silent + --accept-* avoids interactive prompts; --exact pins the id.
         # Python.Python.3.12 is the LTS-ish current line; bump as needed.
         if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-            Invoke-Step "winget install --id Python.Python.3.12 -e --accept-package-agreements --accept-source-agreements --silent"
+            Invoke-Step "winget install --id Python.Python.3.12 -e --accept-package-agreements --accept-source-agreements --silent" -OkExitCodes $WingetOkExitCodes
         } else {
             Write-Log "python already on PATH, skipping install"
         }
-        Invoke-Step "winget install --id Google.PlatformTools -e --accept-package-agreements --accept-source-agreements --silent"
+        Invoke-Step "winget install --id Google.PlatformTools -e --accept-package-agreements --accept-source-agreements --silent" -OkExitCodes $WingetOkExitCodes
     }
     'scoop' {
         if (-not (Get-Command python -ErrorAction SilentlyContinue)) {

@@ -6,6 +6,15 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.16.3] - 2026-11-23
+
+### Fixed
+- Windows installer (`scripts/install.ps1`) aborted when a winget package
+  (Python or `Google.PlatformTools`) was already installed and up to date:
+  winget exits `0x8A15002B` ("no applicable upgrade") or `0x8A150061`
+  ("already installed") in that case, and the script treated both as
+  failures. They are now accepted as success.
+
 ## [0.16.2] - 2026-11-23
 
 This section rolls up everything since 0.13.1. The v0.14.0 tag shipped
