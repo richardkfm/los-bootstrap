@@ -6,6 +6,12 @@ and the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
 
+## [0.16.2] - 2026-11-23
+
+This section rolls up everything since 0.13.1. The v0.14.0 tag shipped
+without its own changelog section, and 0.15.0, 0.16.0 and 0.16.1 were
+never tagged, so their changes are all listed here.
+
 ### Added
 - `los-bootstrap integrity install` — install a Magisk/KernelSU/APatch
   spoofing module (Phase 12, mutating). Gated on both `--root` and
